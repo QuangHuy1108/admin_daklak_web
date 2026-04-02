@@ -208,17 +208,20 @@ class _LogoutButton extends StatelessWidget {
         ),
         child: Row(
           mainAxisAlignment:
-              isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+          isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
           children: [
             const Icon(Icons.logout_rounded, size: 22, color: AppColors.textMuted),
             if (isExpanded) ...[
               const SizedBox(width: 16),
-              const Text(
-                'Đăng xuất',
-                style: TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+              const Expanded( // <-- SỬA LỖI: Bọc Expanded tại đây
+                child: Text(
+                  'Đăng xuất',
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis, // <-- SỬA LỖI: Xử lý cắt chữ khi tràn
                 ),
               ),
             ],

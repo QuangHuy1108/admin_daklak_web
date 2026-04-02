@@ -1,23 +1,24 @@
-// File: lib/services/weather_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class WeatherService {
-  // Thay mã API Key bạn đang dùng trong Colab vào đây
-  final String apiKey = '4be89a65fe75c2f972c0f24084943bc1';
+  // Lấy API Key từ biến môi trường thay vì gắn cứng
+  final String apiKey = dotenv.env['WEATHER_API_KEY'] ?? '';
 
-  // URL API (Ví dụ dùng OpenWeatherMap)
-  // Bạn có thể sửa lại URL này cho giống trong Colab của bạn
   final String baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
 
   Future<Map<String, dynamic>> fetchWeather(String city) async {
+    if (apiKey.isEmpty) {
+      throw Exception('Lỗi: Chưa cấu hình WEATHER_API_KEY trong file .env');
+    }
+
     try {
       final response = await http.get(
         Uri.parse('$baseUrl?q=$city&appid=$apiKey&units=metric&lang=vi'),
       );
 
       if (response.statusCode == 200) {
-        // Giải mã JSON nhận được
         return json.decode(response.body);
       } else {
         throw Exception('Không lấy được dữ liệu thời tiết');
