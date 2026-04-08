@@ -15,6 +15,8 @@ import '../../features/order_management/screens/order_list_screen.dart';
 import '../../features/product_warehouse/screens/product_list_screen.dart';
 import '../../features/promotions/screens/voucher_management_screen.dart';
 import '../../features/finance/screens/finance_screen.dart';
+import '../../features/reports/screens/report_screen.dart';
+
 
 
 
@@ -90,7 +92,12 @@ class AppRouter {
             path: '/finance',
             builder: (context, state) => const FinanceScreen(),
           ),
+          GoRoute(
+            path: '/reports',
+            builder: (context, state) => const ReportScreen(),
+          ),
         ],
+
       ),
     ],
   );

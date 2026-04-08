@@ -463,7 +463,10 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
 
   Future<void> _updateOrderStatus(String docId, String newStatus) async {
     try {
-      await FirebaseFirestore.instance.collection('orders').doc(docId).update({'status': newStatus});
+      await FirebaseFirestore.instance.collection('orders').doc(docId).update({
+        'status': newStatus,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
       if (mounted) _showToast(context, 'Order updated to $newStatus');
     } catch (e) {
       if (mounted) _showToast(context, 'Error updating order: $e');
