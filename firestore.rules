@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Voucher management rules
+    match /vouchers/{voucherId} {
+      // Authenticated admins only
+      allow read: if request.auth != null && request.auth.token.admin == true;
+      
+      // Strict update rule for isActive field only
+      allow update: if request.auth != null && 
+                      request.auth.token.admin == true && 
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isActive']);
+      
+      // Prevention of other field modification by the client
+      // (Pipelines like ai_voucher_pipeline.py bypass these rules via Admin SDK)
+      allow create, delete: if false; 
+    }
+
+    // Other collections should have their own rules...
+    match /{document=**} {
+      allow read, write: if request.auth != null; 
+    }
+  }
+}

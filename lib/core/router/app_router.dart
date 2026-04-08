@@ -7,6 +7,15 @@ import '../../features/content_management/screens/banner_manager_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../widgets/admin_layout.dart'; // Import layout
+import '../../features/expert_management//screens/admin_appointments_screen.dart';
+import '../../features/logs///screens/ai_logs_screen.dart';
+import '../../features/price_management/screens/agricultural_price.dart';
+import '../../features/sales_management/screens/hub_dashboard_screen.dart';
+import '../../features/order_management/screens/order_list_screen.dart';
+import '../../features/product_warehouse/screens/product_list_screen.dart';
+import '../../features/promotions/screens/voucher_management_screen.dart';
+import '../../features/finance/screens/finance_screen.dart';
+
 
 
 class AppRouter {
@@ -39,7 +48,7 @@ class AppRouter {
           // GoRoute(path: '/users', builder: (context, state) => const UserScreen()),
           GoRoute(
             path: '/users',
-            builder: (context, state) => const UserListScreen(),
+            builder: (context, state) => const UserManagementScreen(),
           ),
           GoRoute(
             path: '/diseases',
@@ -48,6 +57,38 @@ class AppRouter {
           GoRoute(
             path: '/banners',
             builder: (context, state) => const BannerManagerScreen(),
+          ),
+          GoRoute(
+            path: '/appointments',
+            builder: (context, state) => const AdminAppointmentsScreen(),
+          ),
+          GoRoute(
+            path: '/ai-logs',
+            builder: (context, state) => const AiLogsScreen(),
+          ),
+          GoRoute(
+            path: '/prices',
+            builder: (context, state) => const AgriculturalPriceDashboard(),
+          ),
+          GoRoute(
+            path: '/sales',
+            builder: (context, state) => const HubDashboardScreen(),
+          ),
+          GoRoute(
+            path: '/orders',
+            builder: (context, state) => const OrderListScreen(),
+          ),
+          GoRoute(
+            path: '/products',
+            builder: (context, state) => const ProductListScreen(),
+          ),
+          GoRoute(
+            path: '/promotions',
+            builder: (context, state) => const VoucherManagementScreen(),
+          ),
+          GoRoute(
+            path: '/finance',
+            builder: (context, state) => const FinanceScreen(),
           ),
         ],
       ),

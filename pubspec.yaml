@@ -47,6 +47,8 @@ dependencies:
   flutter_dotenv: ^5.1.0
   flutter_quill: 11.5.0 # Dùng cho Rich Text Editor
   flutter_image_compress: ^2.3.0 # Dùng để nén ảnh
+  google_fonts: ^8.0.2
+  csv: ^6.0.0
 
 dev_dependencies:
   flutter_test:

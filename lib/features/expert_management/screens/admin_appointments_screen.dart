@@ -1,0 +1,564 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+
+class AdminAppointmentsScreen extends StatefulWidget {
+  const AdminAppointmentsScreen({super.key});
+
+  @override
+  State<AdminAppointmentsScreen> createState() => _AdminAppointmentsScreenState();
+}
+
+class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
+  String _searchQuery = "";
+  String _selectedFilter = "Tất cả";
+  final List<String> _filters = ["Tất cả", "Đang chờ", "Đã xác nhận", "Hoàn thành", "Đã hủy"];
+
+  // Phân trang
+  int _currentPage = 1;
+  final int _itemsPerPage = 4;
+
+  // Bảng màu
+  final Color _bgColor = const Color(0xFFF9FAF9);
+  final Color _primaryGreen = const Color(0xFF1B4332);
+  final Color _accentBrown = const Color(0xFF8D4A20);
+  final Color _textDark = const Color(0xFF2D3748);
+  final Color _textGrey = const Color(0xFF718096);
+
+  // Khởi tạo Stream 1 lần duy nhất để chống giật/nháy màn hình
+  late Stream<QuerySnapshot> _appointmentsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _appointmentsStream = FirebaseFirestore.instance
+        .collection('appointments')
+        .orderBy('time', descending: true)
+        .snapshots();
+  }
+
+  String _mapFilterToStatus(String filter) {
+    switch (filter) {
+      case "Đang chờ": return "pending";
+      case "Đã xác nhận": return "confirmed";
+      case "Hoàn thành": return "completed";
+      case "Đã hủy": return "cancelled";
+      default: return "";
+    }
+  }
+
+  // Hàm xóa lịch hẹn
+  Future<void> _deleteAppointment(String docId) async {
+    bool? confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Xác nhận xóa"),
+        content: const Text("Bạn vẫn muốn xóa cuộc hẹn này chứ? Hành động này không thể hoàn tác."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Hủy")),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text("Đồng ý xóa"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await FirebaseFirestore.instance.collection('appointments').doc(docId).delete();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Đã xóa cuộc hẹn thành công")));
+      }
+    }
+  }
+
+  // Hàm tạo lịch hẹn mới
+  void _showCreateAppointmentDialog() {
+    final farmerNameCtrl = TextEditingController();
+    final farmerIdCtrl = TextEditingController();
+    final farmerPhoneCtrl = TextEditingController();
+    final expertNameCtrl = TextEditingController();
+    final expertIdCtrl = TextEditingController();
+    DateTime selectedTime = DateTime.now();
+
+    // Tạo sẵn ID cuộc hẹn tự động từ Firestore
+    DocumentReference newDocRef = FirebaseFirestore.instance.collection('appointments').doc();
+    String generatedId = newDocRef.id;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Tạo lịch hẹn mới", style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: 500,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Trường ID tự động do hệ thống đề xuất
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: TextField(
+                    controller: TextEditingController(text: generatedId),
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: "Mã lịch hẹn (Tự động tạo)",
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                _buildTextField("Tên Nông dân", farmerNameCtrl),
+                _buildTextField("ID Nông dân", farmerIdCtrl),
+                _buildTextField("SĐT Nông dân", farmerPhoneCtrl),
+                const Divider(height: 30),
+                _buildTextField("Tên Chuyên gia", expertNameCtrl),
+                _buildTextField("ID Chuyên gia", expertIdCtrl),
+                const SizedBox(height: 16),
+
+                StatefulBuilder(
+                    builder: (context, setDialogState) {
+                      return ListTile(
+                        title: const Text("Thời gian hẹn:"),
+                        subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(selectedTime)),
+                        trailing: const Icon(Icons.calendar_month),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: Colors.grey.shade300)),
+                        onTap: () async {
+                          DateTime? date = await showDatePicker(context: context, initialDate: selectedTime, firstDate: DateTime.now(), lastDate: DateTime(2030));
+                          if (date != null) {
+                            if (!context.mounted) return;
+                            TimeOfDay? time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+                            if (time != null) {
+                              setDialogState(() {
+                                selectedTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                              });
+                            }
+                          }
+                        },
+                      );
+                    }
+                )
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Hủy")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen, foregroundColor: Colors.white),
+            onPressed: () async {
+              // Lưu vào Firestore dùng ID đã sinh ra
+              await newDocRef.set({
+                'farmerName': farmerNameCtrl.text.isEmpty ? "Chưa cung cấp" : farmerNameCtrl.text,
+                'farmerId': farmerIdCtrl.text.isEmpty ? "N/A" : farmerIdCtrl.text,
+                'farmerPhone': farmerPhoneCtrl.text,
+                'expertName': expertNameCtrl.text.isEmpty ? "Chưa phân công" : expertNameCtrl.text,
+                'expertId': expertIdCtrl.text.isEmpty ? "N/A" : expertIdCtrl.text,
+                'time': Timestamp.fromDate(selectedTime),
+                'status': 'pending',
+                'createdAt': FieldValue.serverTimestamp(),
+              });
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tạo lịch hẹn thành công!")));
+              }
+            },
+            child: const Text("Lưu cuộc hẹn"),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bgColor,
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _appointmentsStream, // Gọi stream từ biến đã khởi tạo ở initState
+        builder: (context, snapshot) {
+          if (snapshot.hasError) return Center(child: Text("Lỗi: ${snapshot.error}"));
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+
+          final docs = snapshot.data!.docs;
+
+          int total = docs.length;
+          int upcoming = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'confirmed').length;
+          int completed = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'completed').length;
+
+          // Xử lý bộ lọc & Tìm kiếm (Tìm theo từng chữ cái)
+          final filteredDocs = docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final status = data['status'] ?? 'pending';
+            final farmerName = (data['farmerName'] ?? '').toString().toLowerCase();
+            final expertName = (data['expertName'] ?? '').toString().toLowerCase();
+            final docId = doc.id.toLowerCase();
+
+            bool matchTab = _selectedFilter == "Tất cả" || status == _mapFilterToStatus(_selectedFilter);
+            bool matchSearch = _searchQuery.isEmpty ||
+                farmerName.contains(_searchQuery) ||
+                expertName.contains(_searchQuery) ||
+                docId.contains(_searchQuery);
+
+            return matchTab && matchSearch;
+          }).toList();
+
+          // Xử lý logic Phân trang
+          int totalPages = (filteredDocs.length / _itemsPerPage).ceil();
+          if (totalPages == 0) totalPages = 1;
+          if (_currentPage > totalPages) _currentPage = totalPages;
+
+          int startIndex = (_currentPage - 1) * _itemsPerPage;
+          int endIndex = startIndex + _itemsPerPage;
+          if (endIndex > filteredDocs.length) endIndex = filteredDocs.length;
+
+          List<DocumentSnapshot> paginatedDocs = filteredDocs.sublist(startIndex, endIndex);
+
+          return Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // --- HEADER ---
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Quản lý lịch hẹn", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _primaryGreen)),
+                    Container(
+                      width: 320,
+                      decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(24)),
+                      child: TextField(
+                        decoration: const InputDecoration(
+                          hintText: "Tìm theo tên, mã lịch hẹn...",
+                          prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onChanged: (val) {
+                          setState(() {
+                            _searchQuery = val.trim().toLowerCase();
+                            _currentPage = 1; // Nhập phím thì trở về trang 1
+                          });
+                        },
+                      ),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // --- SUMMARY CARDS ---
+                Row(
+                  children: [
+                    _buildStatCard("Tổng lịch hẹn", total.toString(), Icons.calendar_today, const Color(0xFF4CAF50), const Color(0xFFE8F5E9), _primaryGreen),
+                    const SizedBox(width: 24),
+                    _buildStatCard("Lịch sắp tới", upcoming.toString(), Icons.access_time_filled, const Color(0xFF934B22), const Color(0xFFFDF0E7), _textDark),
+                    const SizedBox(width: 24),
+                    _buildStatCard("Đã hoàn thành", completed.toString(), Icons.check_circle, const Color(0xFF4CAF50), const Color(0xFFE8F5E9), _textDark),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // --- TOOLBAR ---
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(30)),
+                      child: Row(
+                        children: _filters.map((filter) => _buildFilterTab(filter)).toList(),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _showCreateAppointmentDialog,
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text("Tạo lịch hẹn mới"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accentBrown, foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      ),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // --- DATA TABLE ---
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white, borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+                    ),
+                    child: Column(
+                      children: [
+                        // Table Header
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF5F7F5),
+                            borderRadius: BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(flex: 2, child: Text("MÃ LỊCH HẸN", style: TextStyle(color: _textGrey, fontWeight: FontWeight.bold, fontSize: 12))),
+                              Expanded(flex: 3, child: Text("NÔNG DÂN", style: TextStyle(color: _textGrey, fontWeight: FontWeight.bold, fontSize: 12))),
+                              Expanded(flex: 3, child: Text("CHUYÊN GIA", style: TextStyle(color: _textGrey, fontWeight: FontWeight.bold, fontSize: 12))),
+                              Expanded(flex: 2, child: Text("THỜI GIAN", style: TextStyle(color: _textGrey, fontWeight: FontWeight.bold, fontSize: 12))),
+                              Expanded(flex: 2, child: Text("TRẠNG THÁI", style: TextStyle(color: _textGrey, fontWeight: FontWeight.bold, fontSize: 12))),
+                              Expanded(flex: 1, child: Text("HÀNH ĐỘNG", textAlign: TextAlign.right, style: TextStyle(color: _textGrey, fontWeight: FontWeight.bold, fontSize: 12))),
+                            ],
+                          ),
+                        ),
+
+                        // Table Body
+                        Expanded(
+                          child: paginatedDocs.isEmpty
+                              ? const Center(child: Text("Không có dữ liệu phù hợp"))
+                              : ListView.separated(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: paginatedDocs.length,
+                            separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                            itemBuilder: (context, index) {
+                              final doc = paginatedDocs[index];
+                              final data = doc.data() as Map<String, dynamic>;
+                              return _buildDataRow(doc.id, data);
+                            },
+                          ),
+                        ),
+
+                        // Pagination Footer
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFF0F0F0)))),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("Hiển thị ${filteredDocs.isEmpty ? 0 : startIndex + 1} - $endIndex của ${filteredDocs.length} lịch hẹn", style: TextStyle(color: _textGrey, fontSize: 13)),
+                              Row(
+                                children: [
+                                  // Nút Previous
+                                  InkWell(
+                                    onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                    child: _buildPageIcon(Icons.chevron_left, enabled: _currentPage > 1),
+                                  ),
+
+                                  // Hiển thị các nút trang 1, 2, 3
+                                  for (int i = 1; i <= totalPages; i++)
+                                    if (i == 1 || i == totalPages || (i >= _currentPage - 1 && i <= _currentPage + 1))
+                                      InkWell(
+                                        onTap: () => setState(() => _currentPage = i),
+                                        child: _buildPageNumber(i.toString(), _currentPage == i),
+                                      )
+                                    else if (i == 2 && _currentPage > 3 || i == totalPages - 1 && _currentPage < totalPages - 2)
+                                      const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text("...")),
+
+                                  // Nút Next
+                                  InkWell(
+                                    onTap: _currentPage < totalPages ? () => setState(() => _currentPage++) : null,
+                                    child: _buildPageIcon(Icons.chevron_right, enabled: _currentPage < totalPages),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color iconColor, Color iconBgColor, Color valueColor) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)]),
+        child: Row(
+          children: [
+            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: iconBgColor, borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: iconColor, size: 28)),
+            const SizedBox(width: 20),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(color: _textGrey, fontSize: 13, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 4),
+                Text(value, style: TextStyle(color: valueColor, fontWeight: FontWeight.bold, fontSize: 28)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterTab(String title) {
+    bool isSelected = _selectedFilter == title;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedFilter = title;
+          _currentPage = 1;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(color: isSelected ? _primaryGreen : Colors.transparent, borderRadius: BorderRadius.circular(24)),
+        child: Text(title, style: TextStyle(color: isSelected ? Colors.white : _textGrey, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
+      ),
+    );
+  }
+
+  Widget _buildDataRow(String docId, Map<String, dynamic> data) {
+    final DateTime time = data['time'] != null ? (data['time'] as Timestamp).toDate() : DateTime.now();
+    final String farmerName = data['farmerName'] ?? "N/A";
+    final String farmerId = data['farmerId']?.toString() ?? "Chưa có ID";
+    final String expertName = data['expertName'] ?? "N/A";
+    final String expertId = data['expertId']?.toString() ?? "Chưa có ID";
+    final String status = data['status'] ?? "pending";
+
+    String initials = farmerName.isNotEmpty ? farmerName[0].toUpperCase() : "N";
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Row(
+        children: [
+          // Cột 1: Mã Lịch Hẹn
+          Expanded(flex: 2, child: Text(docId.substring(0, 8).toUpperCase(), style: TextStyle(color: _textGrey, fontWeight: FontWeight.bold))),
+
+          // Cột 2: Nông dân
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                CircleAvatar(radius: 20, backgroundColor: Colors.grey[200], child: Text(initials, style: TextStyle(color: _textDark, fontWeight: FontWeight.bold, fontSize: 13))),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(farmerName, style: TextStyle(fontWeight: FontWeight.bold, color: _textDark, fontSize: 14), overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text("ID: $farmerId", style: TextStyle(color: _textGrey, fontSize: 12), overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Cột 3: Chuyên gia
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(20)), child: const Icon(Icons.person, color: Color(0xFF4CAF50), size: 16)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(expertName, style: TextStyle(fontWeight: FontWeight.w600, color: _textDark, fontSize: 14)),
+                      Text("ID: $expertId", style: TextStyle(color: _textGrey, fontSize: 12), overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
+
+          // Cột 4: Thời gian
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(DateFormat('HH:mm').format(time), style: TextStyle(fontWeight: FontWeight.bold, color: _textDark, fontSize: 14)),
+                const SizedBox(height: 4),
+                Text(DateFormat('dd/MM/yyyy').format(time), style: TextStyle(color: _textGrey, fontSize: 12)),
+              ],
+            ),
+          ),
+
+          // Cột 5: Trạng thái
+          Expanded(flex: 2, child: Align(alignment: Alignment.centerLeft, child: _buildStatusBadge(status))),
+
+          // Cột 6: Hành động
+          Expanded(
+            flex: 1,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Colors.grey),
+                onSelected: (value) {
+                  if (value == 'delete') _deleteAppointment(docId);
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(children: [Icon(Icons.delete, color: Colors.red, size: 20), SizedBox(width: 8), Text('Xóa cuộc hẹn', style: TextStyle(color: Colors.red))]),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    Color bg, text; String label;
+    if (status == 'confirmed') { bg = const Color(0xFFD4EDDA); text = const Color(0xFF155724); label = "Đã xác nhận"; }
+    else if (status == 'pending') { bg = const Color(0xFFFDE6D8); text = const Color(0xFFC05621); label = "Đang chờ"; }
+    else if (status == 'completed') { bg = Colors.grey[200]!; text = Colors.grey[700]!; label = "Hoàn thành"; }
+    else { bg = const Color(0xFFF8D7DA); text = const Color(0xFF721C24); label = "Đã hủy"; }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Text(label, style: TextStyle(color: text, fontWeight: FontWeight.bold, fontSize: 12)),
+    );
+  }
+
+  Widget _buildPageNumber(String number, bool isSelected) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      width: 32, height: 32,
+      decoration: BoxDecoration(color: isSelected ? _primaryGreen : Colors.transparent, shape: BoxShape.circle, border: isSelected ? null : Border.all(color: Colors.grey[300]!)),
+      alignment: Alignment.center,
+      child: Text(number, style: TextStyle(color: isSelected ? Colors.white : _textDark, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
+    );
+  }
+
+  Widget _buildPageIcon(IconData icon, {required bool enabled}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      width: 32, height: 32,
+      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: enabled ? Colors.grey[400]! : Colors.grey[200]!)),
+      child: Icon(icon, size: 18, color: enabled ? _textDark : Colors.grey[300]),
+    );
+  }
+}

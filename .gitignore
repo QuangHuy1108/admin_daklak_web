@@ -44,3 +44,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Sensitive Keys
+serviceAccountKey.json
+
+# Temporary Reports and Analysis
+pipeline_report_*.json
+*.txt
+*.log
+
+# Redundant root files
+voucher_model.dart
+voucher_service.dart

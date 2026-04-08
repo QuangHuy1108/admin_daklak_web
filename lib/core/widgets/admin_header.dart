@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import '../providers/menu_provider.dart';
 import '../constants/app_colors.dart';
 import '../../features/auth/services/auth_service.dart';
 
@@ -13,100 +11,117 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
     bool isMobile = MediaQuery.of(context).size.width <= 768;
 
     return Container(
-      height: kToolbarHeight + 1,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      height: 64, // Cập nhật chiều cao 64 cho không gian thoáng hơn
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
         color: AppColors.cardBg,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // ── Menu toggle (Chỉ hiện nếu trên mobile/tablet để mở drawer) ────────────────
-           IconButton(
-              icon: const Icon(Icons.menu_rounded, color: AppColors.textHeading, size: 24),
-              onPressed: () {
-                if (isMobile) {
-                  Scaffold.of(context).openDrawer();
-                } else {
-                  context.read<MenuProvider>().toggleMenu();
-                }
-              },
-              tooltip: 'Toggle menu',
-            ),
-          const SizedBox(width: 16),
 
-          // ── Search bar ───────────────────────────────────────
-          if (MediaQuery.of(context).size.width > 500) // Ẩn thanh tìm kiếm nếu quá nhỏ
+          // ── Feature 2: Search Bar ──────────────────────────────
+          if (!isMobile)
             Expanded(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Container(
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBg,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 12),
-                      const Icon(Icons.search_rounded, size: 18, color: AppColors.textMuted),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          decoration: const InputDecoration(
-                            hintText: 'Search something here...',
-                            hintStyle: TextStyle(
-                              color: AppColors.textMuted,
-                              fontSize: 14,
-                            ),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
+              flex: 5,
+              child: Container(
+                height: 40, // Tăng chiều cao search bar cho phù hợp với header 64
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    Icon(
+                      Icons.search_rounded,
+                      size: 20,
+                      color: Colors.grey.shade500,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search something here.....',
+                          hintStyle: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: 14,
                           ),
-                          style: const TextStyle(fontSize: 14, color: AppColors.textBody),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textBody,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            )
-          else 
-            const Spacer(),
+            ),
 
-          if (MediaQuery.of(context).size.width > 500) const Spacer(),
+          const Spacer(flex: 3),
 
-          // ── Notification bell ─────────────────────────────────
+          // ── Feature 3: Actions Group ───────────────────────────
+          // Notification item
           Stack(
             clipBehavior: Clip.none,
+            alignment: Alignment.center,
             children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none_rounded, color: AppColors.textHeading, size: 24),
-                onPressed: () {},
-                tooltip: 'Thông báo',
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: AppColors.textHeading,
+                    size: 20,
+                  ),
+                  onPressed: () {},
+                  tooltip: 'Notifications',
+                ),
               ),
               Positioned(
-                right: 8,
-                top: 8,
+                right: 0,
+                top: 0,
                 child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary, // Green dot cho FarmVista
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary, // Chấm xanh
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 2,
+                    ), // Viền trắng tạo hiệu ứng khoét
                   ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
 
-          // ── Admin profile ─────────────────────────────────────
+          // Vertical Divider ngăn cách chuông và profile
+          Container(height: 24, width: 1, color: Colors.grey.shade300),
+
+          const SizedBox(width: 20),
+
+          // Profile item
           PopupMenuButton<String>(
-            offset: const Offset(0, 48),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            offset: const Offset(0, 56),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             itemBuilder: (_) => [
               const PopupMenuItem(
                 value: 'profile',
@@ -150,24 +165,42 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
             },
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 16,
+                const CircleAvatar(
+                  radius: 16, // Giảm kích thước avatar
+                  backgroundImage: NetworkImage(
+                    'https://i.pravatar.cc/150?img=11',
+                  ),
                   backgroundColor: AppColors.background,
-                  child: const Icon(Icons.person, size: 20, color: AppColors.textMuted),
                 ),
                 if (!isMobile) ...[
                   const SizedBox(width: 12),
-                  const Text(
-                    'Admin',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textHeading,
-                    ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Albert Flores',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textHeading,
+                        ),
+                      ),
+                      Text(
+                        'albert45@mail.com',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.keyboard_arrow_down_rounded,
-                      size: 20, color: AppColors.textMuted),
+                  const SizedBox(width: 12),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: Colors.grey.shade600,
+                  ),
                 ],
               ],
             ),
@@ -178,5 +211,5 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 1);
+  Size get preferredSize => const Size.fromHeight(64);
 }

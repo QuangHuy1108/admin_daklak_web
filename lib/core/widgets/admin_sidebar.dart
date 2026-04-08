@@ -14,6 +14,7 @@ class _MenuItem {
 
 const _mainMenu = [
   _MenuItem(Icons.dashboard_rounded, 'Dashboard', '/dashboard'),
+  _MenuItem(Icons.shopping_cart_outlined, 'Quản lý Đơn hàng', '/sales'),
   _MenuItem(Icons.image_outlined, 'Banner', '/banners'),
   _MenuItem(Icons.people_outlined, 'Tài khoản', '/users'),
   _MenuItem(Icons.calendar_today_outlined, 'Lịch hẹn chuyên gia', '/appointments'),
@@ -29,13 +30,10 @@ class AdminSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tự động điều chỉnh kích thước sidebar dựa trên Breakpoint (Desktop, Tablet, Mobile)
     final screenWidth = MediaQuery.of(context).size.width;
     bool isDrawer = screenWidth <= 768;
     bool showIconsOnly = screenWidth > 768 && screenWidth <= 1024;
-    
-    // Nếu màn hình quá nhỏ thì sidebar được mở từ Drawer và được phép xem full width chữ
-    // Nếu ở chế độ desktop thì dùng MenuProvider để người dùng tự toggle.
+
     bool _providerExpanded = context.watch<MenuProvider>().isExpanded;
     bool isExpanded = isDrawer ? true : (showIconsOnly ? false : _providerExpanded);
 
@@ -45,6 +43,8 @@ class AdminSidebar extends StatelessWidget {
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
       width: isExpanded ? 240 : 80,
+      clipBehavior: Clip.antiAlias,
+      height: MediaQuery.of(context).size.height,
       decoration: const BoxDecoration(
         color: AppColors.sidebarBg,
         border: Border(right: BorderSide(color: AppColors.border, width: 1)),
@@ -53,44 +53,51 @@ class AdminSidebar extends StatelessWidget {
         children: [
           // ── Logo ─────────────────────────────────────────────
           Container(
-            height: 72,
+            height: 64, // Đồng bộ 64px với Header mới
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.eco_rounded, color: Colors.white, size: 22),
+                  child: const Icon(Icons.eco_rounded, color: Colors.white, size: 24),
                 ),
-                if (isExpanded) ...[
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'DakLak Agent',
-                      style: TextStyle(
-                        color: AppColors.textHeading,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                if (isExpanded)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(width: 12),
+                          const Text(
+                            'FarmVista',
+                            style: TextStyle(
+                              color: AppColors.textHeading,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ],
               ],
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           // ── Menu items ────────────────────────────────────────
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.only(top: 8), // Bỏ padding ngang để viền trái chạm lề
               children: _mainMenu.map((item) => _SidebarTile(
                 item: item,
                 isExpanded: isExpanded,
@@ -132,52 +139,64 @@ class _SidebarTileState extends State<_SidebarTile> {
       onExit: (_) => setState(() => _hovered = false),
       child: InkWell(
         onTap: () {
-          // Xử lý đóng Drawer nếu chạy trên Mobile
           if (Scaffold.of(context).isDrawerOpen) {
             Navigator.pop(context);
           }
           context.go(widget.item.route);
         },
-        borderRadius: BorderRadius.circular(8),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: 8, right: 16), // Thêm margin phải
           padding: EdgeInsets.symmetric(
             horizontal: widget.isExpanded ? 16 : 0,
             vertical: 14,
           ),
           decoration: BoxDecoration(
             color: active
-                ? AppColors.primary
+                ? AppColors.primary.withOpacity(0.08) // Nền xanh nhạt giống ảnh
                 : _hovered
-                    ? AppColors.background
-                    : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+                ? AppColors.background
+                : Colors.transparent,
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(8),
+              bottomRight: Radius.circular(8),
+            ),
+            border: Border(
+              left: BorderSide(
+                color: active ? AppColors.primary : Colors.transparent, // Vạch dọc bên trái
+                width: 4,
+              ),
+            ),
           ),
           child: Row(
-            mainAxisAlignment: widget.isExpanded
-                ? MainAxisAlignment.start
-                : MainAxisAlignment.center,
+            mainAxisAlignment: widget.isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
             children: [
               Icon(
                 widget.item.icon,
                 size: 22,
-                color: active ? Colors.white : AppColors.textMuted,
+                color: active ? AppColors.primary : AppColors.textMuted,
               ),
-              if (widget.isExpanded) ...[
-                const SizedBox(width: 16),
+              if (widget.isExpanded)
                 Expanded(
-                  child: Text(
-                    widget.item.label,
-                    style: TextStyle(
-                      color: active ? Colors.white : AppColors.textMuted,
-                      fontSize: 14,
-                      fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(width: 16),
+                        Text(
+                          widget.item.label,
+                          style: TextStyle(
+                            color: active ? AppColors.primary : AppColors.textMuted,
+                            fontSize: 14,
+                            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ],
             ],
           ),
         ),
@@ -207,24 +226,30 @@ class _LogoutButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
-          mainAxisAlignment:
-          isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+          mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
           children: [
             const Icon(Icons.logout_rounded, size: 22, color: AppColors.textMuted),
-            if (isExpanded) ...[
-              const SizedBox(width: 16),
-              const Expanded( // <-- SỬA LỖI: Bọc Expanded tại đây
-                child: Text(
-                  'Đăng xuất',
-                  style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+            if (isExpanded)
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(width: 16),
+                      const Text(
+                        'Đăng xuất',
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                  overflow: TextOverflow.ellipsis, // <-- SỬA LỖI: Xử lý cắt chữ khi tràn
                 ),
               ),
-            ],
           ],
         ),
       ),
