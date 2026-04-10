@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:admin_daklak_web/features/reports/services/report_service.dart';
+import 'package:admin_daklak_web/features/reports/services/export_service.dart';
 import 'package:admin_daklak_web/features/reports/widgets/report_skeleton.dart';
 import 'package:admin_daklak_web/features/reports/widgets/report_widgets.dart';
 import 'package:admin_daklak_web/features/reports/widgets/report_charts.dart';
@@ -17,7 +18,9 @@ class ReportScreen extends StatefulWidget {
 
 class _ReportScreenState extends State<ReportScreen> {
   final ReportService _reportService = ReportService();
+  final ExportService _exportService = ExportService();
   
+  bool _isExporting = false;
   late Future<Map<String, dynamic>> _businessFuture;
   late Future<Map<String, dynamic>> _agriFuture;
   late Stream<Map<String, dynamic>> _aiStream;
@@ -103,21 +106,53 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget _buildExportButton() {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      child: OutlinedButton.icon(
-        onPressed: () {
-          // TODO: Implement CSV/Excel export logic
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Exporting data to CSV...")),
-          );
-        },
-        icon: const Icon(Icons.download, size: 18),
-        label: const Text("Export"),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.border),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: PopupMenuButton<String>(
+        onSelected: _handleExport,
+        enabled: !_isExporting,
+        itemBuilder: (context) => [
+          const PopupMenuItem(value: 'orders', child: Text("Xuất Đơn Hàng")),
+          const PopupMenuItem(value: 'expenses', child: Text("Xuất Chi Phí")),
+          const PopupMenuItem(value: 'all', child: Text("Xuất Tất Cả")),
+        ],
+        child: OutlinedButton.icon(
+          onPressed: null, // Disabled because PopupMenuButton handles tap
+          icon: _isExporting 
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+            : const Icon(Icons.download, size: 18),
+          label: Text(_isExporting ? "Đang xuất..." : "Xuất File"),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: AppColors.border),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            disabledForegroundColor: AppColors.primary,
+          ),
         ),
       ),
     );
+  }
+
+  Future<void> _handleExport(String type) async {
+    setState(() => _isExporting = true);
+    try {
+      if (type == 'orders' || type == 'all') {
+        final orders = await _reportService.fetchAllOrders();
+        _exportService.exportOrdersToCsv(orders);
+      }
+      
+      if (type == 'expenses' || type == 'all') {
+        final expenses = await _reportService.fetchAllExpenses();
+        _exportService.exportExpensesToCsv(expenses);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Xuất dữ liệu thành công!")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Lỗi khi xuất dữ liệu: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
   }
 
   Widget _buildFilterCluster() {
@@ -347,7 +382,7 @@ class _BusinessOverviewTab extends StatelessWidget {
               isPositive: true,
               icon: Icons.payments_outlined,
               iconColor: AppColors.primary,
-              onTap: () {}, // TODO: Navigate to Finance
+              onTap: () => context.push('/finance'),
             ),
             ReportKPICard(
               title: "Today's Orders",
@@ -357,7 +392,7 @@ class _BusinessOverviewTab extends StatelessWidget {
               isPositive: true,
               icon: Icons.shopping_basket_outlined,
               iconColor: Colors.blue,
-              onTap: () {}, // TODO: Navigate to Orders
+              onTap: () => context.push('/orders'),
             ),
             ReportKPICard(
               title: "Volume",
@@ -367,7 +402,7 @@ class _BusinessOverviewTab extends StatelessWidget {
               isPositive: true,
               icon: Icons.inventory_2_outlined,
               iconColor: Colors.orange,
-              onTap: () {}, // TODO: Navigate to Products
+              onTap: () => context.push('/products'),
             ),
             ReportKPICard(
               title: "Today Revenue",
@@ -377,7 +412,7 @@ class _BusinessOverviewTab extends StatelessWidget {
               isPositive: true,
               icon: Icons.trending_up,
               iconColor: Colors.teal,
-              onTap: () {}, // TODO: Navigate to Finance
+              onTap: () => context.push('/finance'),
             ),
           ],
         );
@@ -415,7 +450,7 @@ class _AgriExpertTab extends StatelessWidget {
                       isPositive: true,
                       icon: Icons.event,
                       iconColor: Colors.blue,
-                      onTap: () {},
+                      onTap: () => context.push('/appointments'),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -428,7 +463,7 @@ class _AgriExpertTab extends StatelessWidget {
                       isPositive: true,
                       icon: Icons.verified,
                       iconColor: AppColors.primary,
-                      onTap: () {},
+                      onTap: () => context.push('/users'),
                     ),
                   ),
                 ],
@@ -490,7 +525,7 @@ class _AISystemTab extends StatelessWidget {
                       isPositive: (data['successRate'] ?? 0.0) >= 90,
                       icon: Icons.check_circle_outline,
                       iconColor: Colors.teal,
-                      onTap: () => context.go('/ai-logs'),
+                      onTap: () => context.push('/ai-logs'),
                     ),
                   ),
                 ],

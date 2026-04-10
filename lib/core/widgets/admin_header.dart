@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../constants/app_colors.dart';
 import '../../features/auth/services/auth_service.dart';
+import '../../features/notifications/services/notification_service.dart';
+import '../../features/notifications/models/notification_model.dart';
+import '../../features/notifications/widgets/notification_dropdown.dart';
 
 class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
   const AdminHeader({super.key});
@@ -68,45 +71,97 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
 
           // ── Feature 3: Actions Group ───────────────────────────
           // Notification item
-          Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(
-                    Icons.notifications_none_rounded,
-                    color: AppColors.textHeading,
-                    size: 20,
+          StreamBuilder<List<AdminNotification>>(
+            stream: NotificationService.getUnreadNotificationsStream(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                debugPrint('🚨 [AdminHeader] StreamBuilder Error: ${snapshot.error}');
+              }
+              final unreadList = snapshot.data ?? [];
+              final unreadCount = unreadList.length;
+
+              return Row(
+                children: [
+                   // Hidden Debug Button (only during V1/Dev)
+                  IconButton(
+                    icon: Icon(Icons.bug_report_outlined, color: Colors.grey.shade400, size: 18),
+                    onPressed: () async {
+                      try {
+                        await NotificationService.sendTestNotification();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Đã gửi thông báo thử nghiệm thành công!')),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Lỗi khi gửi thông báo: $e')),
+                          );
+                        }
+                      }
+                    },
+                    tooltip: 'Gửi Test Notification',
                   ),
-                  onPressed: () {},
-                  tooltip: 'Notifications',
-                ),
-              ),
-              Positioned(
-                right: 0,
-                top: 0,
-                child: Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary, // Chấm xanh
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 2,
-                    ), // Viền trắng tạo hiệu ứng khoét
+                  const SizedBox(width: 8),
+
+                  Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: PopupMenuButton<void>(
+                          padding: EdgeInsets.zero,
+                          tooltip: 'Thông báo',
+                          offset: const Offset(0, 50),
+                          icon: Icon(
+                            unreadCount > 0 ? Icons.notifications_active_rounded : Icons.notifications_none_rounded,
+                            color: unreadCount > 0 ? AppColors.primary : AppColors.textHeading,
+                            size: 20,
+                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          itemBuilder: (context) => [
+                            PopupMenuItem<void>(
+                              enabled: false, // Dropdown handle events internally
+                              padding: EdgeInsets.zero,
+                              child: NotificationDropdown(
+                                notifications: unreadList,
+                                onAction: () => Navigator.pop(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (unreadCount > 0)
+                        Positioned(
+                          right: -2,
+                          top: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                            child: Text(
+                              unreadCount > 9 ? '9+' : '$unreadCount',
+                              style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
 
           const SizedBox(width: 20),

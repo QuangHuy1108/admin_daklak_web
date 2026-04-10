@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
       password: _passwordController.text.trim(),
     );
 
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
 
     if (error == null) {
       if (mounted) context.go('/dashboard'); // Thành công -> Vào Dashboard

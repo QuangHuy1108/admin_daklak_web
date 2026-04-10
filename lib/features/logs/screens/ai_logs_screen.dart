@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'dart:html' as html;
 import 'dart:math';
+import 'dart:async';
 import 'package:admin_daklak_web/features/auth/services/admin_service.dart';
+import 'package:admin_daklak_web/features/reports/services/export_service.dart';
 
 const Color primaryDarkGreen = Color(0xFF1B3D2F);
 const Color bgLightGreen = Color(0xFFF7F8F3);
@@ -19,21 +19,63 @@ class AiLogsScreen extends StatefulWidget {
 }
 
 class _AiLogsScreenState extends State<AiLogsScreen> {
+  final ExportService _exportService = ExportService();
   int _currentTabIndex = 0;
   String _searchQuery = "";
   DateTimeRange? _selectedDateRange;
 
   int _currentPage = 0;
   final int _rowsPerPage = 8;
+  bool _isExporting = false;
 
-  late final Stream<QuerySnapshot> _chatLogsStream;
-  late final Stream<QuerySnapshot> _adminLogsStream;
+  // Cached data to keep export button responsive
+  List<QueryDocumentSnapshot> _chatDocs = [];
+  List<QueryDocumentSnapshot> _adminDocs = [];
+  StreamSubscription? _chatSub;
+  StreamSubscription? _adminSub;
+  
+  String? _chatError;
+  String? _adminError;
 
   @override
   void initState() {
     super.initState();
-    _chatLogsStream = FirebaseFirestore.instance.collection('ai_chat_logs').orderBy('timestamp', descending: true).snapshots();
-    _adminLogsStream = FirebaseFirestore.instance.collection('admin_logs').orderBy('timestamp', descending: true).snapshots();
+    _initStreams();
+  }
+
+  void _initStreams() {
+    _chatSub = FirebaseFirestore.instance
+        .collection('ai_chat_logs')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .listen(
+      (snap) {
+        if (mounted) setState(() { _chatDocs = snap.docs; _chatError = null; });
+      },
+      onError: (err) {
+        if (mounted) setState(() => _chatError = err.toString());
+      },
+    );
+
+    _adminSub = FirebaseFirestore.instance
+        .collection('admin_logs')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .listen(
+      (snap) {
+        if (mounted) setState(() { _adminDocs = snap.docs; _adminError = null; });
+      },
+      onError: (err) {
+        if (mounted) setState(() => _adminError = err.toString());
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _chatSub?.cancel();
+    _adminSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _pickDateRange() async {
@@ -59,51 +101,68 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
     }
   }
 
-  String _escapeCSV(String text) {
-    return '"${text.replaceAll('"', '""')}"';
-  }
-
-  void _downloadCSV(List<QueryDocumentSnapshot> docs, String fileNamePrefix) {
-    String csvContent = "Thoi gian,ID Chat,User ID,Chu de,Trang thai,Hanh dong,Cau hoi,Tra loi\n";
-    for (var doc in docs) {
-      var d = doc.data() as Map<String, dynamic>? ?? {};
-      DateTime? time = _parseDateTime(d['timestamp']);
-      String timeStr = time != null ? DateFormat('dd/MM/yyyy HH:mm').format(time) : '';
-      String chatId = doc.id;
-      String userId = d['userId']?.toString() ?? 'UID-${doc.id.substring(0, 5).toUpperCase()}';
-
-      csvContent += "$timeStr,$chatId,$userId,${d['category_tag']},${d['status']},${d['action_triggered']},${_escapeCSV(d['prompt'] ?? '')},${_escapeCSV(d['response'] ?? '')}\n";
+  void _handleExport() async {
+    List<QueryDocumentSnapshot> sourceDocs = _currentTabIndex == 2 ? _adminDocs : _chatDocs;
+    
+    // Initial filtering based on search/date/tab
+    List<QueryDocumentSnapshot> filteredDocs;
+    if (_currentTabIndex == 2) {
+      filteredDocs = sourceDocs.where((doc) {
+        var data = doc.data() as Map<String, dynamic>? ?? {};
+        String adminEmail = (data['adminEmail'] ?? '').toString().toLowerCase();
+        String action = (data['action'] ?? '').toString().toLowerCase();
+        bool matchSearch = adminEmail.contains(_searchQuery) || action.contains(_searchQuery);
+        return matchSearch && _matchDate(data['timestamp']);
+      }).toList();
+    } else {
+      Map<String, int> promptCounts = {};
+      for (var doc in sourceDocs) {
+        var d = doc.data() as Map<String, dynamic>? ?? {};
+        String key = "${d['userId'] ?? d['userEmail']}_${(d['prompt'] ?? '').toString().trim().toLowerCase()}";
+        promptCounts[key] = (promptCounts[key] ?? 0) + 1;
+      }
+      filteredDocs = _getFilteredChatDocs(sourceDocs, promptCounts);
     }
-    _triggerDownload(csvContent, fileNamePrefix);
-  }
 
-  void _downloadAdminCSV(List<QueryDocumentSnapshot> docs) {
-    String csvContent = "Thoi gian,Admin,Hanh dong,Muc tieu / Chi tiet\n";
-    for (var doc in docs) {
-      var d = doc.data() as Map<String, dynamic>? ?? {};
-      DateTime? time = _parseDateTime(d['timestamp']);
-      String timeStr = time != null ? DateFormat('dd/MM/yyyy HH:mm').format(time) : '';
-      String target = d['target'] ?? d['details'] ?? '';
-      csvContent += "$timeStr,${d['adminEmail']},${d['action']},${_escapeCSV(target)}\n";
+    if (filteredDocs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Không có dữ liệu để xuất!")));
+      return;
     }
-    _triggerDownload(csvContent, "NhatKyAdmin");
+
+    setState(() => _isExporting = true);
+    
+    try {
+      if (_currentTabIndex == 2) {
+        final List<Map<String, dynamic>> exportData = filteredDocs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return { ...data, 'timestamp': _parseDateTime(data['timestamp']) };
+        }).toList();
+        _exportService.exportAdminLogsToCsv(exportData);
+      } else {
+        final List<Map<String, dynamic>> exportData = filteredDocs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return { ...data, 'id': doc.id, 'timestamp': _parseDateTime(data['timestamp']) };
+        }).toList();
+        
+        String fileName = _currentTabIndex == 1 ? "Danh_Sach_Loi_AI" : "Toan_Bo_Chat_AI";
+        _exportService.exportAiChatLogsToCsv(exportData, fileName);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Đang khởi tạo tải xuống...")));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi khi chuẩn bị dữ liệu: $e")));
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
   }
 
-  void _triggerDownload(String csvContent, String fileNamePrefix) {
-    final bytes = utf8.encode(csvContent);
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.document.createElement('a') as html.AnchorElement
-      ..href = url
-      ..style.display = 'none'
-      ..download = '${fileNamePrefix}_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.csv';
-
-    html.document.body!.children.add(anchor);
-    anchor.click();
-    html.document.body!.children.remove(anchor);
-    html.Url.revokeObjectUrl(url);
-
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Đang tải tệp CSV về máy...")));
+  bool _matchDate(dynamic timestamp) {
+    if (_selectedDateRange == null) return true;
+    DateTime? time = _parseDateTime(timestamp);
+    if (time == null) return false;
+    DateTime start = _selectedDateRange!.start;
+    DateTime end = _selectedDateRange!.end.add(const Duration(days: 1));
+    return time.isAfter(start) && time.isBefore(end);
   }
 
   void _toggleFlag(String docId, bool currentFlag, String userId, String prompt) {
@@ -224,14 +283,9 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
 
             Expanded(
               child: Container(
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(color: cardWhite, borderRadius: BorderRadius.circular(24)),
-                child: IndexedStack(
-                  index: _currentTabIndex == 2 ? 1 : 0,
-                  children: [
-                    _buildChatTable(),   // index 0 (khi _currentTabIndex là 0 hoặc 1)
-                    _buildAdminTable(),  // index 1 (khi _currentTabIndex là 2)
-                  ],
-                ),
+                child: _currentTabIndex == 2 ? _buildAdminTable() : _buildChatTable(),
               ),
             )
           ],
@@ -286,84 +340,60 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
   }
 
   Widget _buildExportButton() {
-    return StreamBuilder<QuerySnapshot>(
-      // THÊM KEY ĐỂ FIX LỖI CACHE DỮ LIỆU
-        key: ValueKey('export_btn_$_currentTabIndex'),
-        stream: _currentTabIndex == 2 ? _adminLogsStream : _chatLogsStream,
-        builder: (context, snapshot) {
-          return ElevatedButton.icon(
-            onPressed: () {
-              if (!snapshot.hasData) return;
-              var allDocs = snapshot.data!.docs;
+    String label = "Xuất toàn bộ chat";
+    if (_currentTabIndex == 1) label = "Tải danh sách lỗi";
+    if (_currentTabIndex == 2) label = "Tải nhật ký admin";
 
-              if (_currentTabIndex == 2) {
-                var filteredDocs = allDocs.where((doc) {
-                  var data = doc.data() as Map<String, dynamic>? ?? {};
-                  String adminEmail = (data['adminEmail'] ?? '').toString().toLowerCase();
-                  String action = (data['action'] ?? '').toString().toLowerCase();
-                  return adminEmail.contains(_searchQuery) || action.contains(_searchQuery);
-                }).toList();
-                _downloadAdminCSV(filteredDocs);
-              } else {
-                Map<String, int> promptCounts = {};
-                for (var doc in allDocs) {
-                  var d = doc.data() as Map<String, dynamic>? ?? {};
-                  String key = "${d['userId'] ?? d['userEmail']}_${(d['prompt'] ?? '').toString().trim().toLowerCase()}";
-                  promptCounts[key] = (promptCounts[key] ?? 0) + 1;
-                }
-                var filteredDocs = _getFilteredChatDocs(allDocs, promptCounts);
-                _downloadCSV(filteredDocs, _currentTabIndex == 1 ? "DanhSachLoi" : "ToanBoChat");
-              }
-            },
-            icon: const Icon(Icons.download_rounded, color: Colors.white, size: 18),
-            label: Text(
-                _currentTabIndex == 2 ? "Tải nhật ký admin" : (_currentTabIndex == 1 ? "Tải danh sách lỗi" : "Xuất toàn bộ chat"),
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
-            ),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF8E4A1D),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))
-            ),
-          );
-        }
+    bool canExport = !_isExporting && (_currentTabIndex == 2 ? _adminDocs.isNotEmpty : _chatDocs.isNotEmpty);
+
+    return ElevatedButton.icon(
+      onPressed: canExport ? _handleExport : null,
+      icon: _isExporting 
+        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+        : const Icon(Icons.download_rounded, color: Colors.white, size: 18),
+      label: Text(
+          _isExporting ? "Đang xử lý..." : label,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+      ),
+      style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF8E4A1D),
+          disabledBackgroundColor: Colors.grey,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))
+      ),
     );
   }
 
   Widget _buildFirestoreStats() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _chatLogsStream,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox(height: 104, child: Center(child: CircularProgressIndicator()));
+    if (_chatError != null) return Text("Lỗi tải thống kê: $_chatError", style: const TextStyle(color: Colors.red));
+    if (_chatDocs.isEmpty) return const SizedBox(height: 104, child: Center(child: CircularProgressIndicator()));
 
-        var allChatDocs = snapshot.data!.docs;
-        int totalLogs = allChatDocs.length;
+    var allChatDocs = _chatDocs;
+    int totalLogs = allChatDocs.length;
 
-        Map<String, int> userPromptCounts = {};
-        for (var doc in allChatDocs) {
-          var d = doc.data() as Map<String, dynamic>? ?? {};
-          String key = "${d['userId'] ?? d['userEmail']}_${(d['prompt'] ?? '').toString().trim().toLowerCase()}";
-          userPromptCounts[key] = (userPromptCounts[key] ?? 0) + 1;
-        }
+    Map<String, int> userPromptCounts = {};
+    for (var doc in allChatDocs) {
+      var d = doc.data() as Map<String, dynamic>? ?? {};
+      String key = "${d['userId'] ?? d['userEmail']}_${(d['prompt'] ?? '').toString().trim().toLowerCase()}";
+      userPromptCounts[key] = (userPromptCounts[key] ?? 0) + 1;
+    }
 
-        int failedCount = allChatDocs.where((doc) {
-          var d = doc.data() as Map<String, dynamic>? ?? {};
-          String key = "${d['userId'] ?? d['userEmail']}_${(d['prompt'] ?? '').toString().trim().toLowerCase()}";
-          return d['status'] == 'error' || d['isFlagged'] == true || (userPromptCounts[key] ?? 0) > 3;
-        }).length;
+    int failedCount = allChatDocs.where((doc) {
+      var d = doc.data() as Map<String, dynamic>? ?? {};
+      String key = "${d['userId'] ?? d['userEmail']}_${(d['prompt'] ?? '').toString().trim().toLowerCase()}";
+      return d['status'] == 'error' || d['isFlagged'] == true || (userPromptCounts[key] ?? 0) > 3;
+    }).length;
 
-        int successCount = totalLogs - failedCount;
+    int successCount = totalLogs - failedCount;
 
-        return Row(
-          children: [
-            _buildStatCard('Tổng số Log', NumberFormat('#,###').format(totalLogs), Icons.bar_chart, Colors.green[50]!, Colors.green[800]!),
-            const SizedBox(width: 24),
-            _buildStatCard('Cần huấn luyện AI', NumberFormat('#,###').format(failedCount), Icons.psychology, Colors.orange[50]!, Colors.orange[800]!),
-            const SizedBox(width: 24),
-            _buildStatCard('Log thành công', NumberFormat('#,###').format(successCount), Icons.check_circle, Colors.teal[50]!, Colors.teal[800]!),
-          ],
-        );
-      },
+    return Row(
+      children: [
+        _buildStatCard('Tổng số Log', NumberFormat('#,###').format(totalLogs), Icons.bar_chart, Colors.green[50]!, Colors.green[800]!),
+        const SizedBox(width: 24),
+        _buildStatCard('Cần huấn luyện AI', NumberFormat('#,###').format(failedCount), Icons.psychology, Colors.orange[50]!, Colors.orange[800]!),
+        const SizedBox(width: 24),
+        _buildStatCard('Log thành công', NumberFormat('#,###').format(successCount), Icons.check_circle, Colors.teal[50]!, Colors.teal[800]!),
+      ],
     );
   }
 
@@ -396,19 +426,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
       String category = (data['category_tag'] ?? '').toString().toLowerCase();
       bool matchSearch = userId.contains(_searchQuery) || email.contains(_searchQuery) || docId.contains(_searchQuery) || category.contains(_searchQuery);
 
-      bool matchDate = true;
-      if (_selectedDateRange != null) {
-        DateTime? time = _parseDateTime(data['timestamp']);
-        if (time != null) {
-          DateTime start = _selectedDateRange!.start;
-          DateTime end = _selectedDateRange!.end.add(const Duration(days: 1));
-          matchDate = time.isAfter(start) && time.isBefore(end);
-        } else {
-          matchDate = false;
-        }
-      }
-
-      if (!matchSearch || !matchDate) return false;
+      if (!matchSearch || !_matchDate(data['timestamp'])) return false;
 
       if (_currentTabIndex == 1) {
         String key = "${data['userId'] ?? data['userEmail']}_${(data['prompt'] ?? '').toString().trim().toLowerCase()}";
@@ -421,214 +439,206 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
     }).toList();
   }
 
-  // --- BẢNG CHAT ---
   Widget _buildChatTable() {
-    return StreamBuilder<QuerySnapshot>(
-      // THÊM KEY ĐỂ BẮT BUỘC FLUTTER RENDER LẠI KHI ĐỔI TAB
-        stream: _chatLogsStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) return const Center(child: Text("Có lỗi xảy ra khi tải dữ liệu Chat."));
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+    if (_chatError != null) return _buildErrorMessage("Lỗi tải Chat: $_chatError");
+    if (_chatDocs.isEmpty) return const Center(child: CircularProgressIndicator());
 
-          var allDocs = snapshot.data!.docs;
-          Map<String, int> promptCounts = {};
-          for (var doc in allDocs) {
-            var d = doc.data() as Map<String, dynamic>? ?? {};
-            String key = "${d['userId'] ?? d['userEmail']}_${(d['prompt'] ?? '').toString().trim().toLowerCase()}";
-            promptCounts[key] = (promptCounts[key] ?? 0) + 1;
-          }
+    var allDocs = _chatDocs;
+    Map<String, int> promptCounts = {};
+    for (var doc in allDocs) {
+      var d = doc.data() as Map<String, dynamic>? ?? {};
+      String key = "${d['userId'] ?? d['userEmail']}_${(d['prompt'] ?? '').toString().trim().toLowerCase()}";
+      promptCounts[key] = (promptCounts[key] ?? 0) + 1;
+    }
 
-          var filteredDocs = _getFilteredChatDocs(allDocs, promptCounts);
+    var filteredDocs = _getFilteredChatDocs(allDocs, promptCounts);
 
-          int totalItems = filteredDocs.length;
-          int totalPages = (totalItems / _rowsPerPage).ceil();
-          if (totalPages == 0) totalPages = 1;
-          if (_currentPage >= totalPages) _currentPage = max(0, totalPages - 1);
+    int totalItems = filteredDocs.length;
+    int totalPages = (totalItems / _rowsPerPage).ceil();
+    if (totalPages == 0) totalPages = 1;
+    if (_currentPage >= totalPages) _currentPage = max(0, totalPages - 1);
 
-          int startIndex = _currentPage * _rowsPerPage;
-          int endIndex = min(startIndex + _rowsPerPage, totalItems);
-          var pagedDocs = totalItems == 0 ? [] : filteredDocs.sublist(startIndex, endIndex);
+    int startIndex = _currentPage * _rowsPerPage;
+    int endIndex = min(startIndex + _rowsPerPage, totalItems);
+    var pagedDocs = totalItems == 0 ? [] : filteredDocs.sublist(startIndex, endIndex);
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Row(children: [
-                  _headerCell('THỜI GIAN', flex: 2), _headerCell('ID CHAT', flex: 2),
-                  _headerCell('NGƯỜI DÙNG', flex: 3), _headerCell('CHỦ ĐỀ', flex: 2),
-                  _headerCell('NỘI DUNG', flex: 4), _headerCell('HÀNH ĐỘNG', flex: 1),
-                ]),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: pagedDocs.isEmpty
-                    ? const Center(child: Text("Không có dữ liệu phù hợp.", style: TextStyle(color: textGrey)))
-                    : ListView.builder(
-                  itemCount: pagedDocs.length,
-                  itemBuilder: (context, index) {
-                    var doc = pagedDocs[index];
-                    var data = doc.data() as Map<String, dynamic>? ?? {};
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: Row(children: [
+            _headerCell('THỜI GIAN', flex: 2), _headerCell('ID CHAT', flex: 2),
+            _headerCell('NGƯỜI DÙNG', flex: 3), _headerCell('CHỦ ĐỀ', flex: 2),
+            _headerCell('NỘI DUNG', flex: 4), _headerCell('HÀNH ĐỘNG', flex: 1),
+          ]),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: pagedDocs.isEmpty
+              ? const Center(child: Text("Không có dữ liệu phù hợp.", style: TextStyle(color: textGrey)))
+              : ListView.builder(
+            itemCount: pagedDocs.length,
+            itemBuilder: (context, index) {
+              var doc = pagedDocs[index];
+              var data = doc.data() as Map<String, dynamic>? ?? {};
 
-                    DateTime? time = _parseDateTime(data['timestamp']);
-                    String timeStr = time != null ? "${DateFormat('HH:mm').format(time)},\n${DateFormat('dd/MM').format(time)}" : "--";
+              DateTime? time = _parseDateTime(data['timestamp']);
+              String timeStr = time != null ? "${DateFormat('HH:mm').format(time)},\n${DateFormat('dd/MM').format(time)}" : "--";
 
-                    String chatId = doc.id.substring(0, 8).toUpperCase();
-                    String email = data['userEmail'] ?? '';
-                    String displayName = _getNameFromEmail(email);
-                    String userIdDisplay = data['userId']?.toString() ?? 'UID-${doc.id.substring(0, 5).toUpperCase()}';
+              String chatId = doc.id.substring(0, 8).toUpperCase();
+              String email = data['userEmail'] ?? '';
+              String displayName = _getNameFromEmail(email);
+              String userIdDisplay = data['userId']?.toString() ?? 'UID-${doc.id.substring(0, 5).toUpperCase()}';
 
-                    String promptText = (data['prompt'] ?? '').toString().trim();
-                    String displayPrompt = promptText.isNotEmpty ? '"$promptText"' : '--';
+              String promptText = (data['prompt'] ?? '').toString().trim();
+              String displayPrompt = promptText.isNotEmpty ? '"$promptText"' : '--';
 
-                    bool isFlagged = data['isFlagged'] == true || _currentTabIndex == 1;
+              bool isFlagged = data['isFlagged'] == true;
 
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[50]!))),
-                      child: Row(
-                        children: [
-                          Expanded(flex: 2, child: Text(timeStr, style: const TextStyle(fontSize: 13, height: 1.4))),
-                          Expanded(flex: 2, child: Text("#$chatId", style: const TextStyle(fontSize: 13, color: primaryDarkGreen, fontWeight: FontWeight.bold))),
-                          Expanded(
-                              flex: 3,
-                              child: Row(
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[50]!))),
+                child: Row(
+                  children: [
+                    Expanded(flex: 2, child: Text(timeStr, style: const TextStyle(fontSize: 13, height: 1.4))),
+                    Expanded(flex: 2, child: Text("#$chatId", style: const TextStyle(fontSize: 13, color: primaryDarkGreen, fontWeight: FontWeight.bold))),
+                    Expanded(
+                        flex: 3,
+                        child: Row(
+                          children: [
+                            CircleAvatar(radius: 16, backgroundColor: Colors.blueGrey[100], child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold, fontSize: 14))),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  CircleAvatar(radius: 16, backgroundColor: Colors.blueGrey[100], child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold, fontSize: 14))),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis),
-                                        Text('ID: $userIdDisplay', style: const TextStyle(color: textGrey, fontSize: 12), overflow: TextOverflow.ellipsis),
-                                      ],
-                                    ),
-                                  ),
+                                  Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis),
+                                  Text('ID: $userIdDisplay', style: const TextStyle(color: textGrey, fontSize: 12), overflow: TextOverflow.ellipsis),
                                 ],
-                              )
-                          ),
-                          Expanded(
-                              flex: 2,
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(color: const Color(0xFFFBE4D7).withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
-                                  child: Text(data['category_tag'] ?? 'Khác', style: const TextStyle(color: Color(0xFFD96B40), fontSize: 12, fontWeight: FontWeight.bold)),
-                                ),
-                              )
-                          ),
-                          Expanded(flex: 4, child: Text(displayPrompt, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontStyle: FontStyle.italic, color: textGrey, fontSize: 13))),
-                          Expanded(
-                            flex: 1,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(icon: const Icon(Icons.remove_red_eye, color: textGrey, size: 20), onPressed: () => _showDetailDialog(data), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
-                                IconButton(icon: Icon(isFlagged ? Icons.flag : Icons.flag_outlined, color: isFlagged ? Colors.red : textGrey, size: 20), onPressed: () => _toggleFlag(doc.id, data['isFlagged'] == true, userIdDisplay, data['prompt'] ?? ''), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
-                              ],
+                              ),
                             ),
+                          ],
+                        )
+                    ),
+                    Expanded(
+                        flex: 2,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(color: const Color(0xFFFBE4D7).withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
+                            child: Text(data['category_tag'] ?? 'Khác', style: const TextStyle(color: Color(0xFFD96B40), fontSize: 12, fontWeight: FontWeight.bold)),
                           ),
+                        )
+                    ),
+                    Expanded(flex: 4, child: Text(displayPrompt, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontStyle: FontStyle.italic, color: textGrey, fontSize: 13))),
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(icon: const Icon(Icons.remove_red_eye, color: textGrey, size: 20), onPressed: () => _showDetailDialog(data), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
+                          IconButton(icon: Icon(isFlagged ? Icons.flag : Icons.flag_outlined, color: isFlagged ? Colors.red : textGrey, size: 20), onPressed: () => _toggleFlag(doc.id, data['isFlagged'] == true, userIdDisplay, data['prompt'] ?? ''), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
                         ],
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
-              ),
-              _buildTableFooter(totalItems, totalPages),
-            ],
-          );
-        }
+              );
+            },
+          ),
+        ),
+        _buildTableFooter(totalItems, totalPages),
+      ],
     );
   }
 
-  // --- BẢNG ADMIN ---
   Widget _buildAdminTable() {
-    return StreamBuilder<QuerySnapshot>(
-      // THÊM KEY ĐỂ BẮT BUỘC FLUTTER RENDER LẠI KHI ĐỔI TAB
-        stream: _adminLogsStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) return const Center(child: Text("Có lỗi xảy ra khi tải Nhật ký Admin."));
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+    if (_adminError != null) return _buildErrorMessage("Lỗi tải Nhật ký: $_adminError");
+    if (_adminDocs.isEmpty) return const Center(child: CircularProgressIndicator());
 
-          var allDocs = snapshot.data!.docs;
-          var filteredDocs = allDocs.where((doc) {
-            var data = doc.data() as Map<String, dynamic>? ?? {};
-            String adminEmail = (data['adminEmail'] ?? '').toString().toLowerCase();
-            String action = (data['action'] ?? '').toString().toLowerCase();
-            String target = (data['target'] ?? data['details'] ?? '').toString().toLowerCase();
+    var allDocs = _adminDocs;
+    var filteredDocs = allDocs.where((doc) {
+      var data = doc.data() as Map<String, dynamic>? ?? {};
+      String adminEmail = (data['adminEmail'] ?? '').toString().toLowerCase();
+      String action = (data['action'] ?? '').toString().toLowerCase();
+      String target = (data['target'] ?? data['details'] ?? '').toString().toLowerCase();
 
-            bool matchSearch = adminEmail.contains(_searchQuery) || action.contains(_searchQuery) || target.contains(_searchQuery);
+      bool matchSearch = adminEmail.contains(_searchQuery) || action.contains(_searchQuery) || target.contains(_searchQuery);
+      return matchSearch && _matchDate(data['timestamp']);
+    }).toList();
 
-            bool matchDate = true;
-            if (_selectedDateRange != null) {
+    int totalItems = filteredDocs.length;
+    int totalPages = (totalItems / _rowsPerPage).ceil();
+    if (totalPages == 0) totalPages = 1;
+    if (_currentPage >= totalPages) _currentPage = max(0, totalPages - 1);
+
+    int startIndex = _currentPage * _rowsPerPage;
+    int endIndex = min(startIndex + _rowsPerPage, totalItems);
+    var pagedDocs = totalItems == 0 ? [] : filteredDocs.sublist(startIndex, endIndex);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: Row(children: [
+            _headerCell('THỜI GIAN', flex: 2), _headerCell('ADMIN', flex: 3),
+            _headerCell('HÀNH ĐỘNG', flex: 3), _headerCell('MỤC TIÊU / CHI TIẾT', flex: 4),
+          ]),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: pagedDocs.isEmpty
+              ? const Center(child: Text("Không có dữ liệu phù hợp.", style: TextStyle(color: textGrey)))
+              : ListView.builder(
+            itemCount: pagedDocs.length,
+            itemBuilder: (context, index) {
+              var doc = pagedDocs[index];
+              var data = doc.data() as Map<String, dynamic>? ?? {};
               DateTime? time = _parseDateTime(data['timestamp']);
-              if (time != null) {
-                DateTime start = _selectedDateRange!.start;
-                DateTime end = _selectedDateRange!.end.add(const Duration(days: 1));
-                matchDate = time.isAfter(start) && time.isBefore(end);
-              } else {
-                matchDate = false;
-              }
-            }
-            return matchSearch && matchDate;
-          }).toList();
 
-          int totalItems = filteredDocs.length;
-          int totalPages = (totalItems / _rowsPerPage).ceil();
-          if (totalPages == 0) totalPages = 1;
-          if (_currentPage >= totalPages) _currentPage = max(0, totalPages - 1);
-
-          int startIndex = _currentPage * _rowsPerPage;
-          int endIndex = min(startIndex + _rowsPerPage, totalItems);
-          var pagedDocs = totalItems == 0 ? [] : filteredDocs.sublist(startIndex, endIndex);
-
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Row(children: [
-                  _headerCell('THỜI GIAN', flex: 2), _headerCell('ADMIN', flex: 3),
-                  _headerCell('HÀNH ĐỘNG', flex: 3), _headerCell('MỤC TIÊU / CHI TIẾT', flex: 4),
-                ]),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: pagedDocs.isEmpty
-                    ? const Center(child: Text("Không có dữ liệu phù hợp.", style: TextStyle(color: textGrey)))
-                    : ListView.builder(
-                  itemCount: pagedDocs.length,
-                  itemBuilder: (context, index) {
-                    var doc = pagedDocs[index];
-                    var data = doc.data() as Map<String, dynamic>? ?? {};
-                    DateTime? time = _parseDateTime(data['timestamp']);
-
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[50]!))),
-                      child: Row(
-                        children: [
-                          Expanded(flex: 2, child: Text(time != null ? DateFormat('dd/MM/yyyy\nHH:mm').format(time) : '--', style: const TextStyle(fontSize: 13, height: 1.4))),
-                          Expanded(flex: 3, child: Text(data['adminEmail'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold))),
-                          Expanded(flex: 3, child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(color: const Color(0xFFE2EED8), borderRadius: BorderRadius.circular(8)),
-                              child: Text(data['action'] ?? '', style: const TextStyle(color: Color(0xFF4C8C2B), fontSize: 12, fontWeight: FontWeight.bold)),
-                            ),
-                          )),
-                          Expanded(flex: 4, child: Text(data['target'] ?? data['details'] ?? '', style: const TextStyle(color: textGrey))),
-                        ],
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[50]!))),
+                child: Row(
+                  children: [
+                    Expanded(flex: 2, child: Text(time != null ? DateFormat('dd/MM/yyyy\nHH:mm').format(time) : '--', style: const TextStyle(fontSize: 13, height: 1.4))),
+                    Expanded(flex: 3, child: Text(data['adminEmail'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold))),
+                    Expanded(flex: 3, child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(color: const Color(0xFFE2EED8), borderRadius: BorderRadius.circular(8)),
+                        child: Text(data['action'] ?? '', style: const TextStyle(color: Color(0xFF4C8C2B), fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
-                    );
-                  },
+                    )),
+                    Expanded(flex: 4, child: Text(data['target'] ?? data['details'] ?? '', style: const TextStyle(color: textGrey))),
+                  ],
                 ),
-              ),
-              _buildTableFooter(totalItems, totalPages),
-            ],
-          );
-        }
+              );
+            },
+          ),
+        ),
+        _buildTableFooter(totalItems, totalPages),
+      ],
+    );
+  }
+
+  Widget _buildErrorMessage(String msg) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            Text(msg, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            const Text("Vui lòng kiểm tra index Firestore hoặc quyền truy cập.", style: TextStyle(fontSize: 12, color: textGrey)),
+          ],
+        ),
+      ),
     );
   }
 

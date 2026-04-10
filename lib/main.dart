@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
+import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
 import 'core/router/app_router.dart';
 import 'core/providers/menu_provider.dart';
 import 'core/providers/dashboard_provider.dart'; // Import provider mới
 import 'package:intl/date_symbol_data_local.dart';
+import 'features/settings/logic/settings_provider.dart';
+import 'features/settings/data/repositories/firebase_settings_repository.dart';
+import 'features/auth/logic/user_provider.dart';
+import 'features/finance/providers/finance_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,22 +30,41 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MenuProvider()),
-        ChangeNotifierProvider(create: (_) => DashboardProvider()), // Đăng ký DashboardProvider
+        ChangeNotifierProvider(create: (_) => DashboardProvider()), 
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(
+          create: (_) => SettingsProvider(FirebaseSettingsRepository()),
+        ),
+        ChangeNotifierProvider(create: (_) => FinanceProvider()),
       ],
       child: const AdminApp(),
     ),
   );
 }
 
-class AdminApp extends StatelessWidget {
+class AdminApp extends StatefulWidget {
   const AdminApp({super.key});
+
+  @override
+  State<AdminApp> createState() => _AdminAppState();
+}
+
+class _AdminAppState extends State<AdminApp> {
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the router once with the UserProvider instance
+    _router = AppRouter.createRouter(context.read<UserProvider>());
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Daklak Agent Admin',
       debugShowCheckedModeBanner: false,
-      routerConfig: AppRouter.router,
+      routerConfig: _router,
     );
   }
 }

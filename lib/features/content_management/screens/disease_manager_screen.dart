@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:admin_daklak_web/features/logs/services/bulk_service.dart';
+import 'package:admin_daklak_web/features/logs/widgets/bulk_action_bar.dart';
+import 'package:admin_daklak_web/features/logs/models/audit_log_model.dart';
 
 class DiseaseManagerScreen extends StatefulWidget {
   const DiseaseManagerScreen({super.key});
@@ -15,6 +19,7 @@ class DiseaseManagerScreen extends StatefulWidget {
 class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
   final _firestore = FirebaseFirestore.instance;
   bool _isLoading = false;
+  final Set<String> _selectedIds = {};
 
   // Variables cho Search, Filter, View State và Pagination
   String _searchQuery = '';
@@ -425,6 +430,20 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                               )
                             ],
                           ),
+                          const SizedBox(height: 24),
+                          if (_selectedIds.isNotEmpty)
+                            BulkActionBar(
+                              selectedCount: _selectedIds.length,
+                              onClearSelection: () => setState(() => _selectedIds.clear()),
+                              actions: [
+                                ElevatedButton.icon(
+                                  onPressed: _handleBulkDeleteDiseases,
+                                  icon: const Icon(Icons.delete_sweep, color: Colors.white, size: 20),
+                                  label: const Text("Xóa hàng loạt", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                ),
+                              ],
+                            ),
                           const SizedBox(height: 32),
 
                           // Chỉ hiển thị KPI và Chart nếu KHÔNG ở màn hình Pending
@@ -669,17 +688,34 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                             child: Column(
                               children: [
                                 // Header Bảng (Căn chỉnh khoảng cách rộng ra)
-                                const Padding(
-                                  padding: EdgeInsets.only(bottom: 16),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
                                   child: Row(
                                     children: [
-                                      SizedBox(width: 80, child: Text("IMAGE", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
-                                      SizedBox(width: 32), // Khoảng trống ngăn cách
-                                      Expanded(flex: 3, child: Text("DISEASE INFO", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
-                                      Expanded(flex: 2, child: Text("CLASSIFICATION", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
-                                      Expanded(flex: 2, child: Text("SEVERITY LEVEL", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
-                                      Expanded(flex: 2, child: Text("STATUS", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
-                                      SizedBox(width: 80, child: Text("ACTIONS", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1), textAlign: TextAlign.right)),
+                                      SizedBox(
+                                        width: 40,
+                                        child: Checkbox(
+                                          value: paginatedDocs.isNotEmpty && _selectedIds.containsAll(paginatedDocs.map((d) => d.id)),
+                                          onChanged: (val) {
+                                            setState(() {
+                                              if (val == true) {
+                                                _selectedIds.addAll(paginatedDocs.map((d) => d.id));
+                                              } else {
+                                                for (var d in paginatedDocs) {
+                                                  _selectedIds.remove(d.id);
+                                                }
+                                              }
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 80, child: Text("IMAGE", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
+                                      const SizedBox(width: 32),
+                                      const Expanded(flex: 3, child: Text("DISEASE INFO", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
+                                      const Expanded(flex: 2, child: Text("CLASSIFICATION", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
+                                      const Expanded(flex: 2, child: Text("SEVERITY LEVEL", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
+                                      const Expanded(flex: 2, child: Text("STATUS", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
+                                      const SizedBox(width: 80, child: Text("ACTIONS", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1), textAlign: TextAlign.right)),
                                     ],
                                   ),
                                 ),
@@ -701,6 +737,21 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                       padding: const EdgeInsets.symmetric(vertical: 16),
                                       child: Row(
                                         children: [
+                                          SizedBox(
+                                            width: 40,
+                                            child: Checkbox(
+                                              value: _selectedIds.contains(doc.id),
+                                              onChanged: (val) {
+                                                setState(() {
+                                                  if (val == true) {
+                                                    _selectedIds.add(doc.id);
+                                                  } else {
+                                                    _selectedIds.remove(doc.id);
+                                                  }
+                                                });
+                                              },
+                                            ),
+                                          ),
                                           // Image - Cố định width 80
                                           SizedBox(
                                             width: 80,
@@ -894,5 +945,50 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
         Text(level, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
       ],
     );
+  }
+
+  void _handleBulkDeleteDiseases() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận xóa hàng loạt'),
+        content: Text('Bạn có chắc chắn muốn xóa ${_selectedIds.length} mục sâu bệnh đã chọn không?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _executeBulkDeleteDiseases();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Xóa tất cả', style: TextStyle(color: Colors.white)),
+          )
+        ],
+      )
+    );
+  }
+
+  Future<void> _executeBulkDeleteDiseases() async {
+    setState(() => _isLoading = true);
+    try {
+      await BulkService.deleteDocuments(
+        collection: 'pest_diseases',
+        docIds: _selectedIds.toList(),
+        module: AuditModule.aichat,
+        actionDescription: "Xóa hàng loạt sâu bệnh khỏi thư viện",
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xóa dữ liệu thành công!'), backgroundColor: Colors.green));
+        setState(() {
+          _selectedIds.clear();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi khi xóa hàng loạt: $e'), backgroundColor: Colors.red));
+        setState(() => _isLoading = false);
+      }
+    }
   }
 }

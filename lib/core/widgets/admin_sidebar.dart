@@ -22,6 +22,7 @@ const _mainMenu = [
   _MenuItem(Icons.bug_report_outlined, 'Sâu bệnh', '/diseases'),
   _MenuItem(Icons.attach_money_outlined, 'Giá nông sản', '/prices'),
   _MenuItem(Icons.bar_chart_outlined, 'Báo cáo & Thống kê', '/reports'),
+  _MenuItem(Icons.security_outlined, 'Nhật ký hệ thống', '/audit-logs'),
   _MenuItem(Icons.settings_outlined, 'Cài đặt hệ thống', '/settings'),
 ];
 

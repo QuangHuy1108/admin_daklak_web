@@ -8,6 +8,10 @@ import 'package:csv/csv.dart';
 import 'dart:html' as html;
 
 import 'order_detail_dialog.dart';
+import 'order_detail_dialog.dart';
+import 'package:admin_daklak_web/features/logs/services/bulk_service.dart';
+import 'package:admin_daklak_web/features/logs/widgets/bulk_action_bar.dart';
+import 'package:admin_daklak_web/features/logs/models/audit_log_model.dart';
 
 const Color _bgGray = Color(0xFFF5F7FA);
 const Color _primaryGreen = Color(0xFF2E7D32);
@@ -46,6 +50,7 @@ class OrdersTableWidget extends StatefulWidget {
 
 class OrdersTableWidgetState extends State<OrdersTableWidget> {
   String _selectedStatus = 'All Status';
+  final Set<String> _selectedIds = {};
   
   bool _isSearchMode = false;
   String _activeSearchId = '';
@@ -227,49 +232,59 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Recent Orders', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 250,
-                      height: 40,
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search exact Order ID...',
-                          hintStyle: GoogleFonts.inter(color: _textSecondary, fontSize: 13),
-                          prefixIcon: const Icon(Icons.search, size: 20, color: _textSecondary),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _borderColor)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _borderColor)),
-                        ),
-                        onChanged: (val) {
-                          if (val.isEmpty) _performSearch('');
-                        },
-                        onSubmitted: (val) => _performSearch(val),
-                      ),
+                _selectedIds.isNotEmpty 
+                ? Expanded(
+                    child: BulkActionBar(
+                      selectedCount: _selectedIds.length,
+                      onClearSelection: () => setState(() => _selectedIds.clear()),
+                      actions: [
+                        _buildBulkStatusDropdown(),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Container(
-                      height: 40,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(border: Border.all(color: _borderColor), borderRadius: BorderRadius.circular(8)),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedStatus,
-                          icon: const Icon(Icons.arrow_drop_down, color: _textSecondary),
-                          style: GoogleFonts.inter(color: _textPrimary, fontSize: 14),
-                          items: <String>['All Status', 'Pending', 'Processing', 'In Transit', 'Completed', 'Cancelled', 'Failed']
-                              .map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
-                          onChanged: (newValue) {
-                            if (newValue != null) {
-                              setState(() { _selectedStatus = newValue; });
-                              if (!_isSearchMode) _startListeningToOrders();
-                            }
+                  )
+                : Row(
+                    children: [
+                      SizedBox(
+                        width: 250,
+                        height: 40,
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Search exact Order ID...',
+                            hintStyle: GoogleFonts.inter(color: _textSecondary, fontSize: 13),
+                            prefixIcon: const Icon(Icons.search, size: 20, color: _textSecondary),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _borderColor)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _borderColor)),
+                          ),
+                          onChanged: (val) {
+                            if (val.isEmpty) _performSearch('');
                           },
+                          onSubmitted: (val) => _performSearch(val),
                         ),
                       ),
-                    ),
-                  ],
-                )
+                      const SizedBox(width: 16),
+                      Container(
+                        height: 40,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(border: Border.all(color: _borderColor), borderRadius: BorderRadius.circular(8)),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedStatus,
+                            icon: const Icon(Icons.arrow_drop_down, color: _textSecondary),
+                            style: GoogleFonts.inter(color: _textPrimary, fontSize: 14),
+                            items: <String>['All Status', 'Pending', 'Processing', 'In Transit', 'Completed', 'Cancelled', 'Failed']
+                                .map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
+                            onChanged: (newValue) {
+                              if (newValue != null) {
+                                setState(() { _selectedStatus = newValue; });
+                                if (!_isSearchMode) _startListeningToOrders();
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
               ],
             ),
           ),
@@ -357,9 +372,18 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
         constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - (widget.isDashboard ? 100 : 64)),
         child: DataTable(
           headingRowColor: WidgetStateProperty.all(_bgGray),
-          showCheckboxColumn: false,
+          showCheckboxColumn: true,
           dataRowMaxHeight: 70,
           dataRowMinHeight: 70,
+          onSelectAll: (selected) {
+            setState(() {
+              if (selected == true) {
+                _selectedIds.addAll(displayDocs.map((d) => d.id));
+              } else {
+                _selectedIds.clear();
+              }
+            });
+          },
           columns: [
             _buildDataColumn('Order Code'),
             _buildDataColumn('Customer Name'),
@@ -381,20 +405,23 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
             final amount = (data['totalAmount'] ?? 0) is num ? (data['totalAmount'] as num).toDouble() : double.tryParse((data['totalAmount']).toString()) ?? 0;
 
             return DataRow(
+              selected: _selectedIds.contains(doc.id),
               onSelectChanged: (selected) {
-                 if (selected == true) {
-                    showDialog(
-                        context: context,
-                        builder: (context) => OrderDetailDialog(
-                           orderId: doc.id,
-                           orderData: data,
-                           onStatusChange: _updateOrderStatus,
-                        )
-                    );
-                 }
+                setState(() {
+                  if (selected == true) {
+                    _selectedIds.add(doc.id);
+                  } else {
+                    _selectedIds.remove(doc.id);
+                  }
+                });
               },
               cells: [
-                DataCell(Text(doc.id.length > 8 ? doc.id.substring(0, 8).toUpperCase() : doc.id.toUpperCase(), style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
+                DataCell(
+                  InkWell(
+                    onTap: () => _viewOrderDetail(doc.id, data),
+                    child: Text(doc.id.length > 8 ? doc.id.substring(0, 8).toUpperCase() : doc.id.toUpperCase(), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  )
+                ),
                 DataCell(Text(data['customerName'] ?? 'No Name', style: GoogleFonts.inter())),
                 DataCell(Text('${amount.toStringAsFixed(0)} đ', style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
                 DataCell(_buildStatusBadge(data['status'] ?? 'Pending')),
@@ -413,6 +440,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
             );
           }).toList(),
         ),
+
       ),
     );
   }
@@ -470,6 +498,88 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
       if (mounted) _showToast(context, 'Order updated to $newStatus');
     } catch (e) {
       if (mounted) _showToast(context, 'Error updating order: $e');
+    }
+  }
+
+  void _viewOrderDetail(String orderId, Map<String, dynamic> data) {
+    showDialog(
+      context: context,
+      builder: (context) => OrderDetailDialog(
+        orderId: orderId,
+        orderData: data,
+        onStatusChange: _updateOrderStatus,
+      )
+    );
+  }
+
+  Widget _buildBulkStatusDropdown() {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFC7D2FE)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          hint: Text("Cập nhật trạng thái", style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF4338CA), fontWeight: FontWeight.bold)),
+          icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF4338CA)),
+          items: <String>['Pending', 'Processing', 'In Transit', 'Completed', 'Cancelled']
+              .map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
+          onChanged: (newValue) {
+            if (newValue != null) {
+              _confirmBulkUpdate(newValue);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  void _confirmBulkUpdate(String newStatus) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Xác nhận cập nhật hàng loạt", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        content: Text("Bạn có chắc chắn muốn cập nhật trạng thái cho ${_selectedIds.length} đơn hàng sang '$newStatus'?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Hủy")),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _executeBulkUpdate(newStatus);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen),
+            child: const Text("Xác nhận", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeBulkUpdate(String newStatus) async {
+    setState(() => _isLoading = true);
+    try {
+      await BulkService.updateDocuments(
+        collection: 'orders',
+        docIds: _selectedIds.toList(),
+        data: {'status': newStatus},
+        module: AuditModule.orders,
+        actionDescription: "Cập nhật hàng loạt trạng thái đơn hàng sang '$newStatus'",
+      );
+      if (mounted) {
+        _showToast(context, "Đã cập nhật ${_selectedIds.length} đơn hàng thành công.");
+        setState(() {
+          _selectedIds.clear();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        _showToast(context, "Lỗi khi cập nhật hàng loạt: $e");
+        setState(() => _isLoading = false);
+      }
     }
   }
 }

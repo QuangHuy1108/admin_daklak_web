@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import '../../finance/models/expense_model.dart';
 
 class ReportService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -188,5 +189,53 @@ class ReportService {
   String _capitalize(String s) {
     if (s.isEmpty) return s;
     return s[0].toUpperCase() + s.substring(1);
+  }
+
+  // --- Export Data Fetching ---
+
+  /// Fetches all orders within a specific date range
+  Future<List<Map<String, dynamic>>> fetchAllOrders({DateTime? start, DateTime? end}) async {
+    try {
+      Query query = _db.collection('orders').orderBy('createdAt', descending: true);
+      
+      if (start != null) {
+        query = query.where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(start));
+      }
+      if (end != null) {
+        query = query.where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(end));
+      }
+
+      final snapshot = await query.get();
+      return snapshot.docs.map((doc) => {
+        ...doc.data() as Map<String, dynamic>,
+        'id': doc.id,
+        'createdAt': (doc.data() as Map<String, dynamic>)['createdAt']?.toDate(),
+      }).toList();
+    } catch (e) {
+      debugPrint('ReportService Error (FetchOrders): $e');
+      return [];
+    }
+  }
+
+  /// Fetches all expenses within a specific date range
+  Future<List<ExpenseModel>> fetchAllExpenses({DateTime? start, DateTime? end}) async {
+    try {
+      Query query = _db.collection('expenses').orderBy('date', descending: true);
+      
+      if (start != null) {
+        query = query.where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(start));
+      }
+      if (end != null) {
+        query = query.where('date', isLessThanOrEqualTo: Timestamp.fromDate(end));
+      }
+
+      final snapshot = await query.get();
+      return snapshot.docs.map((doc) => 
+        ExpenseModel.fromMap(doc.data() as Map<String, dynamic>, doc.id)
+      ).toList();
+    } catch (e) {
+      debugPrint('ReportService Error (FetchExpenses): $e');
+      return [];
+    }
   }
 }
