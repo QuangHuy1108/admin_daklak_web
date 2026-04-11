@@ -30,12 +30,8 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
 
   // Cached data to keep export button responsive
   List<QueryDocumentSnapshot> _chatDocs = [];
-  List<QueryDocumentSnapshot> _adminDocs = [];
   StreamSubscription? _chatSub;
-  StreamSubscription? _adminSub;
-  
   String? _chatError;
-  String? _adminError;
 
   @override
   void initState() {
@@ -56,25 +52,11 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
         if (mounted) setState(() => _chatError = err.toString());
       },
     );
-
-    _adminSub = FirebaseFirestore.instance
-        .collection('admin_logs')
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .listen(
-      (snap) {
-        if (mounted) setState(() { _adminDocs = snap.docs; _adminError = null; });
-      },
-      onError: (err) {
-        if (mounted) setState(() => _adminError = err.toString());
-      },
-    );
   }
 
   @override
   void dispose() {
     _chatSub?.cancel();
-    _adminSub?.cancel();
     super.dispose();
   }
 
@@ -102,27 +84,18 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
   }
 
   void _handleExport() async {
-    List<QueryDocumentSnapshot> sourceDocs = _currentTabIndex == 2 ? _adminDocs : _chatDocs;
+    List<QueryDocumentSnapshot> sourceDocs = _chatDocs;
     
     // Initial filtering based on search/date/tab
     List<QueryDocumentSnapshot> filteredDocs;
-    if (_currentTabIndex == 2) {
-      filteredDocs = sourceDocs.where((doc) {
-        var data = doc.data() as Map<String, dynamic>? ?? {};
-        String adminEmail = (data['adminEmail'] ?? '').toString().toLowerCase();
-        String action = (data['action'] ?? '').toString().toLowerCase();
-        bool matchSearch = adminEmail.contains(_searchQuery) || action.contains(_searchQuery);
-        return matchSearch && _matchDate(data['timestamp']);
-      }).toList();
-    } else {
-      Map<String, int> promptCounts = {};
-      for (var doc in sourceDocs) {
-        var d = doc.data() as Map<String, dynamic>? ?? {};
-        String key = "${d['userId'] ?? d['userEmail']}_${(d['prompt'] ?? '').toString().trim().toLowerCase()}";
-        promptCounts[key] = (promptCounts[key] ?? 0) + 1;
-      }
-      filteredDocs = _getFilteredChatDocs(sourceDocs, promptCounts);
+    
+    Map<String, int> promptCounts = {};
+    for (var doc in sourceDocs) {
+      var d = doc.data() as Map<String, dynamic>? ?? {};
+      String key = "${d['userId'] ?? d['userEmail']}_${(d['prompt'] ?? '').toString().trim().toLowerCase()}";
+      promptCounts[key] = (promptCounts[key] ?? 0) + 1;
     }
+    filteredDocs = _getFilteredChatDocs(sourceDocs, promptCounts);
 
     if (filteredDocs.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Không có dữ liệu để xuất!")));
@@ -132,21 +105,13 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
     setState(() => _isExporting = true);
     
     try {
-      if (_currentTabIndex == 2) {
-        final List<Map<String, dynamic>> exportData = filteredDocs.map((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          return { ...data, 'timestamp': _parseDateTime(data['timestamp']) };
-        }).toList();
-        _exportService.exportAdminLogsToCsv(exportData);
-      } else {
-        final List<Map<String, dynamic>> exportData = filteredDocs.map((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          return { ...data, 'id': doc.id, 'timestamp': _parseDateTime(data['timestamp']) };
-        }).toList();
-        
-        String fileName = _currentTabIndex == 1 ? "Danh_Sach_Loi_AI" : "Toan_Bo_Chat_AI";
-        _exportService.exportAiChatLogsToCsv(exportData, fileName);
-      }
+      final List<Map<String, dynamic>> exportData = filteredDocs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return { ...data, 'id': doc.id, 'timestamp': _parseDateTime(data['timestamp']) };
+      }).toList();
+      
+      String fileName = _currentTabIndex == 1 ? "Danh_Sach_Loi_AI" : "Toan_Bo_Chat_AI";
+      _exportService.exportAiChatLogsToCsv(exportData, fileName);
 
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Đang khởi tạo tải xuống...")));
     } catch (e) {
@@ -272,8 +237,6 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
                     _buildTabButton("Tất cả Chat AI", 0),
                     const SizedBox(width: 10),
                     _buildTabButton("Câu trả lời lỗi", 1),
-                    const SizedBox(width: 10),
-                    _buildTabButton("Nhật ký Admin", 2),
                   ],
                 ),
                 _buildExportButton(),
@@ -285,7 +248,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
               child: Container(
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(color: cardWhite, borderRadius: BorderRadius.circular(24)),
-                child: _currentTabIndex == 2 ? _buildAdminTable() : _buildChatTable(),
+                child: _buildChatTable(),
               ),
             )
           ],
@@ -342,9 +305,8 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
   Widget _buildExportButton() {
     String label = "Xuất toàn bộ chat";
     if (_currentTabIndex == 1) label = "Tải danh sách lỗi";
-    if (_currentTabIndex == 2) label = "Tải nhật ký admin";
 
-    bool canExport = !_isExporting && (_currentTabIndex == 2 ? _adminDocs.isNotEmpty : _chatDocs.isNotEmpty);
+    bool canExport = !_isExporting && _chatDocs.isNotEmpty;
 
     return ElevatedButton.icon(
       onPressed: canExport ? _handleExport : null,
@@ -553,76 +515,6 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
     );
   }
 
-  Widget _buildAdminTable() {
-    if (_adminError != null) return _buildErrorMessage("Lỗi tải Nhật ký: $_adminError");
-    if (_adminDocs.isEmpty) return const Center(child: CircularProgressIndicator());
-
-    var allDocs = _adminDocs;
-    var filteredDocs = allDocs.where((doc) {
-      var data = doc.data() as Map<String, dynamic>? ?? {};
-      String adminEmail = (data['adminEmail'] ?? '').toString().toLowerCase();
-      String action = (data['action'] ?? '').toString().toLowerCase();
-      String target = (data['target'] ?? data['details'] ?? '').toString().toLowerCase();
-
-      bool matchSearch = adminEmail.contains(_searchQuery) || action.contains(_searchQuery) || target.contains(_searchQuery);
-      return matchSearch && _matchDate(data['timestamp']);
-    }).toList();
-
-    int totalItems = filteredDocs.length;
-    int totalPages = (totalItems / _rowsPerPage).ceil();
-    if (totalPages == 0) totalPages = 1;
-    if (_currentPage >= totalPages) _currentPage = max(0, totalPages - 1);
-
-    int startIndex = _currentPage * _rowsPerPage;
-    int endIndex = min(startIndex + _rowsPerPage, totalItems);
-    var pagedDocs = totalItems == 0 ? [] : filteredDocs.sublist(startIndex, endIndex);
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(24),
-          child: Row(children: [
-            _headerCell('THỜI GIAN', flex: 2), _headerCell('ADMIN', flex: 3),
-            _headerCell('HÀNH ĐỘNG', flex: 3), _headerCell('MỤC TIÊU / CHI TIẾT', flex: 4),
-          ]),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: pagedDocs.isEmpty
-              ? const Center(child: Text("Không có dữ liệu phù hợp.", style: TextStyle(color: textGrey)))
-              : ListView.builder(
-            itemCount: pagedDocs.length,
-            itemBuilder: (context, index) {
-              var doc = pagedDocs[index];
-              var data = doc.data() as Map<String, dynamic>? ?? {};
-              DateTime? time = _parseDateTime(data['timestamp']);
-
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[50]!))),
-                child: Row(
-                  children: [
-                    Expanded(flex: 2, child: Text(time != null ? DateFormat('dd/MM/yyyy\nHH:mm').format(time) : '--', style: const TextStyle(fontSize: 13, height: 1.4))),
-                    Expanded(flex: 3, child: Text(data['adminEmail'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold))),
-                    Expanded(flex: 3, child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(color: const Color(0xFFE2EED8), borderRadius: BorderRadius.circular(8)),
-                        child: Text(data['action'] ?? '', style: const TextStyle(color: Color(0xFF4C8C2B), fontSize: 12, fontWeight: FontWeight.bold)),
-                      ),
-                    )),
-                    Expanded(flex: 4, child: Text(data['target'] ?? data['details'] ?? '', style: const TextStyle(color: textGrey))),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        _buildTableFooter(totalItems, totalPages),
-      ],
-    );
-  }
 
   Widget _buildErrorMessage(String msg) {
     return Center(

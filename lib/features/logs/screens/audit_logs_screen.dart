@@ -299,16 +299,40 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(log.adminEmail, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text(log.adminEmail, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary)),
                   Text("ID: ${log.adminId.substring(0, 6)}...", style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
                 ],
               )),
               DataCell(Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(color: _getActionColor(log.actionType).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                child: Text(log.actionType.label, style: TextStyle(color: _getActionColor(log.actionType), fontSize: 11, fontWeight: FontWeight.bold)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (log.module == AuditModule.users) 
+                      const Padding(
+                        padding: EdgeInsets.only(right: 4),
+                        child: Icon(Icons.admin_panel_settings, size: 10, color: AppColors.primary),
+                      ),
+                    Text(log.actionType.label, style: TextStyle(color: _getActionColor(log.actionType), fontSize: 11, fontWeight: FontWeight.bold)),
+                  ],
+                ),
               )),
-              DataCell(Text(log.module.label, style: const TextStyle(fontSize: 13))),
+              DataCell(Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: log.module == AuditModule.users ? AppColors.primary.withValues(alpha: 0.05) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  log.module.label, 
+                  style: TextStyle(
+                    fontSize: 13, 
+                    fontWeight: log.module == AuditModule.users ? FontWeight.bold : FontWeight.normal,
+                    color: log.module == AuditModule.users ? AppColors.primary : Colors.black87,
+                  )
+                ),
+              )),
               DataCell(SizedBox(width: 250, child: Text(log.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)))),
               DataCell(Text(log.ipAddress, style: const TextStyle(fontSize: 11, color: AppColors.textMuted))),
               DataCell(IconButton(icon: const Icon(Icons.info_outline, size: 20), onPressed: () => _showDetailDialog(log))),

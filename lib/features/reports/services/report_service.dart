@@ -141,7 +141,7 @@ class ReportService {
           'query': _capitalize(e['query'] ?? ''),
           'hits': e['hits'] ?? 0,
         }).toList(),
-        'avgResponseTime': 1.1,
+        'avgResponseTime': (data['avgResponseTime'] ?? 0.0).toDouble(),
       };
     });
   }
@@ -173,7 +173,7 @@ class ReportService {
           'query': _capitalize(e['query'] ?? ''),
           'hits': e['hits'] ?? 0,
         }).toList(),
-        'avgResponseTime': 1.1,
+        'avgResponseTime': (data['avgResponseTime'] ?? 0.0).toDouble(),
       };
     } catch (e) {
       debugPrint('ReportService Error (Aggregation): $e');

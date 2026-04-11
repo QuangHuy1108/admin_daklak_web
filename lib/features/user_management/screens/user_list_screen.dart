@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'dart:math';
+import 'dart:async';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -11,29 +13,241 @@ class UserManagementScreen extends StatefulWidget {
 }
 
 class _UserManagementScreenState extends State<UserManagementScreen> {
-  // --- Biến trạng thái ---
-  String _searchQuery = '';
-  String _selectedTab = 'Tất cả';
-  int _currentPage = 0;
-  final int _rowsPerPage = 8;
-
   final Color _primaryGreen = const Color(0xFF1B3D2F);
   final Color _accentBrown = const Color(0xFF8E4A1D);
   final Color _bgColor = const Color(0xFFF7F8F3);
 
-  // --- Logic Firebase ---
+  // --- Biến trạng thái ---
+  String _searchQuery = '';
+  String _selectedTab = 'Tất cả';
+  final int _rowsPerPage = 10; // Đổi lên 10 cho server-side
 
-  Future<void> _addUser(Map<String, dynamic> userData) async {
-    await FirebaseFirestore.instance.collection('users').doc(userData['id']).set({
-      'displayName': userData['displayName'], // Đã đổi thành displayName
-      'email': userData['email'],
-      'phone': userData['phone'],
-      'role': userData['role'],
-      'password': userData['password'], // Lưu mật khẩu (Lưu ý: Thực tế nên mã hóa)
-      'isBanned': false,
-      'isOnline': false,
-      'createdAt': FieldValue.serverTimestamp(),
+  // --- Phase 2: Server-side Pagination State ---
+  List<DocumentSnapshot> _userDocs = [];
+  DocumentSnapshot? _lastDoc;
+  bool _isLoading = false;
+  bool _hasMore = true;
+  Timer? _debounce;
+
+  // --- Phase 1: Bulk UX & Drawer State ---
+  List<String> _selectedUserIds = [];
+  Map<String, dynamic>? _selectedUserForDrawer;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUsers(isRefresh: true);
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  // --- Logic Fetch Dữ liệu (Server-side) ---
+
+  Future<void> _fetchUsers({bool isRefresh = false}) async {
+    // Nếu đang load và KHÔNG PHẢI là refresh thì mới return. 
+    // Nếu là refresh (từ addUser/deleteUser) thì phải cho phép chạy.
+    if (_isLoading && !isRefresh) return;
+    if (!isRefresh && !_hasMore) return;
+
+    setState(() {
+      _isLoading = true;
+      if (isRefresh) {
+        _userDocs = [];
+        _lastDoc = null;
+        _hasMore = true;
+      }
     });
+
+    try {
+      Query query = FirebaseFirestore.instance.collection('users');
+
+      // 1. Lọc theo Vai trò / Trạng thái
+      if (_selectedTab == 'Nông dân') {
+        query = query.where('role', isEqualTo: 'farmer');
+      } else if (_selectedTab == 'Chuyên gia') {
+        query = query.where('role', isEqualTo: 'expert');
+      } else if (_selectedTab == 'Bị khóa') {
+        query = query.where('isBanned', isEqualTo: true);
+      }
+
+      // 2. Lọc theo Tìm kiếm (Prefix chuẩn hóa)
+      if (_searchQuery.isNotEmpty) {
+        String normalizedQuery = _normalize(_searchQuery);
+        query = query
+            .where('searchName', isGreaterThanOrEqualTo: normalizedQuery)
+            .where('searchName', isLessThan: normalizedQuery + '\uf8ff')
+            .orderBy('searchName');
+      } else {
+        // Mặc định sắp xếp theo ngày tạo (đảm bảo đồng nhất)
+        query = query.orderBy('createdAt', descending: true);
+      }
+
+      // 3. Phân trang
+      query = query.limit(_rowsPerPage);
+      if (!isRefresh && _lastDoc != null) {
+        query = query.startAfterDocument(_lastDoc!);
+      }
+
+      final snapshot = await query.get();
+      final newDocs = snapshot.docs;
+
+      setState(() {
+        _userDocs.addAll(newDocs);
+        if (newDocs.length < _rowsPerPage) {
+          _hasMore = false;
+        }
+        if (newDocs.isNotEmpty) {
+          _lastDoc = newDocs.last;
+        }
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      print("Firebase Query Error: $e");
+      // TODO: Nếu thiếu Composite Index, Link tạo Index sẽ xuất hiện ở đây trong console.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi tải dữ liệu: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  // --- Normalization Engine (Advanced Search) ---
+
+  String _normalize(String text) {
+    String str = text.toLowerCase();
+    // Thay thế các ký tự tiếng Việt có dấu
+    str = str.replaceAll(RegExp(r'[àáạảãâầấậẩẫăằắặẳẵ]'), 'a');
+    str = str.replaceAll(RegExp(r'[èéẹẻẽêềếệểễ]'), 'e');
+    str = str.replaceAll(RegExp(r'[ìíịỉĩ]'), 'i');
+    str = str.replaceAll(RegExp(r'[òóọỏõôồốộổỗơờớợởỡ]'), 'o');
+    str = str.replaceAll(RegExp(r'[ùúụủũưừứựửữ]'), 'u');
+    str = str.replaceAll(RegExp(r'[ỳýỵỷỹ]'), 'y');
+    str = str.replaceAll(RegExp(r'[đ]'), 'd');
+    // Xóa ký tự đặc biệt, giữ lại khoảng trắng
+    str = str.replaceAll(RegExp(r'[^\w\s]'), '');
+    return str.trim();
+  }
+
+  // --- Logic Firebase (Secure via Cloud Functions) ---
+
+  Future<bool> _addUser(Map<String, dynamic> userData) async {
+    setState(() => _isLoading = true);
+    try {
+      // Xóa createdAt nếu có để tránh lỗi Int64 trên môi trường Web
+      userData.remove('createdAt');
+
+      // Đảm bảo tất cả dữ liệu gửi đi là String để tránh lỗi Int64 trên Web
+      final Map<String, String> sanitizedData = userData.map(
+        (key, value) => MapEntry(key.toString(), value.toString()),
+      );
+
+      final HttpsCallable callable = FirebaseFunctions.instanceFor(region: 'asia-southeast1')
+          .httpsCallable('createSystemUser');
+      
+      final result = await callable.call(sanitizedData);
+
+      // Xử lý kết quả trả về một cách cực kỳ an toàn cho Web
+      final dynamic responseData = result.data;
+      bool isSuccess = false;
+      String? message;
+
+      if (responseData != null && responseData is Map) {
+        final successValue = responseData['success'];
+        isSuccess = (successValue == true || successValue.toString() == 'true');
+        message = responseData['message']?.toString();
+      }
+
+      if (isSuccess) {
+        await _fetchUsers(isRefresh: true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message ?? 'Thêm người dùng thành công!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        return true; // Thành công
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message ?? 'Không thể tạo người dùng. Vui lòng thử lại.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return false; // Trả về false nếu isSuccess là false
+      }
+    } on FirebaseFunctionsException catch (e) {
+      final String errorMessage = e.message ?? e.toString();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $errorMessage'), backgroundColor: Colors.red),
+        );
+      }
+      return false; // Trả về false nếu bị lỗi Functions
+    } catch (e) {
+      // Chuyển đối tượng lỗi sang String ngay lập tức để tránh lỗi DiagnosticsNode trên Web
+      final String errorStr = e.toString();
+      print('Cloud Function Error: $errorStr');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi không xác định: $errorStr'), backgroundColor: Colors.red),
+        );
+      }
+      return false;
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteUser(String userId) async {
+    setState(() => _isLoading = true);
+    try {
+      final HttpsCallable callable = FirebaseFunctions.instanceFor(region: 'asia-southeast1')
+          .httpsCallable('deleteSystemUser');
+      
+      final result = await callable.call({'uid': userId.toString()});
+
+      final dynamic responseData = result.data;
+      bool isSuccess = false;
+
+      if (responseData != null && responseData is Map) {
+        final successValue = responseData['success'];
+        isSuccess = (successValue == true || successValue.toString() == 'true');
+      }
+
+      if (isSuccess) {
+        await _fetchUsers(isRefresh: true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã xóa người dùng thành công!'), backgroundColor: Colors.green),
+          );
+        }
+      }
+    } on FirebaseFunctionsException catch (e) {
+      final String errorMessage = e.message ?? e.toString();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi xóa: $errorMessage'), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      final String errorStr = e.toString();
+      print('Cloud Function Delete Error: $errorStr');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi hệ thống: $errorStr'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   // --- Dialogs & UI Logic ---
@@ -51,8 +265,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Thêm người dùng mới', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
         content: SizedBox(
           width: 450,
@@ -143,10 +358,16 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen),
-            onPressed: () {
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primaryGreen,
+              minimumSize: const Size(120, 45),
+            ),
+            onPressed: _isLoading ? null : () async {
               if (formKey.currentState!.validate()) {
-                _addUser({
+                // Chúng ta cần setDialogState để cái spinner trong Dialog hiện lên ngay
+                setDialogState(() {}); 
+                
+                final success = await _addUser({
                   'id': suggestedId,
                   'displayName': displayName,
                   'email': email,
@@ -154,16 +375,24 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   'role': role,
                   'password': password,
                 });
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm người dùng thành công!')));
+
+                if (success && context.mounted) {
+                  Navigator.pop(context);
+                } else if (context.mounted) {
+                  // Nếu fail thì update lại UI để gỡ spinner
+                  setDialogState(() {});
+                }
               }
             },
-            child: const Text('Lưu thông tin', style: TextStyle(color: Colors.white)),
+            child: _isLoading 
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : const Text('Lưu thông tin', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTextField({
     required String label,
@@ -192,43 +421,81 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bgColor,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text('Quản lý người dùng', style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: _primaryGreen)),
-                const Spacer(),
-                _buildSearchBar(),
-                const SizedBox(width: 20),
-              ],
-            ),
-            const SizedBox(height: 32),
-            _buildFirestoreStats(),
-            const SizedBox(height: 32),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          bool isDesktop = constraints.maxWidth >= 800;
 
-            Row(
+          Widget content = SingleChildScrollView(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTabButton('Tất cả'),
-                const SizedBox(width: 10),
-                _buildTabButton('Nông dân'),
-                const SizedBox(width: 10),
-                _buildTabButton('Chuyên gia'),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: _showAddUserDialog,
-                  icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
-                  label: const Text('Thêm người dùng mới', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: _accentBrown, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                Row(
+                  children: [
+                    Text('Quản lý người dùng', style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: _primaryGreen)),
+                    const Spacer(),
+                    _buildSearchBar(),
+                    const SizedBox(width: 20),
+                  ],
                 ),
+                const SizedBox(height: 32),
+                _buildFirestoreStats(),
+                const SizedBox(height: 32),
+
+                Row(
+                  children: [
+                    _buildTabButton('Tất cả'),
+                    const SizedBox(width: 10),
+                    _buildTabButton('Nông dân'),
+                    const SizedBox(width: 10),
+                    _buildTabButton('Chuyên gia'),
+                    const SizedBox(width: 10),
+                    _buildTabButton('Bị khóa'),
+                    const Spacer(),
+                    ElevatedButton.icon(
+                      onPressed: _showAddUserDialog,
+                      icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
+                      label: const Text('Thêm người dùng mới', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accentBrown,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                _buildUserTable(),
               ],
             ),
-            const SizedBox(height: 24),
-            _buildUserTable(),
-          ],
-        ),
+          );
+
+          if (isDesktop) {
+            return Row(
+              children: [
+                Expanded(child: content),
+                if (_selectedUserForDrawer != null)
+                  Container(
+                    width: 400,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(left: BorderSide(color: Colors.grey[200]!)),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(-5, 0))],
+                    ),
+                    child: _buildRightDrawer(),
+                  ),
+              ],
+            );
+          } else {
+            return Stack(
+              children: [
+                content,
+                if (_selectedUserForDrawer != null)
+                  Positioned.fill(child: _buildRightDrawer()),
+              ],
+            );
+          }
+        },
       ),
     );
   }
@@ -241,13 +508,16 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(30)),
       child: TextField(
         onChanged: (val) {
-          setState(() {
-            _searchQuery = val.toLowerCase(); // Sửa lỗi: Cập nhật biến tìm kiếm
-            _currentPage = 0; // Reset về trang 1 khi tìm kiếm
+          if (_debounce?.isActive ?? false) _debounce!.cancel();
+          _debounce = Timer(const Duration(milliseconds: 500), () {
+            setState(() {
+              _searchQuery = val.trim();
+            });
+            _fetchUsers(isRefresh: true);
           });
         },
         decoration: const InputDecoration(
-            hintText: 'Tìm theo tên, email...',
+            hintText: 'Tìm theo tên...',
             prefixIcon: Icon(Icons.search),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(vertical: 12)
@@ -259,7 +529,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   Widget _buildTabButton(String label) {
     bool isSelected = _selectedTab == label;
     return InkWell(
-      onTap: () => setState(() { _selectedTab = label; _currentPage = 0; }),
+      onTap: () {
+        if (!isSelected) {
+          setState(() => _selectedTab = label);
+          _fetchUsers(isRefresh: true);
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         decoration: BoxDecoration(color: isSelected ? _primaryGreen : Colors.transparent, borderRadius: BorderRadius.circular(20)),
@@ -311,55 +586,23 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   Widget _buildUserTable() {
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
-      child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-
-          // 1. Lọc dữ liệu Real-time
-          var filteredDocs = snapshot.data!.docs.where((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final name = (data['name'] ?? '').toString().toLowerCase();
-            final email = (data['email'] ?? '').toString().toLowerCase();
-            final role = data['role'] ?? 'farmer';
-
-            bool matchesTab = (_selectedTab == 'Tất cả') ||
-                (_selectedTab == 'Nông dân' && role == 'farmer') ||
-                (_selectedTab == 'Chuyên gia' && role == 'expert');
-
-            // Tìm theo tên HOẶC email
-            bool matchesSearch = name.contains(_searchQuery) || email.contains(_searchQuery);
-
-            return matchesTab && matchesSearch;
-          }).toList();
-
-          int totalItems = filteredDocs.length;
-          int totalPages = (totalItems / _rowsPerPage).ceil();
-          if (totalPages == 0) totalPages = 1;
-
-          int startIndex = _currentPage * _rowsPerPage;
-          int endIndex = min(startIndex + _rowsPerPage, totalItems);
-
-          var paginatedDocs = totalItems == 0 ? [] : filteredDocs.sublist(startIndex, endIndex);
-
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Row(children: [
-                  _headerCell('NGƯỜI DÙNG', flex: 3), _headerCell('LIÊN HỆ', flex: 3),
-                  _headerCell('VAI TRÒ', flex: 2), _headerCell('TRẠNG THÁI', flex: 2), _headerCell('HÀNH ĐỘNG', flex: 1),
-                ]),
-              ),
-              const Divider(height: 1),
-              if (paginatedDocs.isEmpty)
-                const Padding(padding: EdgeInsets.all(40), child: Text('Không có dữ liệu phù hợp.'))
-              else
-                ...paginatedDocs.map((doc) => _buildUserRow(doc)).toList(),
-              _buildTableFooter(totalItems, totalPages),
-            ],
-          );
-        },
+      child: Column(
+        children: [
+          if (_userDocs.isEmpty && _isLoading)
+            const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
+          else ...[
+            if (_selectedUserIds.isNotEmpty)
+              _buildBulkActionBar()
+            else
+              _buildTableHeader(_userDocs),
+            const Divider(height: 1),
+            if (_userDocs.isEmpty)
+              const Padding(padding: EdgeInsets.all(40), child: Text('Không có dữ liệu phù hợp.'))
+            else
+              ..._userDocs.map((doc) => _buildUserRow(doc)).toList(),
+            _buildTableFooter(_userDocs.length),
+          ]
+        ],
       ),
     );
   }
@@ -371,55 +614,157 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final role = data['role'] ?? 'farmer';
     final isOnline = data['isOnline'] ?? false;
     final isBanned = data['isBanned'] ?? false;
+    final isSelected = _selectedUserIds.contains(doc.id);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[50]!))),
-      child: Row(
-        children: [
-          Expanded(flex: 3, child: Row(children: [
-            const CircleAvatar(radius: 20, child: Icon(Icons.person)),
-            const SizedBox(width: 12),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row( // <-- Thêm Row để chứa tên và nhãn
+    final String? imageUrl = data['photoURL'] ?? data['avatar'];
+    final Widget avatarWidget = (imageUrl != null && imageUrl.isNotEmpty)
+        ? CircleAvatar(radius: 20, backgroundImage: NetworkImage(imageUrl))
+        : const CircleAvatar(radius: 20, child: Icon(Icons.person));
+
+    return InkWell(
+      onTap: () => setState(() => _selectedUserForDrawer = {...data, 'id': doc.id}),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.green.withOpacity(0.05) : Colors.transparent,
+          border: Border(bottom: BorderSide(color: Colors.grey[50]!)),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 40,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {}, // Prevent InkWell splash
+                child: Checkbox(
+                  value: isSelected,
+                  activeColor: _primaryGreen,
+                  onChanged: (val) {
+                    setState(() {
+                      if (val == true) {
+                        _selectedUserIds.add(doc.id);
+                      } else {
+                        _selectedUserIds.remove(doc.id);
+                      }
+                    });
+                  },
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Row(
                 children: [
-                  Text(data['displayName'] ?? 'Không tên', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  if (isBanned) ...[ // Nếu bị khóa thì thêm Badge đỏ
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.red[100], borderRadius: BorderRadius.circular(4)),
-                      child: const Text('ĐÃ KHÓA', style: TextStyle(color: Colors.red, fontSize: 8, fontWeight: FontWeight.bold)),
+                  avatarWidget,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      data['displayName'] ?? 'Không tên',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (isBanned) ...[
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.lock_rounded, size: 14, color: Colors.red),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'ID: ${doc.id}',
+                          style: const TextStyle(color: Colors.grey, fontSize: 11),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ],
               ),
-              Text('ID: ${doc.id}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
-            ],
-            )
-          ])),
-          Expanded(flex: 3, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(data['email'] ?? ''), Text(data['phone'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          ])),
-          Expanded(flex: 2, child: _buildRoleBadge(role)),
-          Expanded(flex: 2, child: _buildStatusCell(isOnline)),
-          Expanded(flex: 1, child: _buildActionMenu(doc.id, isBanned)),
-        ],
+            ),
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    data['email'] ?? '',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    data['phone'] ?? '',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(flex: 2, child: _buildRoleBadge(role)),
+            Expanded(flex: 2, child: _buildStatusCell(isOnline, isBanned)),
+            Expanded(flex: 1, child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {}, // Prevent InkWell splash
+              child: _buildActionMenu(doc.id, isBanned),
+            )),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTableHeader() {
+  Widget _buildTableHeader(List<DocumentSnapshot> visibleDocs) {
+    bool allPaginatedSelected = visibleDocs.isNotEmpty && visibleDocs.every((doc) => _selectedUserIds.contains(doc.id));
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Row(children: [
-        _headerCell('NGƯỜI DÙNG', flex: 3), _headerCell('LIÊN HỆ', flex: 3),
-        _headerCell('VAI TRÒ', flex: 2), _headerCell('TRẠNG THÁI', flex: 2), _headerCell('HÀNH ĐỘNG', flex: 1),
+        SizedBox(
+          width: 40,
+          child: Checkbox(
+            value: allPaginatedSelected,
+            activeColor: _primaryGreen,
+            onChanged: (val) {
+              setState(() {
+                if (val == true) {
+                  for (var doc in visibleDocs) {
+                    if (!_selectedUserIds.contains(doc.id)) _selectedUserIds.add(doc.id);
+                  }
+                } else {
+                  for (var doc in visibleDocs) {
+                    _selectedUserIds.remove(doc.id);
+                  }
+                }
+              });
+            },
+          ),
+        ),
+        _headerCell('NGƯỜI DÙNG', flex: 3),
+        _headerCell('LIÊN HỆ', flex: 3),
+        _headerCell('VAI TRÒ', flex: 2),
+        _headerCell('TRẠNG THÁI', flex: 2),
+        _headerCell('HÀNH ĐỘNG', flex: 1),
       ]),
     );
   }
 
-  Widget _buildStatusCell(bool isOnline) {
+  Widget _buildStatusCell(bool isOnline, bool isBanned) {
+    if (isBanned) {
+      return const Text('---', style: TextStyle(color: Colors.grey, fontSize: 13));
+    }
     return Row(children: [
       Icon(Icons.circle, size: 8, color: isOnline ? Colors.green : Colors.grey),
       const SizedBox(width: 8),
@@ -451,6 +796,220 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     ));
   }
 
+  Widget _buildBulkActionBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      color: _primaryGreen.withOpacity(0.05),
+      child: Row(
+        children: [
+          Checkbox(
+            value: true,
+            activeColor: _primaryGreen,
+            onChanged: (val) => setState(() => _selectedUserIds.clear()),
+          ),
+          const SizedBox(width: 8),
+          Text('Đã chọn ${_selectedUserIds.length} người dùng', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+          const Spacer(),
+          TextButton.icon(
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tính năng khóa hàng loạt đang phát triển'))),
+            icon: const Icon(Icons.block, size: 18, color: Colors.red),
+            label: const Text('Khóa tài khoản', style: TextStyle(color: Colors.red)),
+          ),
+          const SizedBox(width: 16),
+          ElevatedButton.icon(
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tính năng thông báo hàng loạt đang phát triển'))),
+            icon: const Icon(Icons.send_rounded, size: 18, color: Colors.white),
+            label: const Text('Gửi thông báo', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityLog(String targetUid) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('audit_logs')
+          .where('targetUid', isEqualTo: targetUid)
+          .orderBy('timestamp', descending: true)
+          .limit(10)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Text('Chưa có lịch sử hoạt động.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+          );
+        }
+
+        return Column(
+          children: snapshot.data!.docs.map((doc) {
+            final log = doc.data() as Map<String, dynamic>;
+            final DateTime? ts = (log['timestamp'] as Timestamp?)?.toDate();
+            final String timeStr = ts != null 
+                ? '${ts.day}/${ts.month} ${ts.hour}:${ts.minute.toString().padLeft(2, '0')}'
+                : 'Đang chờ...';
+            
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blueGrey[50],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    log['action'] == 'CREATE_USER' ? Icons.add_circle_outline : Icons.delete_outline,
+                    size: 18,
+                    color: _primaryGreen,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          log['action'] == 'CREATE_USER' ? 'Tạo tài khoản' : 'Xóa tài khoản',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        Text(
+                          log['details'] ?? '',
+                          style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(timeStr, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildRightDrawer() {
+    final data = _selectedUserForDrawer!;
+    final role = data['role'] ?? 'farmer';
+    final String? imageUrl = data['photoURL'] ?? data['avatar'];
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Text('Chi tiết người dùng', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              IconButton(onPressed: () => setState(() => _selectedUserForDrawer = null), icon: const Icon(Icons.close)),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundImage: (imageUrl != null && imageUrl.isNotEmpty) ? NetworkImage(imageUrl) : null,
+                  child: (imageUrl == null || imageUrl.isEmpty) ? const Icon(Icons.person, size: 50) : null,
+                ),
+                const SizedBox(height: 16),
+                Text(data['displayName'] ?? 'Không tên', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text('ID: ${data['id']}', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                const SizedBox(height: 12),
+                _buildRoleBadge(role),
+                const SizedBox(height: 32),
+
+                _drawerInfoTile(Icons.email_outlined, 'Email', data['email'] ?? 'Chưa cập nhật'),
+                _drawerInfoTile(Icons.phone_outlined, 'Số điện thoại', data['phone'] ?? 'Chưa cập nhật'),
+                const Divider(height: 48),
+
+                if (role == 'farmer') ...[
+                  _drawerSectionHeader('HOẠT ĐỘNG NÔNG DÂN'),
+                  _drawerActionTile(Icons.agriculture, 'Vườn đã đăng ký', '2 vườn'),
+                  _drawerActionTile(Icons.medical_services_outlined, 'Lịch sử chẩn đoán AI', '15 lần'),
+                ] else if (role == 'expert') ...[
+                  _drawerSectionHeader('QUẢN LÝ CHUYÊN GIA'),
+                  _drawerActionTile(Icons.calendar_today_outlined, 'Lịch hẹn chờ duyệt', '3 lịch'),
+                  _drawerActionTile(Icons.description_outlined, 'Bài viết chuyên môn', '8 bài'),
+                ],
+
+                const Divider(height: 48),
+                _drawerSectionHeader('ACTIVITY LOG (NHẬT KÝ HÀNH ĐỘNG)'),
+                _buildActivityLog(data['uid'] ?? data['id']),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _drawerInfoTile(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _drawerSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[400], letterSpacing: 1.1)),
+      ),
+    );
+  }
+
+  Widget _drawerActionTile(IconData icon, String title, String subtitle) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        children: [
+          Icon(icon, color: _primaryGreen, size: 24),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+        ],
+      ),
+    );
+  }
+
   void _showConfirmDialog({required String title, required String content, required VoidCallback onConfirm}) {
     showDialog(context: context, builder: (context) => AlertDialog(
       title: Text(title), content: Text(content),
@@ -459,30 +1018,34 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     ));
   }
 
-  Future<void> _deleteUser(String userId) async {
-    await FirebaseFirestore.instance.collection('users').doc(userId).delete();
-  }
+  // _deleteUser đã được di chuyển lên trên phần logic Firebase
 
   Future<void> _toggleBanStatus(String userId, bool currentBanStatus) async {
     await FirebaseFirestore.instance.collection('users').doc(userId).update({'isBanned': !currentBanStatus});
+    _fetchUsers(isRefresh: true);
   }
 
-  Widget _buildTableFooter(int total, int totalPages) {
+  Widget _buildTableFooter(int currentCount) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Row(
         children: [
-          Text('Hiển thị ${total == 0 ? 0 : _currentPage * _rowsPerPage + 1} - ${min((_currentPage + 1) * _rowsPerPage, total)} trong $total người dùng', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Text('Hiển thị $currentCount người dùng', style: const TextStyle(color: Colors.grey, fontSize: 13)),
           const Spacer(),
-          _pageBox(Icons.chevron_left, enabled: _currentPage > 0, onTap: () => setState(() => _currentPage--)),
-          ...List.generate(totalPages, (index) {
-            if (totalPages > 5 && (index > _currentPage + 1 || index < _currentPage - 1) && index != 0 && index != totalPages - 1) {
-              if (index == 1 || index == totalPages - 2) return const Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text('...'));
-              return const SizedBox();
-            }
-            return _pageBox('${index + 1}', active: _currentPage == index, onTap: () => setState(() => _currentPage = index));
-          }),
-          _pageBox(Icons.chevron_right, enabled: _currentPage < totalPages - 1, onTap: () => setState(() => _currentPage++)),
+          if (_isLoading)
+            const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+          else if (_hasMore)
+            ElevatedButton(
+              onPressed: () => _fetchUsers(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryGreen,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Text('Tải thêm', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            )
+          else
+            const Text('Đã tải hết danh sách.', style: TextStyle(color: Colors.grey, fontSize: 13)),
         ],
       ),
     );

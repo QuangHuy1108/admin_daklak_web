@@ -52,6 +52,7 @@ dependencies:
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
   universal_html: ^2.3.0
+  cloud_functions: ^6.1.0
 
 dev_dependencies:
   flutter_test:
