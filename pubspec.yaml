@@ -53,6 +53,7 @@ dependencies:
   json_annotation: ^4.9.0
   universal_html: ^2.3.0
   cloud_functions: ^6.1.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

@@ -44,6 +44,14 @@ class NotificationTile extends StatelessWidget {
         return Icons.psychology_alt_rounded;
       case NotificationType.lowStock:
         return Icons.inventory_2_rounded;
+      case NotificationType.verification:
+        return Icons.verified_user_rounded;
+      case NotificationType.finance:
+        return Icons.account_balance_wallet_rounded;
+      case NotificationType.market:
+        return Icons.trending_up_rounded;
+      case NotificationType.moderation:
+        return Icons.gavel_rounded;
     }
   }
 
@@ -59,6 +67,14 @@ class NotificationTile extends StatelessWidget {
         return Colors.red;
       case NotificationType.lowStock:
         return Colors.deepPurple;
+      case NotificationType.verification:
+        return Colors.teal;
+      case NotificationType.finance:
+        return Colors.amber.shade700;
+      case NotificationType.market:
+        return Colors.indigo;
+      case NotificationType.moderation:
+        return Colors.brown;
     }
   }
 
@@ -80,7 +96,7 @@ class NotificationTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: notification.isRead ? Colors.transparent : Colors.blue.withOpacity(0.05),
+          color: notification.isRead ? Colors.transparent : Colors.blue.withValues(alpha: 0.05),
           border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
         ),
         child: Row(
@@ -89,7 +105,7 @@ class NotificationTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: _getTypeColor().withOpacity(0.1),
+                color: _getTypeColor().withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(_getTypeIcon(), color: _getTypeColor(), size: 20),

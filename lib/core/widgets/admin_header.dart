@@ -1,20 +1,135 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../../features/auth/services/auth_service.dart';
+import '../../features/auth/logic/user_provider.dart';
 import '../../features/notifications/services/notification_service.dart';
 import '../../features/notifications/models/notification_model.dart';
 import '../../features/notifications/widgets/notification_dropdown.dart';
+import '../services/search_service.dart';
+import 'search_overlay.dart';
 
-class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
+class AdminHeader extends StatefulWidget implements PreferredSizeWidget {
   const AdminHeader({super.key});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(64);
+
+  @override
+  State<AdminHeader> createState() => _AdminHeaderState();
+}
+
+class _AdminHeaderState extends State<AdminHeader> {
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  final LayerLink _layerLink = LayerLink();
+  
+  OverlayEntry? _overlayEntry;
+  Timer? _debounce;
+  final SearchService _searchService = SearchService();
+  
+  bool _isSearching = false;
+  List<SearchResult> _searchResults = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocus.addListener(() {
+      if (_searchFocus.hasFocus && _searchController.text.isNotEmpty) {
+        _showOverlay();
+      } else if (!_searchFocus.hasFocus) {
+        // Need a slight delay to allow taps on the overlay to register
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (mounted) _hideOverlay();
+        });
+      }
+    });
+
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    
+    final query = _searchController.text.trim();
+    if (query.isEmpty) {
+      _hideOverlay();
+      return;
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      _showOverlay();
+      setState(() => _isSearching = true);
+      _overlayEntry?.markNeedsBuild();
+
+      final results = await _searchService.searchGlobal(query);
+      
+      if (mounted) {
+        setState(() {
+          _searchResults = results;
+          _isSearching = false;
+        });
+        _overlayEntry?.markNeedsBuild();
+      }
+    });
+  }
+
+  void _showOverlay() {
+    if (_overlayEntry != null) return;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        return Positioned(
+          width: 400,
+          child: CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            offset: const Offset(0, 50),
+            child: SearchOverlay(
+              isLoading: _isSearching,
+              results: _searchResults,
+              onClose: () {
+                _hideOverlay();
+                _searchFocus.unfocus();
+                _searchController.clear();
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _hideOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    _searchFocus.dispose();
+    _hideOverlay();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     bool isMobile = MediaQuery.of(context).size.width <= 768;
+    final userProvider = Provider.of<UserProvider>(context);
+
+    // Get real user data
+    final displayName = userProvider.displayName ?? 'Admin';
+    final email = userProvider.email ?? 'admin@farmvista.com';
+    final photoURL = userProvider.photoURL;
 
     return Container(
-      height: 64, // Cập nhật chiều cao 64 cho không gian thoáng hơn
+      height: 64, 
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
         color: AppColors.cardBg,
@@ -28,41 +143,46 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
           if (!isMobile)
             Expanded(
               flex: 5,
-              child: Container(
-                height: 40, // Tăng chiều cao search bar cho phù hợp với header 64
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 16),
-                    Icon(
-                      Icons.search_rounded,
-                      size: 20,
-                      color: Colors.grey.shade500,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search something here.....',
-                          hintStyle: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontSize: 14,
+              child: CompositedTransformTarget(
+                link: _layerLink,
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 16),
+                      Icon(
+                        Icons.search_rounded,
+                        size: 20,
+                        color: Colors.grey.shade500,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          focusNode: _searchFocus,
+                          decoration: InputDecoration(
+                            hintText: 'Search orders, users, or experts...',
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
                           ),
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textBody,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textBody,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -70,7 +190,6 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
           const Spacer(flex: 3),
 
           // ── Feature 3: Actions Group ───────────────────────────
-          // Notification item
           StreamBuilder<List<AdminNotification>>(
             stream: NotificationService.getUnreadNotificationsStream(),
             builder: (context, snapshot) {
@@ -82,7 +201,6 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
 
               return Row(
                 children: [
-                   // Hidden Debug Button (only during V1/Dev)
                   IconButton(
                     icon: Icon(Icons.bug_report_outlined, color: Colors.grey.shade400, size: 18),
                     onPressed: () async {
@@ -128,7 +246,7 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           itemBuilder: (context) => [
                             PopupMenuItem<void>(
-                              enabled: false, // Dropdown handle events internally
+                              enabled: false,
                               padding: EdgeInsets.zero,
                               child: NotificationDropdown(
                                 notifications: unreadList,
@@ -165,10 +283,7 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
           ),
 
           const SizedBox(width: 20),
-
-          // Vertical Divider ngăn cách chuông và profile
           Container(height: 24, width: 1, color: Colors.grey.shade300),
-
           const SizedBox(width: 20),
 
           // Profile item
@@ -216,16 +331,19 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
                 if (context.mounted) context.go('/login');
               } else if (value == 'settings') {
                 context.go('/settings');
+              } else if (value == 'profile') {
+                context.go('/profile');
               }
             },
             child: Row(
               children: [
-                const CircleAvatar(
-                  radius: 16, // Giảm kích thước avatar
-                  backgroundImage: NetworkImage(
-                    'https://i.pravatar.cc/150?img=11',
-                  ),
-                  backgroundColor: AppColors.background,
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: AppColors.surfaceVariant,
+                  backgroundImage: photoURL != null ? NetworkImage(photoURL) : null,
+                  child: photoURL == null
+                      ? const Icon(Icons.person, size: 16, color: AppColors.textMuted)
+                      : null,
                 ),
                 if (!isMobile) ...[
                   const SizedBox(width: 12),
@@ -233,16 +351,16 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Albert Flores',
-                        style: TextStyle(
+                      Text(
+                        displayName,
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textHeading,
                         ),
                       ),
                       Text(
-                        'albert45@mail.com',
+                        email.length > 20 ? '${email.substring(0, 17)}...' : email,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade500,
@@ -264,7 +382,4 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(64);
 }

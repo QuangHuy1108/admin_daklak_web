@@ -53,43 +53,51 @@ class AdminSidebar extends StatelessWidget {
       child: Column(
         children: [
           // ── Logo ─────────────────────────────────────────────
-          Container(
-            height: 64, 
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(8),
+          InkWell(
+            onTap: () {
+              if (Scaffold.of(context).isDrawerOpen) {
+                Navigator.pop(context);
+              }
+              context.go('/dashboard');
+            },
+            child: Container(
+              height: 64, 
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.eco_rounded, color: Colors.white, size: 24),
                   ),
-                  child: const Icon(Icons.eco_rounded, color: Colors.white, size: 24),
-                ),
-                if (isExpanded)
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const NeverScrollableScrollPhysics(),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(width: 12),
-                          const Text(
-                            'FarmVista',
-                            style: TextStyle(
-                              color: AppColors.textHeading,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                  if (isExpanded)
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(width: 12),
+                            const Text(
+                              'FarmVista',
+                              style: TextStyle(
+                                color: AppColors.textHeading,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -228,12 +236,18 @@ class _CollapseToggle extends StatelessWidget {
           mainAxisAlignment: isExpanded ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
           children: [
             if (isExpanded) ...[
-              const Text(
-                'Thu gọn',
-                style: TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: const Text(
+                    'Thu gọn',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
               const Icon(Icons.chevron_left_rounded, size: 22, color: AppColors.textMuted),

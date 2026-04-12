@@ -5,7 +5,11 @@ enum NotificationType {
   order,
   alert,
   aiError,
-  lowStock;
+  lowStock,
+  verification,
+  finance,
+  market,
+  moderation;
 
   String get label {
     switch (this) {
@@ -19,6 +23,14 @@ enum NotificationType {
         return 'Lỗi AI';
       case NotificationType.lowStock:
         return 'Sắp hết hàng';
+      case NotificationType.verification:
+        return 'Xác thực chuyên gia';
+      case NotificationType.finance:
+        return 'Tài chính';
+      case NotificationType.market:
+        return 'Thị trường';
+      case NotificationType.moderation:
+        return 'Báo cáo người dùng';
     }
   }
 }
@@ -48,11 +60,19 @@ class AdminNotification {
     final data = doc.data() as Map<String, dynamic>;
     final timestamp = data['timestamp'];
     
+    // Safety check for NotificationType (Enum robustness)
+    NotificationType safeType;
+    try {
+      safeType = NotificationType.values.byName(data['type'] ?? 'system');
+    } catch (_) {
+      safeType = NotificationType.system;
+    }
+    
     return AdminNotification(
       id: doc.id,
       title: data['title'] ?? '',
       message: data['message'] ?? '',
-      type: NotificationType.values.byName(data['type'] ?? 'system'),
+      type: safeType,
       isRead: data['isRead'] ?? false,
       // Handle null timestamp during internal Firestore latency (pending writes)
       timestamp: timestamp != null 
@@ -62,6 +82,7 @@ class AdminNotification {
       metadata: data['metadata'],
     );
   }
+
 
   Map<String, dynamic> toMap() {
     return {

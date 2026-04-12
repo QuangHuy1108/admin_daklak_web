@@ -48,6 +48,12 @@ _$NotificationTriggerRulesImpl _$$NotificationTriggerRulesImplFromJson(
   notifyOnSystemError: json['notifyOnSystemError'] as bool? ?? true,
   notifyOnNewExpertAppointment:
       json['notifyOnNewExpertAppointment'] as bool? ?? true,
+  notifyOnNewWithdrawal: json['notifyOnNewWithdrawal'] as bool? ?? true,
+  notifyOnPriceSpike: json['notifyOnPriceSpike'] as bool? ?? true,
+  notifyOnExpertVerification:
+      json['notifyOnExpertVerification'] as bool? ?? true,
+  notifyOnUserReport: json['notifyOnUserReport'] as bool? ?? true,
+  notifyOnSystemMaintenance: json['notifyOnSystemMaintenance'] as bool? ?? true,
 );
 
 Map<String, dynamic> _$$NotificationTriggerRulesImplToJson(
@@ -57,4 +63,9 @@ Map<String, dynamic> _$$NotificationTriggerRulesImplToJson(
   'notifyOnLowStock': instance.notifyOnLowStock,
   'notifyOnSystemError': instance.notifyOnSystemError,
   'notifyOnNewExpertAppointment': instance.notifyOnNewExpertAppointment,
+  'notifyOnNewWithdrawal': instance.notifyOnNewWithdrawal,
+  'notifyOnPriceSpike': instance.notifyOnPriceSpike,
+  'notifyOnExpertVerification': instance.notifyOnExpertVerification,
+  'notifyOnUserReport': instance.notifyOnUserReport,
+  'notifyOnSystemMaintenance': instance.notifyOnSystemMaintenance,
 };

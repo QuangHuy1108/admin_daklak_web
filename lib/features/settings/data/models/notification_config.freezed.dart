@@ -354,6 +354,11 @@ mixin _$NotificationTriggerRules {
   bool get notifyOnLowStock => throw _privateConstructorUsedError;
   bool get notifyOnSystemError => throw _privateConstructorUsedError;
   bool get notifyOnNewExpertAppointment => throw _privateConstructorUsedError;
+  bool get notifyOnNewWithdrawal => throw _privateConstructorUsedError;
+  bool get notifyOnPriceSpike => throw _privateConstructorUsedError;
+  bool get notifyOnExpertVerification => throw _privateConstructorUsedError;
+  bool get notifyOnUserReport => throw _privateConstructorUsedError;
+  bool get notifyOnSystemMaintenance => throw _privateConstructorUsedError;
 
   /// Serializes this NotificationTriggerRules to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -377,6 +382,11 @@ abstract class $NotificationTriggerRulesCopyWith<$Res> {
     bool notifyOnLowStock,
     bool notifyOnSystemError,
     bool notifyOnNewExpertAppointment,
+    bool notifyOnNewWithdrawal,
+    bool notifyOnPriceSpike,
+    bool notifyOnExpertVerification,
+    bool notifyOnUserReport,
+    bool notifyOnSystemMaintenance,
   });
 }
 
@@ -402,6 +412,11 @@ class _$NotificationTriggerRulesCopyWithImpl<
     Object? notifyOnLowStock = null,
     Object? notifyOnSystemError = null,
     Object? notifyOnNewExpertAppointment = null,
+    Object? notifyOnNewWithdrawal = null,
+    Object? notifyOnPriceSpike = null,
+    Object? notifyOnExpertVerification = null,
+    Object? notifyOnUserReport = null,
+    Object? notifyOnSystemMaintenance = null,
   }) {
     return _then(
       _value.copyWith(
@@ -420,6 +435,26 @@ class _$NotificationTriggerRulesCopyWithImpl<
             notifyOnNewExpertAppointment: null == notifyOnNewExpertAppointment
                 ? _value.notifyOnNewExpertAppointment
                 : notifyOnNewExpertAppointment // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            notifyOnNewWithdrawal: null == notifyOnNewWithdrawal
+                ? _value.notifyOnNewWithdrawal
+                : notifyOnNewWithdrawal // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            notifyOnPriceSpike: null == notifyOnPriceSpike
+                ? _value.notifyOnPriceSpike
+                : notifyOnPriceSpike // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            notifyOnExpertVerification: null == notifyOnExpertVerification
+                ? _value.notifyOnExpertVerification
+                : notifyOnExpertVerification // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            notifyOnUserReport: null == notifyOnUserReport
+                ? _value.notifyOnUserReport
+                : notifyOnUserReport // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            notifyOnSystemMaintenance: null == notifyOnSystemMaintenance
+                ? _value.notifyOnSystemMaintenance
+                : notifyOnSystemMaintenance // ignore: cast_nullable_to_non_nullable
                       as bool,
           )
           as $Val,
@@ -441,6 +476,11 @@ abstract class _$$NotificationTriggerRulesImplCopyWith<$Res>
     bool notifyOnLowStock,
     bool notifyOnSystemError,
     bool notifyOnNewExpertAppointment,
+    bool notifyOnNewWithdrawal,
+    bool notifyOnPriceSpike,
+    bool notifyOnExpertVerification,
+    bool notifyOnUserReport,
+    bool notifyOnSystemMaintenance,
   });
 }
 
@@ -466,6 +506,11 @@ class __$$NotificationTriggerRulesImplCopyWithImpl<$Res>
     Object? notifyOnLowStock = null,
     Object? notifyOnSystemError = null,
     Object? notifyOnNewExpertAppointment = null,
+    Object? notifyOnNewWithdrawal = null,
+    Object? notifyOnPriceSpike = null,
+    Object? notifyOnExpertVerification = null,
+    Object? notifyOnUserReport = null,
+    Object? notifyOnSystemMaintenance = null,
   }) {
     return _then(
       _$NotificationTriggerRulesImpl(
@@ -485,6 +530,26 @@ class __$$NotificationTriggerRulesImplCopyWithImpl<$Res>
             ? _value.notifyOnNewExpertAppointment
             : notifyOnNewExpertAppointment // ignore: cast_nullable_to_non_nullable
                   as bool,
+        notifyOnNewWithdrawal: null == notifyOnNewWithdrawal
+            ? _value.notifyOnNewWithdrawal
+            : notifyOnNewWithdrawal // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        notifyOnPriceSpike: null == notifyOnPriceSpike
+            ? _value.notifyOnPriceSpike
+            : notifyOnPriceSpike // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        notifyOnExpertVerification: null == notifyOnExpertVerification
+            ? _value.notifyOnExpertVerification
+            : notifyOnExpertVerification // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        notifyOnUserReport: null == notifyOnUserReport
+            ? _value.notifyOnUserReport
+            : notifyOnUserReport // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        notifyOnSystemMaintenance: null == notifyOnSystemMaintenance
+            ? _value.notifyOnSystemMaintenance
+            : notifyOnSystemMaintenance // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -498,6 +563,11 @@ class _$NotificationTriggerRulesImpl implements _NotificationTriggerRules {
     this.notifyOnLowStock = true,
     this.notifyOnSystemError = true,
     this.notifyOnNewExpertAppointment = true,
+    this.notifyOnNewWithdrawal = true,
+    this.notifyOnPriceSpike = true,
+    this.notifyOnExpertVerification = true,
+    this.notifyOnUserReport = true,
+    this.notifyOnSystemMaintenance = true,
   });
 
   factory _$NotificationTriggerRulesImpl.fromJson(Map<String, dynamic> json) =>
@@ -515,10 +585,25 @@ class _$NotificationTriggerRulesImpl implements _NotificationTriggerRules {
   @override
   @JsonKey()
   final bool notifyOnNewExpertAppointment;
+  @override
+  @JsonKey()
+  final bool notifyOnNewWithdrawal;
+  @override
+  @JsonKey()
+  final bool notifyOnPriceSpike;
+  @override
+  @JsonKey()
+  final bool notifyOnExpertVerification;
+  @override
+  @JsonKey()
+  final bool notifyOnUserReport;
+  @override
+  @JsonKey()
+  final bool notifyOnSystemMaintenance;
 
   @override
   String toString() {
-    return 'NotificationTriggerRules(notifyOnNewOrder: $notifyOnNewOrder, notifyOnLowStock: $notifyOnLowStock, notifyOnSystemError: $notifyOnSystemError, notifyOnNewExpertAppointment: $notifyOnNewExpertAppointment)';
+    return 'NotificationTriggerRules(notifyOnNewOrder: $notifyOnNewOrder, notifyOnLowStock: $notifyOnLowStock, notifyOnSystemError: $notifyOnSystemError, notifyOnNewExpertAppointment: $notifyOnNewExpertAppointment, notifyOnNewWithdrawal: $notifyOnNewWithdrawal, notifyOnPriceSpike: $notifyOnPriceSpike, notifyOnExpertVerification: $notifyOnExpertVerification, notifyOnUserReport: $notifyOnUserReport, notifyOnSystemMaintenance: $notifyOnSystemMaintenance)';
   }
 
   @override
@@ -537,7 +622,24 @@ class _$NotificationTriggerRulesImpl implements _NotificationTriggerRules {
                   notifyOnNewExpertAppointment,
                 ) ||
                 other.notifyOnNewExpertAppointment ==
-                    notifyOnNewExpertAppointment));
+                    notifyOnNewExpertAppointment) &&
+            (identical(other.notifyOnNewWithdrawal, notifyOnNewWithdrawal) ||
+                other.notifyOnNewWithdrawal == notifyOnNewWithdrawal) &&
+            (identical(other.notifyOnPriceSpike, notifyOnPriceSpike) ||
+                other.notifyOnPriceSpike == notifyOnPriceSpike) &&
+            (identical(
+                  other.notifyOnExpertVerification,
+                  notifyOnExpertVerification,
+                ) ||
+                other.notifyOnExpertVerification ==
+                    notifyOnExpertVerification) &&
+            (identical(other.notifyOnUserReport, notifyOnUserReport) ||
+                other.notifyOnUserReport == notifyOnUserReport) &&
+            (identical(
+                  other.notifyOnSystemMaintenance,
+                  notifyOnSystemMaintenance,
+                ) ||
+                other.notifyOnSystemMaintenance == notifyOnSystemMaintenance));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -548,6 +650,11 @@ class _$NotificationTriggerRulesImpl implements _NotificationTriggerRules {
     notifyOnLowStock,
     notifyOnSystemError,
     notifyOnNewExpertAppointment,
+    notifyOnNewWithdrawal,
+    notifyOnPriceSpike,
+    notifyOnExpertVerification,
+    notifyOnUserReport,
+    notifyOnSystemMaintenance,
   );
 
   /// Create a copy of NotificationTriggerRules
@@ -573,6 +680,11 @@ abstract class _NotificationTriggerRules implements NotificationTriggerRules {
     final bool notifyOnLowStock,
     final bool notifyOnSystemError,
     final bool notifyOnNewExpertAppointment,
+    final bool notifyOnNewWithdrawal,
+    final bool notifyOnPriceSpike,
+    final bool notifyOnExpertVerification,
+    final bool notifyOnUserReport,
+    final bool notifyOnSystemMaintenance,
   }) = _$NotificationTriggerRulesImpl;
 
   factory _NotificationTriggerRules.fromJson(Map<String, dynamic> json) =
@@ -586,6 +698,16 @@ abstract class _NotificationTriggerRules implements NotificationTriggerRules {
   bool get notifyOnSystemError;
   @override
   bool get notifyOnNewExpertAppointment;
+  @override
+  bool get notifyOnNewWithdrawal;
+  @override
+  bool get notifyOnPriceSpike;
+  @override
+  bool get notifyOnExpertVerification;
+  @override
+  bool get notifyOnUserReport;
+  @override
+  bool get notifyOnSystemMaintenance;
 
   /// Create a copy of NotificationTriggerRules
   /// with the given fields replaced by the non-null parameter values.

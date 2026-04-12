@@ -10,8 +10,8 @@ import '../../features/content_management/screens/banner_manager_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../widgets/admin_layout.dart'; // Import layout
-import '../../features/expert_management//screens/admin_appointments_screen.dart';
-import '../../features/logs///screens/ai_logs_screen.dart';
+import '../../features/expert_management/screens/admin_appointments_screen.dart';
+import '../../features/logs/screens/ai_logs_screen.dart';
 import '../../features/price_management/screens/agricultural_price.dart';
 import '../../features/sales_management/screens/hub_dashboard_screen.dart';
 import '../../features/order_management/screens/order_list_screen.dart';
@@ -23,9 +23,7 @@ import '../../features/settings/presentation/screens/settings_main_screen.dart';
 import '../../features/logs/screens/audit_logs_screen.dart';
 import '../../features/expert_management/screens/expert_verification_screen.dart';
 import '../../features/system_logs/screens/system_log_screen.dart';
-
-
-
+import '../../features/profile/screens/admin_profile_screen.dart';
 
 class AppRouter {
   static GoRouter createRouter(UserProvider userProvider) {
@@ -45,9 +43,9 @@ class AppRouter {
           if (userProvider.isLoading) return null;
 
           if (!userProvider.isSuperAdmin) {
-          debugPrint('AppRouter: Access denied to /settings. Role detected: ${userProvider.role}');
-          return '/dashboard'; // Redirect to dashboard if not super_admin
-        }
+            debugPrint('AppRouter: Access denied to /settings. Role detected: ${userProvider.role}');
+            return '/dashboard'; // Redirect to dashboard if not super_admin
+          }
         }
 
         return null;
@@ -66,6 +64,10 @@ class AppRouter {
             GoRoute(
               path: '/dashboard',
               builder: (context, state) => const DashboardScreen(),
+            ),
+            GoRoute(
+              path: '/profile',
+              builder: (context, state) => const AdminProfileScreen(),
             ),
             GoRoute(
               path: '/users',
@@ -97,6 +99,10 @@ class AppRouter {
             ),
             GoRoute(
               path: '/orders',
+              builder: (context, state) => const OrderListScreen(),
+            ),
+            GoRoute(
+              path: '/orders/detail/:id',
               builder: (context, state) => const OrderListScreen(),
             ),
             GoRoute(
@@ -136,4 +142,4 @@ class AppRouter {
       ],
     );
   }
-}
+}

@@ -25,8 +25,14 @@ class NotificationTriggerRules with _$NotificationTriggerRules {
     @Default(true) bool notifyOnLowStock,
     @Default(true) bool notifyOnSystemError,
     @Default(true) bool notifyOnNewExpertAppointment,
+    @Default(true) bool notifyOnNewWithdrawal,
+    @Default(true) bool notifyOnPriceSpike,
+    @Default(true) bool notifyOnExpertVerification,
+    @Default(true) bool notifyOnUserReport,
+    @Default(true) bool notifyOnSystemMaintenance,
   }) = _NotificationTriggerRules;
 
   factory NotificationTriggerRules.fromJson(Map<String, dynamic> json) =>
       _$NotificationTriggerRulesFromJson(json);
 }
+
