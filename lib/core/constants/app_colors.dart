@@ -1,29 +1,35 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Main Background
-  static const Color background = Color(0xFFF4F7F6); // Light Grey/Off-white
+  // Main Background (Premium Beige/Cream)
+  static const Color background = Color(0xFFFCF9F3); 
+  static const Color scaffoldBg = Color(0xFFFCF9F3);
   
   // Cards & Side Navigation
-  static const Color cardBg = Color(0xFFFFFFFF); // Pure White
-  static const Color sidebarBg = Color(0xFFFFFFFF); // Pure White
+  static const Color cardBg = Color(0xFFFFFFFF);
+  static const Color surfaceVariant = Color(0xFFF8F4EC); // Muted beige for sections/inputs
+  static const Color sidebarBg = Color(0xFFFFFFFF);
   
-  // Primary Accent
-  static const Color primary = Color(0xFF2E7D32); // Forest Green
-  static const Color primaryLight = Color(0xFF4CAF50); // Lighter green for hover/active states
+  // Primary Accent (Deep Forest Green)
+  static const Color primary = Color(0xFF2E6B4E); 
+  static const Color primaryDark = Color(0xFF1E4633);
+  static const Color primaryLight = Color(0xFF42916E);
   
   // Text
-  static const Color textHeading = Color(0xFF333333); // Dark Gray for Headings
-  static const Color textBody = Color(0xFF000000); // Black for stats/numbers
-  static const Color textMuted = Color(0xFF888888); // Grey for labels/subtext
-  static const Color textInverse = Color(0xFFFFFFFF); // White text on dark buttons
+  static const Color textHeading = Color(0xFF2D312E); // Very dark green-tinted charcoal
+  static const Color textBody = Color(0xFF4A4D4A); // Muted dark for paragraph text
+  static const Color textMuted = Color(0xFF9EA39F); // Subtle gray for subtext
+  static const Color textInverse = Color(0xFFFFFFFF); 
   
-  // Status Chips
-  static const Color statusPendingBg = Color(0xFFFFF3E0); // Light orange
-  static const Color statusPendingText = Color(0xFFE65100);
-  static const Color statusProgressBg = Color(0xFFE8F5E9); // Light green
-  static const Color statusProgressText = Color(0xFF2E7D32);
+  // Status Dots/Bars
+  static const Color statusSuccess = Color(0xFF34A853);
+  static const Color statusPending = Color(0xFFFBBC04);
+  static const Color statusDanger = Color(0xFFEA4335);
+  
+  // Dashboard Status Specifics
+  static const Color statusProgressBg = Color(0xFFE8F0FE);
+  static const Color statusProgressText = Color(0xFF1967D2);
   
   // Borders
-  static const Color border = Color(0xFFE0E0E0);
+  static const Color border = Color(0xFFE8E4DB); // Warm border
 }

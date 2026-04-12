@@ -22,10 +22,15 @@ GlobalConfig _$GlobalConfigFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$GlobalConfig {
   String get appName => throw _privateConstructorUsedError;
+  String get slogan => throw _privateConstructorUsedError;
   String get logoUrl => throw _privateConstructorUsedError;
   String get contactPhone => throw _privateConstructorUsedError;
   String get contactEmail => throw _privateConstructorUsedError;
   String get address => throw _privateConstructorUsedError;
+  String get websiteUrl => throw _privateConstructorUsedError;
+  String get socialAccountCount => throw _privateConstructorUsedError;
+  String get mapStatus => throw _privateConstructorUsedError;
+  String get lastUpdated => throw _privateConstructorUsedError;
   String get termsUrl => throw _privateConstructorUsedError;
   String get privacyUrl => throw _privateConstructorUsedError;
   String get refundUrl => throw _privateConstructorUsedError;
@@ -49,10 +54,15 @@ abstract class $GlobalConfigCopyWith<$Res> {
   @useResult
   $Res call({
     String appName,
+    String slogan,
     String logoUrl,
     String contactPhone,
     String contactEmail,
     String address,
+    String websiteUrl,
+    String socialAccountCount,
+    String mapStatus,
+    String lastUpdated,
     String termsUrl,
     String privacyUrl,
     String refundUrl,
@@ -75,10 +85,15 @@ class _$GlobalConfigCopyWithImpl<$Res, $Val extends GlobalConfig>
   @override
   $Res call({
     Object? appName = null,
+    Object? slogan = null,
     Object? logoUrl = null,
     Object? contactPhone = null,
     Object? contactEmail = null,
     Object? address = null,
+    Object? websiteUrl = null,
+    Object? socialAccountCount = null,
+    Object? mapStatus = null,
+    Object? lastUpdated = null,
     Object? termsUrl = null,
     Object? privacyUrl = null,
     Object? refundUrl = null,
@@ -88,6 +103,10 @@ class _$GlobalConfigCopyWithImpl<$Res, $Val extends GlobalConfig>
             appName: null == appName
                 ? _value.appName
                 : appName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            slogan: null == slogan
+                ? _value.slogan
+                : slogan // ignore: cast_nullable_to_non_nullable
                       as String,
             logoUrl: null == logoUrl
                 ? _value.logoUrl
@@ -104,6 +123,22 @@ class _$GlobalConfigCopyWithImpl<$Res, $Val extends GlobalConfig>
             address: null == address
                 ? _value.address
                 : address // ignore: cast_nullable_to_non_nullable
+                      as String,
+            websiteUrl: null == websiteUrl
+                ? _value.websiteUrl
+                : websiteUrl // ignore: cast_nullable_to_non_nullable
+                      as String,
+            socialAccountCount: null == socialAccountCount
+                ? _value.socialAccountCount
+                : socialAccountCount // ignore: cast_nullable_to_non_nullable
+                      as String,
+            mapStatus: null == mapStatus
+                ? _value.mapStatus
+                : mapStatus // ignore: cast_nullable_to_non_nullable
+                      as String,
+            lastUpdated: null == lastUpdated
+                ? _value.lastUpdated
+                : lastUpdated // ignore: cast_nullable_to_non_nullable
                       as String,
             termsUrl: null == termsUrl
                 ? _value.termsUrl
@@ -134,10 +169,15 @@ abstract class _$$GlobalConfigImplCopyWith<$Res>
   @useResult
   $Res call({
     String appName,
+    String slogan,
     String logoUrl,
     String contactPhone,
     String contactEmail,
     String address,
+    String websiteUrl,
+    String socialAccountCount,
+    String mapStatus,
+    String lastUpdated,
     String termsUrl,
     String privacyUrl,
     String refundUrl,
@@ -159,10 +199,15 @@ class __$$GlobalConfigImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? appName = null,
+    Object? slogan = null,
     Object? logoUrl = null,
     Object? contactPhone = null,
     Object? contactEmail = null,
     Object? address = null,
+    Object? websiteUrl = null,
+    Object? socialAccountCount = null,
+    Object? mapStatus = null,
+    Object? lastUpdated = null,
     Object? termsUrl = null,
     Object? privacyUrl = null,
     Object? refundUrl = null,
@@ -172,6 +217,10 @@ class __$$GlobalConfigImplCopyWithImpl<$Res>
         appName: null == appName
             ? _value.appName
             : appName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        slogan: null == slogan
+            ? _value.slogan
+            : slogan // ignore: cast_nullable_to_non_nullable
                   as String,
         logoUrl: null == logoUrl
             ? _value.logoUrl
@@ -188,6 +237,22 @@ class __$$GlobalConfigImplCopyWithImpl<$Res>
         address: null == address
             ? _value.address
             : address // ignore: cast_nullable_to_non_nullable
+                  as String,
+        websiteUrl: null == websiteUrl
+            ? _value.websiteUrl
+            : websiteUrl // ignore: cast_nullable_to_non_nullable
+                  as String,
+        socialAccountCount: null == socialAccountCount
+            ? _value.socialAccountCount
+            : socialAccountCount // ignore: cast_nullable_to_non_nullable
+                  as String,
+        mapStatus: null == mapStatus
+            ? _value.mapStatus
+            : mapStatus // ignore: cast_nullable_to_non_nullable
+                  as String,
+        lastUpdated: null == lastUpdated
+            ? _value.lastUpdated
+            : lastUpdated // ignore: cast_nullable_to_non_nullable
                   as String,
         termsUrl: null == termsUrl
             ? _value.termsUrl
@@ -211,10 +276,15 @@ class __$$GlobalConfigImplCopyWithImpl<$Res>
 class _$GlobalConfigImpl implements _GlobalConfig {
   const _$GlobalConfigImpl({
     this.appName = 'DakLak Admin',
+    this.slogan = '',
     this.logoUrl = '',
     this.contactPhone = '',
     this.contactEmail = '',
     this.address = '',
+    this.websiteUrl = '',
+    this.socialAccountCount = '4 tài khoản đã nối',
+    this.mapStatus = 'Tích hợp Google Maps',
+    this.lastUpdated = '2 phút trước',
     this.termsUrl = '',
     this.privacyUrl = '',
     this.refundUrl = '',
@@ -226,6 +296,9 @@ class _$GlobalConfigImpl implements _GlobalConfig {
   @override
   @JsonKey()
   final String appName;
+  @override
+  @JsonKey()
+  final String slogan;
   @override
   @JsonKey()
   final String logoUrl;
@@ -240,6 +313,18 @@ class _$GlobalConfigImpl implements _GlobalConfig {
   final String address;
   @override
   @JsonKey()
+  final String websiteUrl;
+  @override
+  @JsonKey()
+  final String socialAccountCount;
+  @override
+  @JsonKey()
+  final String mapStatus;
+  @override
+  @JsonKey()
+  final String lastUpdated;
+  @override
+  @JsonKey()
   final String termsUrl;
   @override
   @JsonKey()
@@ -250,7 +335,7 @@ class _$GlobalConfigImpl implements _GlobalConfig {
 
   @override
   String toString() {
-    return 'GlobalConfig(appName: $appName, logoUrl: $logoUrl, contactPhone: $contactPhone, contactEmail: $contactEmail, address: $address, termsUrl: $termsUrl, privacyUrl: $privacyUrl, refundUrl: $refundUrl)';
+    return 'GlobalConfig(appName: $appName, slogan: $slogan, logoUrl: $logoUrl, contactPhone: $contactPhone, contactEmail: $contactEmail, address: $address, websiteUrl: $websiteUrl, socialAccountCount: $socialAccountCount, mapStatus: $mapStatus, lastUpdated: $lastUpdated, termsUrl: $termsUrl, privacyUrl: $privacyUrl, refundUrl: $refundUrl)';
   }
 
   @override
@@ -259,12 +344,21 @@ class _$GlobalConfigImpl implements _GlobalConfig {
         (other.runtimeType == runtimeType &&
             other is _$GlobalConfigImpl &&
             (identical(other.appName, appName) || other.appName == appName) &&
+            (identical(other.slogan, slogan) || other.slogan == slogan) &&
             (identical(other.logoUrl, logoUrl) || other.logoUrl == logoUrl) &&
             (identical(other.contactPhone, contactPhone) ||
                 other.contactPhone == contactPhone) &&
             (identical(other.contactEmail, contactEmail) ||
                 other.contactEmail == contactEmail) &&
             (identical(other.address, address) || other.address == address) &&
+            (identical(other.websiteUrl, websiteUrl) ||
+                other.websiteUrl == websiteUrl) &&
+            (identical(other.socialAccountCount, socialAccountCount) ||
+                other.socialAccountCount == socialAccountCount) &&
+            (identical(other.mapStatus, mapStatus) ||
+                other.mapStatus == mapStatus) &&
+            (identical(other.lastUpdated, lastUpdated) ||
+                other.lastUpdated == lastUpdated) &&
             (identical(other.termsUrl, termsUrl) ||
                 other.termsUrl == termsUrl) &&
             (identical(other.privacyUrl, privacyUrl) ||
@@ -278,10 +372,15 @@ class _$GlobalConfigImpl implements _GlobalConfig {
   int get hashCode => Object.hash(
     runtimeType,
     appName,
+    slogan,
     logoUrl,
     contactPhone,
     contactEmail,
     address,
+    websiteUrl,
+    socialAccountCount,
+    mapStatus,
+    lastUpdated,
     termsUrl,
     privacyUrl,
     refundUrl,
@@ -304,10 +403,15 @@ class _$GlobalConfigImpl implements _GlobalConfig {
 abstract class _GlobalConfig implements GlobalConfig {
   const factory _GlobalConfig({
     final String appName,
+    final String slogan,
     final String logoUrl,
     final String contactPhone,
     final String contactEmail,
     final String address,
+    final String websiteUrl,
+    final String socialAccountCount,
+    final String mapStatus,
+    final String lastUpdated,
     final String termsUrl,
     final String privacyUrl,
     final String refundUrl,
@@ -319,6 +423,8 @@ abstract class _GlobalConfig implements GlobalConfig {
   @override
   String get appName;
   @override
+  String get slogan;
+  @override
   String get logoUrl;
   @override
   String get contactPhone;
@@ -326,6 +432,14 @@ abstract class _GlobalConfig implements GlobalConfig {
   String get contactEmail;
   @override
   String get address;
+  @override
+  String get websiteUrl;
+  @override
+  String get socialAccountCount;
+  @override
+  String get mapStatus;
+  @override
+  String get lastUpdated;
   @override
   String get termsUrl;
   @override

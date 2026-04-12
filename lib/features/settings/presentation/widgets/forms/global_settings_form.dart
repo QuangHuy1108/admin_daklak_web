@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../logic/settings_provider.dart';
 import '../common/config_card.dart';
+import '../common/logo_uploader_segment.dart';
+import '../common/summary_action_card.dart';
+import '../common/settings_form_header.dart';
+import '../common/settings_form_footer.dart';
+import 'package:admin_daklak_web/core/widgets/common/custom_admin_input.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 
 class GlobalSettingsForm extends StatelessWidget {
   const GlobalSettingsForm({super.key});
@@ -16,83 +22,166 @@ class GlobalSettingsForm extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Hệ thống chung',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+        // 1. Premium Header
+        SettingsFormHeader(
+          title: 'Hệ thống chung',
+          subtitle: 'Quản lý cấu hình cốt lõi và định danh thương hiệu',
+          isLoading: provider.isLoading,
+          onSave: () => provider.saveGlobal(),
         ),
-        const SizedBox(height: 8),
-        const Text('Quản lý thông tin thương hiệu và trạng thái vận hành của toàn bộ hệ thống.'),
-        const SizedBox(height: 32),
         
+        // 2. Status Bar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border.withOpacity(0.5)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.statusSuccess,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Trạng thái hệ thống: ',
+                    style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                  ),
+                  const Text(
+                    'Ổn định',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textHeading),
+                  ),
+                ],
+              ),
+              Text(
+                'Cập nhật lần cuối: ${config.lastUpdated}',
+                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 32),
+
+        // 3. Brand Information segment
         ConfigCard(
           title: 'Thông tin thương hiệu',
-          icon: Icons.branding_watermark,
-          children: [
-            TextFormField(
-              initialValue: config.appName,
-              decoration: const InputDecoration(
-                labelText: 'Tên ứng dụng',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (val) => provider.updateGlobal(config.copyWith(appName: val)),
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              initialValue: config.logoUrl,
-              decoration: const InputDecoration(
-                labelText: 'Logo URL',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.link),
-              ),
-              onChanged: (val) => provider.updateGlobal(config.copyWith(logoUrl: val)),
-            ),
-          ],
-        ),
-        
-        const SizedBox(height: 24),
-        
-        ConfigCard(
-          title: 'Thông tin liên hệ',
-          icon: Icons.contact_support,
+          icon: Icons.campaign_rounded,
+          iconCircleColor: const Color(0xFFF0EAE0),
           children: [
             Row(
               children: [
                 Expanded(
-                  child: TextFormField(
-                    initialValue: config.contactPhone,
-                    decoration: const InputDecoration(
-                      labelText: 'Số điện thoại',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (val) => provider.updateGlobal(config.copyWith(contactPhone: val)),
+                  child: CustomAdminInput(
+                    label: 'Tên thương hiệu hiển thị',
+                    initialValue: config.appName,
+                    onChanged: (val) => provider.updateGlobal(config.copyWith(appName: val)),
                   ),
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 24),
                 Expanded(
-                  child: TextFormField(
-                    initialValue: config.contactEmail,
-                    decoration: const InputDecoration(
-                      labelText: 'Email liên hệ',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (val) => provider.updateGlobal(config.copyWith(contactEmail: val)),
+                  child: CustomAdminInput(
+                    label: 'Slogan / Tagline',
+                    initialValue: config.slogan,
+                    onChanged: (val) => provider.updateGlobal(config.copyWith(slogan: val)),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            TextFormField(
+            const SizedBox(height: 32),
+            LogoUploaderSegment(
+              initialLogoUrl: config.logoUrl,
+              appInitial: config.appName.isNotEmpty ? config.appName[0].toUpperCase() : 'T',
+              onLogoChanged: (bytes) {
+                // actual upload logic would go here
+              },
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // 4. Contact Information segment
+        ConfigCard(
+          title: 'Thông tin liên hệ',
+          icon: Icons.contact_support_rounded,
+          iconCircleColor: const Color(0xFFE8ECEB),
+          children: [
+             Row(
+              children: [
+                Expanded(
+                  child: CustomAdminInput(
+                    label: 'Email hỗ trợ',
+                    initialValue: config.contactEmail,
+                    prefixIcon: Icons.mail_rounded,
+                    onChanged: (val) => provider.updateGlobal(config.copyWith(contactEmail: val)),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  child: CustomAdminInput(
+                    label: 'Số điện thoại',
+                    initialValue: config.contactPhone,
+                    prefixIcon: Icons.phone_rounded,
+                    onChanged: (val) => provider.updateGlobal(config.copyWith(contactPhone: val)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            CustomAdminInput(
+              label: 'Địa chỉ văn phòng chính',
               initialValue: config.address,
-              decoration: const InputDecoration(
-                labelText: 'Địa chỉ trụ sở',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
+              prefixIcon: Icons.location_pin,
+              maxLines: 1,
               onChanged: (val) => provider.updateGlobal(config.copyWith(address: val)),
             ),
           ],
         ),
-        
+
+        const SizedBox(height: 16),
+
+        // 5. Action Summary Grid
+        Row(
+          children: [
+            SummaryActionCard(
+              icon: Icons.public_rounded,
+              label: 'WEBSITE',
+              value: config.websiteUrl.isEmpty ? 'Chưa cấu hình' : config.websiteUrl,
+              onTap: () {},
+            ),
+            const SizedBox(width: 16),
+            SummaryActionCard(
+              icon: Icons.share_rounded,
+              label: 'MẠNG XÃ HỘI',
+              value: config.socialAccountCount,
+              onTap: () {},
+            ),
+            const SizedBox(width: 16),
+            SummaryActionCard(
+              icon: Icons.map_rounded,
+              label: 'BẢN ĐỒ',
+              value: config.mapStatus,
+              onTap: () {},
+            ),
+          ],
+        ),
+
+        // 6. Premium Footer
+        SettingsFormFooter(
+          isLoading: provider.isLoading,
+          onSave: () => provider.saveGlobal(),
+          onDiscard: () => provider.discardChanges(),
+        ),
       ],
     );
   }

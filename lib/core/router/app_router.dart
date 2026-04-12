@@ -21,6 +21,8 @@ import '../../features/finance/screens/finance_screen.dart';
 import '../../features/reports/screens/report_screen.dart';
 import '../../features/settings/presentation/screens/settings_main_screen.dart';
 import '../../features/logs/screens/audit_logs_screen.dart';
+import '../../features/expert_management/screens/expert_verification_screen.dart';
+import '../../features/system_logs/screens/system_log_screen.dart';
 
 
 
@@ -120,6 +122,14 @@ class AppRouter {
             GoRoute(
               path: '/audit-logs',
               builder: (context, state) => const AuditLogsScreen(),
+            ),
+            GoRoute(
+              path: '/expert-verifications',
+              builder: (context, state) => const ExpertVerificationScreen(),
+            ),
+            GoRoute(
+              path: '/system-logs',
+              builder: (context, state) => const SystemLogScreen(),
             ),
           ],
         ),

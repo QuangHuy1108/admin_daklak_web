@@ -3,6 +3,10 @@ import 'package:provider/provider.dart';
 import '../../../logic/settings_provider.dart';
 import '../common/config_card.dart';
 import '../common/secure_text_field.dart';
+import '../common/settings_form_header.dart';
+import '../common/settings_form_footer.dart';
+import 'package:admin_daklak_web/core/widgets/common/custom_admin_input.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 
 class AISettingsForm extends StatelessWidget {
   const AISettingsForm({super.key});
@@ -17,66 +21,84 @@ class AISettingsForm extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'AI & Tích hợp',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+        // 1. Premium Header
+        SettingsFormHeader(
+          title: 'AI & Tích hợp',
+          subtitle: 'Cấu hình các thành phần trí tuệ nhân tạo và các dịch vụ tích hợp bên thứ ba.',
+          isLoading: provider.isLoading,
+          onSave: () => provider.saveAI(),
         ),
-        const SizedBox(height: 8),
-        const Text('Cấu hình các thành phần trí tuệ nhân tạo và các dịch vụ tích hợp bên thứ ba.'),
-        const SizedBox(height: 32),
 
+        // 2. Gemini & LLM Config
         ConfigCard(
           title: 'Cấu hình Gemini & LLM',
-          icon: Icons.auto_awesome,
+          icon: Icons.auto_awesome_rounded,
+          iconCircleColor: const Color(0xFFF3E5F5),
           children: [
-            DropdownButtonFormField<String>(
-              value: config.selectedModel,
-              decoration: const InputDecoration(
-                labelText: 'Model AI chính',
-                border: OutlineInputBorder(),
-              ),
-              items: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gpt-4o', 'gpt-4o-mini']
-                  .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) provider.updateAI(config.copyWith(selectedModel: val));
-              },
-            ),
-            const SizedBox(height: 24),
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Temperature: '),
-                Expanded(
+                const Text('Model AI chính', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: config.selectedModel,
+                  decoration: _dropdownDecoration(),
+                  items: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gpt-4o', 'gpt-4o-mini']
+                      .map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) provider.updateAI(config.copyWith(selectedModel: val));
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Temperature', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
+                    Text(config.temperature.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: AppColors.primary,
+                    inactiveTrackColor: AppColors.border,
+                    thumbColor: AppColors.primary,
+                    overlayColor: AppColors.primary.withOpacity(0.1),
+                    trackHeight: 4,
+                  ),
                   child: Slider(
                     value: config.temperature,
                     min: 0,
                     max: 1.0,
                     divisions: 10,
-                    label: config.temperature.toString(),
                     onChanged: (val) => provider.updateAI(config.copyWith(temperature: val)),
                   ),
                 ),
-                Text(config.temperature.toStringAsFixed(1)),
               ],
             ),
-            const SizedBox(height: 20),
-            TextFormField(
+            const SizedBox(height: 32),
+            CustomAdminInput(
+              label: 'System Prompt (Dùng cho chatbot & chuyên gia)',
               initialValue: config.systemPrompt,
-              decoration: const InputDecoration(
-                labelText: 'System Prompt (Dùng cho chatbot & chuyên gia)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 5,
+              maxLines: 4,
               onChanged: (val) => provider.updateAI(config.copyWith(systemPrompt: val)),
             ),
           ],
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
 
+        // 3. API Keys & Secrets
         ConfigCard(
           title: 'API Keys & Secrets',
-          icon: Icons.vpn_key,
+          icon: Icons.vpn_key_rounded,
+          iconCircleColor: const Color(0xFFEFEBE9),
           subtitle: 'Các khóa bí mật dùng để kết nối với các dịch vụ bên thứ ba.',
           children: [
             SecureTextField(
@@ -84,36 +106,43 @@ class AISettingsForm extends StatelessWidget {
               initialValue: config.apiKey,
               onChanged: (val) => provider.updateAI(config.copyWith(apiKey: val)),
             ),
-            const SizedBox(height: 20),
-            SecureTextField(
-              label: 'Weather API Key (OpenWeather)',
-              initialValue: config.weatherApiKey,
-              onChanged: (val) => provider.updateAI(config.copyWith(weatherApiKey: val)),
-            ),
-            const SizedBox(height: 20),
-            SecureTextField(
-              label: 'Email API Key (SendGrid/Mailgun)',
-              initialValue: config.emailApiKey,
-              onChanged: (val) => provider.updateAI(config.copyWith(emailApiKey: val)),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: SecureTextField(
+                    label: 'Weather API Key (OpenWeather)',
+                    initialValue: config.weatherApiKey,
+                    onChanged: (val) => provider.updateAI(config.copyWith(weatherApiKey: val)),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  child: SecureTextField(
+                    label: 'Email API Key (SendGrid/Mailgun)',
+                    initialValue: config.emailApiKey,
+                    onChanged: (val) => provider.updateAI(config.copyWith(emailApiKey: val)),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
 
+        // 4. AI Governance
         ConfigCard(
           title: 'AI Governance',
-          icon: Icons.gavel,
+          icon: Icons.gavel_rounded,
+          iconCircleColor: const Color(0xFFECEFF1),
           children: [
             Row(
               children: [
                 Expanded(
-                  child: TextFormField(
+                  child: CustomAdminInput(
+                    label: 'Hạn mức sử dụng hàng ngày (Request)',
                     initialValue: config.governance.dailyUsageLimit.toString(),
-                    decoration: const InputDecoration(
-                      labelText: 'Hạn mức sử dụng hàng ngày (Request)',
-                      border: OutlineInputBorder(),
-                    ),
                     keyboardType: TextInputType.number,
                     onChanged: (val) {
                       final limit = int.tryParse(val) ?? 0;
@@ -123,42 +152,71 @@ class AISettingsForm extends StatelessWidget {
                     },
                   ),
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 24),
                 Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: config.governance.fallbackModel,
-                    decoration: const InputDecoration(
-                      labelText: 'Model dự phòng',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: ['gpt-4o-mini', 'claude-3-haiku', 'gemini-1.5-flash']
-                        .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        provider.updateAI(config.copyWith(
-                          governance: config.governance.copyWith(fallbackModel: val),
-                        ));
-                      }
-                    },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Model dự phòng', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: config.governance.fallbackModel,
+                        decoration: _dropdownDecoration(),
+                        items: ['gpt-4o-mini', 'claude-3-haiku', 'gemini-1.5-flash']
+                            .map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))))
+                            .toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            provider.updateAI(config.copyWith(
+                              governance: config.governance.copyWith(fallbackModel: val),
+                            ));
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            SwitchListTile(
-              title: const Text('Bật bộ lọc an toàn (Safety Filters)'),
-              subtitle: const Text('Tự động chặn các phản hồi không phù hợp hoặc nguy hiểm.'),
-              value: config.governance.enableSafetyFilters,
-              onChanged: (val) {
-                provider.updateAI(config.copyWith(
-                  governance: config.governance.copyWith(enableSafetyFilters: val),
-                ));
-              },
+            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: SwitchListTile(
+                title: const Text('Bật bộ lọc an toàn (Safety Filters)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                subtitle: const Text('Tự động chặn các phản hồi không phù hợp hoặc nguy hiểm.', style: TextStyle(fontSize: 12)),
+                value: config.governance.enableSafetyFilters,
+                activeColor: AppColors.primary,
+                onChanged: (val) {
+                  provider.updateAI(config.copyWith(
+                    governance: config.governance.copyWith(enableSafetyFilters: val),
+                  ));
+                },
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
           ],
+        ),
+
+        // 5. Premium Footer
+        SettingsFormFooter(
+          isLoading: provider.isLoading,
+          onSave: () => provider.saveAI(),
+          onDiscard: () => provider.discardChanges(),
         ),
       ],
     );
   }
+
+  InputDecoration _dropdownDecoration() => InputDecoration(
+    filled: true,
+    fillColor: AppColors.surfaceVariant.withOpacity(0.4),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+  );
 }

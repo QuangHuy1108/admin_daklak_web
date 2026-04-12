@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../logic/settings_provider.dart';
-import '../widgets/common/sticky_save_bar.dart';
 import '../widgets/forms/global_settings_form.dart';
 import '../widgets/forms/ai_settings_form.dart';
 import '../widgets/forms/business_settings_form.dart';
@@ -11,11 +10,9 @@ import '../widgets/forms/notification_settings_form.dart';
 import '../widgets/forms/localization_settings_form.dart';
 import '../widgets/forms/monitoring_settings_form.dart';
 import '../widgets/forms/backup_settings_form.dart';
-import '../widgets/common/visual_horizontal_nav.dart';
 import '../../data/models/settings_group.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
-import 'package:flutter/gestures.dart';
-import 'dart:ui';
+import 'package:admin_daklak_web/core/constants/app_text_styles.dart';
 
 class SettingsMainScreen extends StatefulWidget {
   const SettingsMainScreen({super.key});
@@ -27,7 +24,7 @@ class SettingsMainScreen extends StatefulWidget {
 class _SettingsMainScreenState extends State<SettingsMainScreen> {
   int _selectedIndex = 0;
 
-  final List<SettingsGroup> _groups = [
+  late final List<SettingsGroup> _groups = [
     SettingsGroup(
       title: 'Hệ thống chung',
       icon: Icons.grid_view_rounded,
@@ -85,76 +82,194 @@ class _SettingsMainScreenState extends State<SettingsMainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDirty = context.watch<SettingsProvider>().isAnyDirty;
-
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
+      backgroundColor: AppColors.scaffoldBg,
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            children: [
-              // Top Horizontal Visual Navigation (Pro Max Rich Card Style)
-              VisualHorizontalNav(
-                groups: _groups,
-                selectedIndex: _selectedIndex,
-                onSelected: (index) => setState(() => _selectedIndex = index),
-              ),
-              
-              // Detail Content
-              Expanded(
-                child: Consumer<SettingsProvider>(
-                  builder: (context, provider, child) {
-                    if (provider.isLoading && provider.global == null) {
-                      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-                    }
-                    
-                    if (provider.errorMessage != null && provider.global == null) {
-                      return Center(
-                        child: Text(
-                          provider.errorMessage!,
-                          style: const TextStyle(color: Colors.redAccent),
-                        ),
-                      );
-                    }
+          // ── Left Sidebar (Master) ───────────────────────────────────
+          _SettingsSidebar(
+            groups: _groups,
+            selectedIndex: _selectedIndex,
+            onSelected: (index) => setState(() => _selectedIndex = index),
+          ),
 
-                    return ScrollConfiguration(
-                      behavior: ScrollConfiguration.of(context).copyWith(
-                        dragDevices: {
-                          PointerDeviceKind.touch,
-                          PointerDeviceKind.mouse,
-                        },
-                      ),
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 32.0),
-                        child: Center(
-                          child: Container(
-                            constraints: const BoxConstraints(maxWidth: 1000),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _groups[_selectedIndex].builder(context),
-                                const SizedBox(height: 120), // Space for Sticky Bar
-                              ],
-                            ),
-                          ),
-                        ),
+          // ── Right Content Area (Detail) ─────────────────────────────
+          Expanded(
+            child: Container(
+              color: AppColors.scaffoldBg,
+              child: Consumer<SettingsProvider>(
+                builder: (context, provider, child) {
+                  if (provider.isLoading && provider.global == null) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: AppColors.primary),
+                    );
+                  }
+
+                  if (provider.errorMessage != null && provider.global == null) {
+                    return Center(
+                      child: Text(
+                        provider.errorMessage!,
+                        style: const TextStyle(color: Colors.redAccent),
                       ),
                     );
-                  },
-                ),
+                  }
+
+                  return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.all(40.0),
+                    child: Center(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 1000),
+                        child: _groups[_selectedIndex].builder(context),
+                      ),
+                    ),
+                  );
+                },
               ),
-            ],
-          ),
-          
-          if (isDirty)
-            const Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: StickySaveBar(),
             ),
+          ),
         ],
       ),
     );
   }
 }
+
+class _SettingsSidebar extends StatelessWidget {
+  final List<SettingsGroup> groups;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  const _SettingsSidebar({
+    required this.groups,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 280,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          right: BorderSide(color: AppColors.border, width: 1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+            child: Text(
+              'CÀI ĐẶT HỆ THỐNG',
+              style: AppTextStyles.subtitle.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: groups.length,
+              itemBuilder: (context, index) {
+                final group = groups[index];
+                final isSelected = index == selectedIndex;
+
+                return _SidebarItem(
+                  title: group.title,
+                  icon: group.icon,
+                  isSelected: isSelected,
+                  onTap: () => onSelected(index),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SidebarItem extends StatefulWidget {
+  final String title;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _SidebarItem({
+    required this.title,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  State<_SidebarItem> createState() => _SidebarItemState();
+}
+
+class _SidebarItemState extends State<_SidebarItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = AppColors.primary;
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: widget.isSelected
+                  ? activeColor.withOpacity(0.1)
+                  : _isHovered
+                      ? AppColors.background.withOpacity(0.5)
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  widget.icon,
+                  size: 20,
+                  color: widget.isSelected ? activeColor : AppColors.textMuted,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: widget.isSelected ? activeColor : AppColors.textBody,
+                    ),
+                  ),
+                ),
+                if (widget.isSelected)
+                  Container(
+                    width: 4,
+                    height: 4,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

@@ -9,12 +9,15 @@ class ConfigCard extends StatelessWidget {
   final List<Widget> children;
   final Widget? trailing;
 
+  final Color? iconCircleColor;
+
   const ConfigCard({
     super.key,
     required this.title,
     this.subtitle,
     this.icon,
     this.trailing,
+    this.iconCircleColor,
     required this.children,
   });
 
@@ -24,26 +27,34 @@ class ConfigCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
         color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20), // More rounded
+        border: Border.all(color: AppColors.border.withOpacity(0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.04), // Subtle shadow
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        padding: const EdgeInsets.all(24), // Unified padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: 20, color: AppColors.primary),
-                  const SizedBox(width: 12),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: iconCircleColor ?? AppColors.background,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, size: 22, color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 16),
                 ],
                 Expanded(
                   child: Column(
@@ -51,13 +62,21 @@ class ConfigCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: AppTextStyles.heading3,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textHeading,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 2),
                         Text(
                           subtitle!,
-                          style: AppTextStyles.subtitle.copyWith(fontSize: 13),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textMuted,
+                          ),
                         ),
                       ],
                     ],
@@ -66,7 +85,7 @@ class ConfigCard extends StatelessWidget {
                 if (trailing != null) trailing!,
               ],
             ),
-            const SizedBox(height: 16), // Trimmed spacing (16px)
+            const SizedBox(height: 28), // Consistent spacing
             ...children,
           ],
         ),
