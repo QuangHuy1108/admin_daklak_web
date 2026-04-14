@@ -4,11 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:admin_daklak_web/features/logs/services/bulk_service.dart';
 import 'package:admin_daklak_web/features/logs/widgets/bulk_action_bar.dart';
 import 'package:admin_daklak_web/features/logs/models/audit_log_model.dart';
+import '../../../core/constants/app_colors.dart';
+import 'package:admin_daklak_web/core/constants/app_text_styles.dart';
 import '../../../core/widgets/common/glass_container.dart';
+import '../../../core/widgets/common/custom_admin_table.dart';
+import '../../../core/widgets/common/custom_admin_toolbar.dart';
 
 class DiseaseManagerScreen extends StatefulWidget {
   const DiseaseManagerScreen({super.key});
@@ -33,12 +36,22 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
   int _currentPage = 1;
   final int _itemsPerPage = 8; // Số item hiển thị trên 1 trang giống thiết kế
 
-  static const List<String> _types = ['Tất cả', 'Côn trùng', 'Nấm', 'Vi-rút', 'Khác'];
+  static const List<String> _types = [
+    'Tất cả',
+    'Côn trùng',
+    'Nấm',
+    'Vi-rút',
+    'Khác',
+  ];
   static const List<String> _sortOptions = ['Mới nhất', 'Mức độ nguy hiểm'];
 
   List<String> _stringToList(String input) {
     if (input.isEmpty) return [];
-    return input.split(RegExp(r'[,\n]')).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    return input
+        .split(RegExp(r'[,\n]'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
   }
 
   void _onSearchChanged(String query) {
@@ -66,15 +79,28 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
 
     final nameController = TextEditingController(text: data['name'] ?? '');
     final seasonController = TextEditingController(text: data['season'] ?? '');
-    final emergencyController = TextEditingController(text: data['emergency_level'] ?? '');
-    final affectedPartsController = TextEditingController(text: (data['affected_parts'] as List? ?? []).join(', '));
-    final symptomsController = TextEditingController(text: (data['symptoms'] as List? ?? []).join('\n'));
-    final treatmentController = TextEditingController(text: (data['treatment'] as List? ?? []).join('\n'));
-    final preventionController = TextEditingController(text: (data['prevention'] as List? ?? []).join('\n'));
-    final tagsController = TextEditingController(text: (data['tags'] as List? ?? []).join(', '));
+    final emergencyController = TextEditingController(
+      text: data['emergency_level'] ?? '',
+    );
+    final affectedPartsController = TextEditingController(
+      text: (data['affected_parts'] as List? ?? []).join(', '),
+    );
+    final symptomsController = TextEditingController(
+      text: (data['symptoms'] as List? ?? []).join('\n'),
+    );
+    final treatmentController = TextEditingController(
+      text: (data['treatment'] as List? ?? []).join('\n'),
+    );
+    final preventionController = TextEditingController(
+      text: (data['prevention'] as List? ?? []).join('\n'),
+    );
+    final tagsController = TextEditingController(
+      text: (data['tags'] as List? ?? []).join(', '),
+    );
 
     String selectedType = data['type'] ?? 'Nấm';
-    if (!_types.contains(selectedType) && selectedType != 'Tất cả') selectedType = 'Khác';
+    if (!_types.contains(selectedType) && selectedType != 'Tất cả')
+      selectedType = 'Khác';
 
     bool isActive = data['isActive'] ?? true;
 
@@ -85,7 +111,12 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) => AlertDialog(
-          title: Text(isEditing ? 'Chỉnh sửa: ${data['name']}' : 'Thêm Sâu bệnh Mới', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          title: Text(
+            isEditing ? 'Chỉnh sửa: ${data['name']}' : 'Thêm Sâu bệnh Mới',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
           content: SizedBox(
             width: 700,
             child: SingleChildScrollView(
@@ -93,111 +124,229 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                 children: [
                   InkWell(
                     onTap: () async {
-                      final XFile? image = await ImagePicker().pickImage(source: ImageSource.gallery);
+                      final XFile? image = await ImagePicker().pickImage(
+                        source: ImageSource.gallery,
+                      );
                       if (image != null) {
                         final bytes = await image.readAsBytes();
                         setStateDialog(() => newImageBytes = bytes);
                       }
                     },
                     child: Container(
-                      height: 180, width: double.infinity,
+                      height: 180,
+                      width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey[200],
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white12
+                            : Colors.grey[200],
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: newImageBytes != null
                           ? Image.memory(newImageBytes!, fit: BoxFit.contain)
-                          : (existingImageUrl != null ? Image.network(existingImageUrl) : Icon(Icons.add_a_photo, size: 50, color: Theme.of(context).textTheme.bodySmall?.color)),
+                          : (existingImageUrl != null
+                                ? Image.network(existingImageUrl)
+                                : Icon(
+                                    Icons.add_a_photo,
+                                    size: 50,
+                                    color: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.color,
+                                  )),
                     ),
                   ),
                   const SizedBox(height: 15),
                   Row(
                     children: [
-                      Expanded(child: TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Tên bệnh', border: OutlineInputBorder()))),
+                      Expanded(
+                        child: TextField(
+                          controller: nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Tên bệnh',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 10),
                       Switch(
                         value: isActive,
-                        onChanged: (val) => setStateDialog(() => isActive = val),
-                        activeColor: Theme.of(context).primaryColor,
+                        onChanged: (val) =>
+                            setStateDialog(() => isActive = val),
+                        activeThumbColor: Theme.of(context).primaryColor,
                       ),
-                      Text(isActive ? "Đã duyệt (Đang hiển thị)" : "Chờ xử lý (Đang ẩn)", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: isActive ? Colors.green : Colors.red, fontWeight: FontWeight.bold)),
+                      Text(
+                        isActive
+                            ? "Đã duyệt (Đang hiển thị)"
+                            : "Chờ xử lý (Đang ẩn)",
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: isActive ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Expanded(child: DropdownButtonFormField<String>(
-                        value: selectedType,
-                        items: ['Côn trùng', 'Nấm', 'Vi-rút', 'Khác'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                        onChanged: (v) => selectedType = v!,
-                        decoration: const InputDecoration(labelText: 'Loại', border: OutlineInputBorder()),
-                      )),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: selectedType,
+                          items: ['Côn trùng', 'Nấm', 'Vi-rút', 'Khác']
+                              .map(
+                                (e) =>
+                                    DropdownMenuItem(value: e, child: Text(e)),
+                              )
+                              .toList(),
+                          onChanged: (v) => selectedType = v!,
+                          decoration: const InputDecoration(
+                            labelText: 'Loại',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 10),
-                      Expanded(child: TextField(controller: seasonController, decoration: const InputDecoration(labelText: 'Mùa vụ (VD: Mùa mưa)', border: OutlineInputBorder()))),
+                      Expanded(
+                        child: TextField(
+                          controller: seasonController,
+                          decoration: const InputDecoration(
+                            labelText: 'Mùa vụ (VD: Mùa mưa)',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Expanded(child: TextField(controller: emergencyController, decoration: const InputDecoration(labelText: 'Mức độ khẩn cấp', border: OutlineInputBorder()))),
+                      Expanded(
+                        child: TextField(
+                          controller: emergencyController,
+                          decoration: const InputDecoration(
+                            labelText: 'Mức độ khẩn cấp',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 10),
-                      Expanded(child: TextField(controller: affectedPartsController, decoration: const InputDecoration(labelText: 'Bộ phận bị hại (cách bởi dấu phẩy)', border: OutlineInputBorder()))),
+                      Expanded(
+                        child: TextField(
+                          controller: affectedPartsController,
+                          decoration: const InputDecoration(
+                            labelText: 'Bộ phận bị hại (cách bởi dấu phẩy)',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  TextField(controller: symptomsController, maxLines: 3, decoration: const InputDecoration(labelText: 'Triệu chứng (mỗi dòng 1 ý)', border: OutlineInputBorder())),
+                  TextField(
+                    controller: symptomsController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Triệu chứng (mỗi dòng 1 ý)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
                   const SizedBox(height: 10),
-                  TextField(controller: treatmentController, maxLines: 3, decoration: const InputDecoration(labelText: 'Cách điều trị (mỗi dòng 1 ý)', border: OutlineInputBorder())),
+                  TextField(
+                    controller: treatmentController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Cách điều trị (mỗi dòng 1 ý)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
                   const SizedBox(height: 10),
-                  TextField(controller: preventionController, maxLines: 3, decoration: const InputDecoration(labelText: 'Cách phòng ngừa (mỗi dòng 1 ý)', border: OutlineInputBorder())),
+                  TextField(
+                    controller: preventionController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Cách phòng ngừa (mỗi dòng 1 ý)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
                   const SizedBox(height: 10),
-                  TextField(controller: tagsController, decoration: const InputDecoration(labelText: 'Tags từ khóa (cách bởi dấu phẩy)', border: OutlineInputBorder())),
+                  TextField(
+                    controller: tagsController,
+                    decoration: const InputDecoration(
+                      labelText: 'Tags từ khóa (cách bởi dấu phẩy)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text('Hủy', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color))),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Hủy',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+              ),
+            ),
             ElevatedButton(
-              onPressed: _isLoading ? null : () async {
-                setStateDialog(() => _isLoading = true);
-                try {
-                  String finalImageUrl = existingImageUrl ?? '';
-                  if (newImageBytes != null) {
-                    String fileName = 'pest_diseases/${DateTime.now().millisecondsSinceEpoch}.png';
-                    TaskSnapshot snapshot = await FirebaseStorage.instance.ref(fileName).putData(newImageBytes!);
-                    finalImageUrl = await snapshot.ref.getDownloadURL();
-                  }
+              onPressed: _isLoading
+                  ? null
+                  : () async {
+                      setStateDialog(() => _isLoading = true);
+                      try {
+                        String finalImageUrl = existingImageUrl ?? '';
+                        if (newImageBytes != null) {
+                          String fileName =
+                              'pest_diseases/${DateTime.now().millisecondsSinceEpoch}.png';
+                          TaskSnapshot snapshot = await FirebaseStorage.instance
+                              .ref(fileName)
+                              .putData(newImageBytes!);
+                          finalImageUrl = await snapshot.ref.getDownloadURL();
+                        }
 
-                  Map<String, dynamic> diseaseData = {
-                    'name': nameController.text.trim(),
-                    'type': selectedType,
-                    'season': seasonController.text.trim(),
-                    'emergency_level': emergencyController.text.trim(),
-                    'isActive': isActive,
-                    'affected_parts': _stringToList(affectedPartsController.text),
-                    'symptoms': _stringToList(symptomsController.text),
-                    'treatment': _stringToList(treatmentController.text),
-                    'prevention': _stringToList(preventionController.text),
-                    'tags': _stringToList(tagsController.text),
-                    'imageUrl': finalImageUrl,
-                    'updatedAt': FieldValue.serverTimestamp(),
-                  };
+                        Map<String, dynamic> diseaseData = {
+                          'name': nameController.text.trim(),
+                          'type': selectedType,
+                          'season': seasonController.text.trim(),
+                          'emergency_level': emergencyController.text.trim(),
+                          'isActive': isActive,
+                          'affected_parts': _stringToList(
+                            affectedPartsController.text,
+                          ),
+                          'symptoms': _stringToList(symptomsController.text),
+                          'treatment': _stringToList(treatmentController.text),
+                          'prevention': _stringToList(
+                            preventionController.text,
+                          ),
+                          'tags': _stringToList(tagsController.text),
+                          'imageUrl': finalImageUrl,
+                          'updatedAt': FieldValue.serverTimestamp(),
+                        };
 
-                  if (isEditing) {
-                    await existingDoc.reference.update(diseaseData);
-                  } else {
-                    diseaseData['createdAt'] = FieldValue.serverTimestamp();
-                    await _firestore.collection('pest_diseases').add(diseaseData);
-                  }
+                        if (isEditing) {
+                          await existingDoc.reference.update(diseaseData);
+                        } else {
+                          diseaseData['createdAt'] =
+                              FieldValue.serverTimestamp();
+                          await _firestore
+                              .collection('pest_diseases')
+                              .add(diseaseData);
+                        }
 
-                  if (context.mounted) Navigator.pop(context);
-                } finally {
-                  setStateDialog(() => _isLoading = false);
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
-              child: Text('Lưu dữ liệu', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
+                        if (context.mounted) Navigator.pop(context);
+                      } finally {
+                        setStateDialog(() => _isLoading = false);
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+              ),
+              child: Text(
+                'Lưu dữ liệu',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -213,13 +362,23 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa "${doc['name']}" không? Hành động này không thể hoàn tác.'),
+        content: Text(
+          'Bạn có chắc chắn muốn xóa "${doc['name']}" không? Hành động này không thể hoàn tác.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text('Xóa vĩnh viễn', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
+            child: Text(
+              'Xóa vĩnh viễn',
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -230,20 +389,33 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
         setState(() => _isLoading = true);
         final data = doc.data() as Map<String, dynamic>;
 
-        if (data['imageUrl'] != null && data['imageUrl'].toString().contains('firebase')) {
+        if (data['imageUrl'] != null &&
+            data['imageUrl'].toString().contains('firebase')) {
           try {
-            await FirebaseStorage.instance.refFromURL(data['imageUrl']).delete();
+            await FirebaseStorage.instance
+                .refFromURL(data['imageUrl'])
+                .delete();
           } catch (e) {
             debugPrint("Lỗi khi xóa ảnh: $e");
           }
         }
         await doc.reference.delete();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xóa dữ liệu thành công!'), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã xóa dữ liệu thành công!'),
+              backgroundColor: Colors.green,
+            ),
+          );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi khi xóa: $e'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi khi xóa: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       } finally {
         if (mounted) setState(() => _isLoading = false);
@@ -256,715 +428,1236 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
   // =========================================================================
   @override
   Widget build(BuildContext context) {
-    const Color primaryGreen = Color(0xFF1B4332);
-    const Color bgSlate = Color(0xFFF8F9FA);
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
-            stream: _firestore.collection('pest_diseases').snapshots(),
-            builder: (context, pestSnapshot) {
-              return StreamBuilder<QuerySnapshot>(
-                  stream: _firestore.collection('ai_chat_logs').snapshots(),
-                  builder: (context, aiSnapshot) {
-                    if (!pestSnapshot.hasData || !aiSnapshot.hasData) {
-                      return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
+          stream: _firestore.collection('pest_diseases').snapshots(),
+          builder: (context, pestSnapshot) {
+            return StreamBuilder<QuerySnapshot>(
+              stream: _firestore.collection('ai_chat_logs').snapshots(),
+              builder: (context, aiSnapshot) {
+                if (!pestSnapshot.hasData || !aiSnapshot.hasData) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  );
+                }
+
+                final pestDocs = pestSnapshot.data!.docs;
+                final aiDocs = aiSnapshot.data!.docs;
+
+                // ====================================================================
+                // 1. TÍNH TOÁN DỮ LIỆU THẬT
+                // ====================================================================
+
+                final now = DateTime.now();
+                final sevenDaysAgo = now.subtract(const Duration(days: 7));
+
+                int totalPests = pestDocs.length;
+                int newIn7Days = 0;
+                int treatableCount = 0;
+                int untreatableCount = 0;
+
+                for (var doc in pestDocs) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  if (data['createdAt'] != null) {
+                    final createdAtDate = (data['createdAt'] as Timestamp)
+                        .toDate();
+                    if (createdAtDate.isAfter(sevenDaysAgo)) newIn7Days++;
+                  }
+                  final treatment = data['treatment'] as List?;
+                  if (treatment != null && treatment.isNotEmpty) {
+                    treatableCount++;
+                  } else {
+                    untreatableCount++;
+                  }
+                }
+
+                double treatableRate = totalPests == 0
+                    ? 0
+                    : (treatableCount / totalPests * 100);
+                double untreatableRate = totalPests == 0
+                    ? 0
+                    : (untreatableCount / totalPests * 100);
+
+                // --- Dữ liệu Hàng Phân Tích ---
+                Map<String, int> typeCounts = {
+                  'Côn trùng': 0,
+                  'Nấm': 0,
+                  'Vi-rút': 0,
+                  'Vi khuẩn': 0,
+                  'Khác': 0,
+                };
+                for (var doc in pestDocs) {
+                  String type =
+                      (doc.data() as Map<String, dynamic>)['type'] ?? 'Khác';
+                  if (type.toLowerCase().contains('côn trùng')) {
+                    type = 'Côn trùng';
+                  } else if (type.toLowerCase().contains('nấm')) {
+                    type = 'Nấm';
+                  } else if (type.toLowerCase().contains('vi-rút') ||
+                      type.toLowerCase().contains('virus')) {
+                    type = 'Vi-rút';
+                  } else if (type.toLowerCase().contains('vi khuẩn')) {
+                    type = 'Vi khuẩn';
+                  } else {
+                    type = 'Khác';
+                  }
+
+                  typeCounts[type] = (typeCounts[type] ?? 0) + 1;
+                }
+                int maxTypeCount = typeCounts.isEmpty
+                    ? 1
+                    : typeCounts.values.reduce((a, b) => a > b ? a : b);
+                if (maxTypeCount == 0) maxTypeCount = 1;
+
+                Map<String, int> topCategories = {};
+                for (var doc in aiDocs) {
+                  final cat = (doc.data() as Map)['category_tag']?.toString();
+                  if (cat != null && cat.isNotEmpty) {
+                    topCategories[cat] = (topCategories[cat] ?? 0) + 1;
+                  }
+                }
+                var sortedTop = topCategories.entries.toList()
+                  ..sort((a, b) => b.value.compareTo(a.value));
+                int totalAILogs = aiDocs.length;
+
+                var pendingPestsList = pestDocs
+                    .where(
+                      (doc) =>
+                          (doc.data() as Map<String, dynamic>)['isActive'] ==
+                          false,
+                    )
+                    .toList();
+                int pendingCount = pendingPestsList.length;
+
+                // --- Dữ liệu cho Bảng (Table) kèm Lọc thông minh ---
+                var filteredDocs = pestDocs.where((doc) {
+                  var data = doc.data() as Map<String, dynamic>;
+
+                  // Lọc theo Search
+                  bool matchesSearch = (data['name'] ?? '')
+                      .toLowerCase()
+                      .contains(_searchQuery);
+
+                  // Lọc theo Tab Type linh hoạt hơn (dùng contains để bao quát dữ liệu đa dạng)
+                  bool matchesType = false;
+                  if (_selectedFilterType == 'Tất cả') {
+                    matchesType = true;
+                  } else {
+                    String docType = (data['type'] ?? '')
+                        .toString()
+                        .toLowerCase();
+                    String targetType = _selectedFilterType.toLowerCase();
+                    if (docType.contains(targetType)) {
+                      matchesType = true;
+                    } else if (targetType == 'khác' &&
+                        !docType.contains('côn trùng') &&
+                        !docType.contains('nấm') &&
+                        !docType.contains('vi-rút') &&
+                        !docType.contains('vi khuẩn')) {
+                      matchesType = true;
                     }
+                  }
 
-                    final pestDocs = pestSnapshot.data!.docs;
-                    final aiDocs = aiSnapshot.data!.docs;
+                  // Lọc theo Trạng thái (Pending View)
+                  bool matchesStatus = _isViewingPending
+                      ? (data['isActive'] == false)
+                      : (data['isActive'] == true);
 
-                    // ====================================================================
-                    // 1. TÍNH TOÁN DỮ LIỆU THẬT
-                    // ====================================================================
+                  return matchesSearch && matchesType && matchesStatus;
+                }).toList();
 
-                    final now = DateTime.now();
-                    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+                // Sort
+                filteredDocs.sort((a, b) {
+                  var dataA = a.data() as Map<String, dynamic>;
+                  var dataB = b.data() as Map<String, dynamic>;
+                  if (_sortBy == 'Mức độ nguy hiểm') {
+                    return (dataB['emergency_level'] ?? '').compareTo(
+                      dataA['emergency_level'] ?? '',
+                    );
+                  } else {
+                    Timestamp tA = dataA['createdAt'] ?? Timestamp.now();
+                    Timestamp tB = dataB['createdAt'] ?? Timestamp.now();
+                    return tB.compareTo(tA);
+                  }
+                });
 
-                    int totalPests = pestDocs.length;
-                    int newIn7Days = 0;
-                    int treatableCount = 0;
-                    int untreatableCount = 0;
+                // ====================================================================
+                // XỬ LÝ PHÂN TRANG (PAGINATION)
+                // ====================================================================
+                int totalFilteredItems = filteredDocs.length;
+                int totalPages = (totalFilteredItems / _itemsPerPage).ceil();
 
-                    for (var doc in pestDocs) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      if (data['createdAt'] != null) {
-                        final createdAtDate = (data['createdAt'] as Timestamp).toDate();
-                        if (createdAtDate.isAfter(sevenDaysAgo)) newIn7Days++;
-                      }
-                      final treatment = data['treatment'] as List?;
-                      if (treatment != null && treatment.isNotEmpty) {
-                        treatableCount++;
-                      } else {
-                        untreatableCount++;
-                      }
-                    }
+                // Đảm bảo trang hiện tại không vượt quá tổng số trang
+                if (_currentPage > totalPages && totalPages > 0)
+                  _currentPage = totalPages;
 
-                    double treatableRate = totalPests == 0 ? 0 : (treatableCount / totalPests * 100);
-                    double untreatableRate = totalPests == 0 ? 0 : (untreatableCount / totalPests * 100);
+                // Cắt danh sách data theo trang hiện tại
+                var paginatedDocs = filteredDocs
+                    .skip((_currentPage - 1) * _itemsPerPage)
+                    .take(_itemsPerPage)
+                    .toList();
 
-                    // --- Dữ liệu Hàng Phân Tích ---
-                    Map<String, int> typeCounts = {'Côn trùng': 0, 'Nấm': 0, 'Vi-rút': 0, 'Vi khuẩn': 0, 'Khác': 0};
-                    for (var doc in pestDocs) {
-                      String type = (doc.data() as Map<String, dynamic>)['type'] ?? 'Khác';
-                      if(type.toLowerCase().contains('côn trùng')) type = 'Côn trùng';
-                      else if(type.toLowerCase().contains('nấm')) type = 'Nấm';
-                      else if(type.toLowerCase().contains('vi-rút') || type.toLowerCase().contains('virus')) type = 'Vi-rút';
-                      else if(type.toLowerCase().contains('vi khuẩn')) type = 'Vi khuẩn';
-                      else type = 'Khác';
-
-                      typeCounts[type] = (typeCounts[type] ?? 0) + 1;
-                    }
-                    int maxTypeCount = typeCounts.isEmpty ? 1 : typeCounts.values.reduce((a, b) => a > b ? a : b);
-                    if (maxTypeCount == 0) maxTypeCount = 1;
-
-                    Map<String, int> topCategories = {};
-                    for (var doc in aiDocs) {
-                      final cat = (doc.data() as Map)['category_tag']?.toString();
-                      if (cat != null && cat.isNotEmpty) {
-                        topCategories[cat] = (topCategories[cat] ?? 0) + 1;
-                      }
-                    }
-                    var sortedTop = topCategories.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-                    int totalAILogs = aiDocs.length;
-
-                    var pendingPestsList = pestDocs.where((doc) => (doc.data() as Map<String, dynamic>)['isActive'] == false).toList();
-                    int pendingCount = pendingPestsList.length;
-
-                    // --- Dữ liệu cho Bảng (Table) kèm Lọc thông minh ---
-                    var filteredDocs = pestDocs.where((doc) {
-                      var data = doc.data() as Map<String, dynamic>;
-
-                      // Lọc theo Search
-                      bool matchesSearch = (data['name'] ?? '').toLowerCase().contains(_searchQuery);
-
-                      // Lọc theo Tab Type linh hoạt hơn (dùng contains để bao quát dữ liệu đa dạng)
-                      bool matchesType = false;
-                      if (_selectedFilterType == 'Tất cả') {
-                        matchesType = true;
-                      } else {
-                        String docType = (data['type'] ?? '').toString().toLowerCase();
-                        String targetType = _selectedFilterType.toLowerCase();
-                        if (docType.contains(targetType)) {
-                          matchesType = true;
-                        } else if (targetType == 'khác' &&
-                            !docType.contains('côn trùng') &&
-                            !docType.contains('nấm') &&
-                            !docType.contains('vi-rút') &&
-                            !docType.contains('vi khuẩn')) {
-                          matchesType = true;
-                        }
-                      }
-
-                      // Lọc theo Trạng thái (Pending View)
-                      bool matchesStatus = _isViewingPending ? (data['isActive'] == false) : (data['isActive'] == true);
-
-                      return matchesSearch && matchesType && matchesStatus;
-                    }).toList();
-
-                    // Sort
-                    filteredDocs.sort((a, b) {
-                      var dataA = a.data() as Map<String, dynamic>;
-                      var dataB = b.data() as Map<String, dynamic>;
-                      if (_sortBy == 'Mức độ nguy hiểm') {
-                        return (dataB['emergency_level'] ?? '').compareTo(dataA['emergency_level'] ?? '');
-                      } else {
-                        Timestamp tA = dataA['createdAt'] ?? Timestamp.now();
-                        Timestamp tB = dataB['createdAt'] ?? Timestamp.now();
-                        return tB.compareTo(tA);
-                      }
-                    });
-
-                    // ====================================================================
-                    // XỬ LÝ PHÂN TRANG (PAGINATION)
-                    // ====================================================================
-                    int totalFilteredItems = filteredDocs.length;
-                    int totalPages = (totalFilteredItems / _itemsPerPage).ceil();
-
-                    // Đảm bảo trang hiện tại không vượt quá tổng số trang
-                    if (_currentPage > totalPages && totalPages > 0) _currentPage = totalPages;
-
-                    // Cắt danh sách data theo trang hiện tại
-                    var paginatedDocs = filteredDocs
-                        .skip((_currentPage - 1) * _itemsPerPage)
-                        .take(_itemsPerPage)
-                        .toList();
-
-                    // ====================================================================
-                    // 2. VẼ GIAO DIỆN
-                    // ====================================================================
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                // ====================================================================
+                // 2. VẼ GIAO DIỆN
+                // ====================================================================
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Header
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      if (_isViewingPending)
-                                        IconButton(
-                                          icon: Icon(Icons.arrow_back, color: AppColors.textHeading, size: 28),
-                                          onPressed: () => setState(() {
-                                            _isViewingPending = false;
-                                            _currentPage = 1;
-                                          }),
-                                        ),
-                                      Text(
-                                          _isViewingPending ? "Danh sách Chờ Duyệt" : "Thư viện Sâu Bệnh",
-                                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).colorScheme.onSurface,
-                                          )
+                                  if (_isViewingPending)
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.arrow_back,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
+                                        size: 28,
                                       ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    "Quản lý danh lục sâu bệnh, triệu chứng và giải pháp điều trị.",
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Theme.of(context).textTheme.bodySmall?.color,
+                                      onPressed: () => setState(() {
+                                        _isViewingPending = false;
+                                        _currentPage = 1;
+                                      }),
                                     ),
+                                  Text(
+                                    _isViewingPending
+                                        ? "Danh sách Chờ Duyệt"
+                                        : "Thư viện Sâu Bệnh",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                        ),
                                   ),
                                 ],
                               ),
-                              SizedBox(
-                                width: 300,
-                                child: TextField(
-                                  onChanged: _onSearchChanged,
-                                  decoration: InputDecoration(
-                                    hintText: 'Tìm kiếm sâu bệnh...',
-                                    prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color),
-                                    filled: true,
-                                    fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
-                                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-                                  ),
-                                ),
-                              )
+                              const SizedBox(height: 8),
+                              Text(
+                                "Quản lý danh lục sâu bệnh, triệu chứng và giải pháp điều trị.",
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.color,
+                                    ),
+                              ),
                             ],
                           ),
-                          const SizedBox(height: 24),
-                          if (_selectedIds.isNotEmpty)
-                            BulkActionBar(
-                              selectedCount: _selectedIds.length,
-                              onClearSelection: () => setState(() => _selectedIds.clear()),
-                              actions: [
-                                ElevatedButton.icon(
-                                  onPressed: _handleBulkDeleteDiseases,
-                                  icon: const Icon(Icons.delete_sweep, color: Colors.white, size: 20),
-                                  label: Text("Xóa hàng loạt", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                                ),
-                              ],
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      if (_selectedIds.isNotEmpty)
+                        BulkActionBar(
+                          selectedCount: _selectedIds.length,
+                          onClearSelection: () =>
+                              setState(() => _selectedIds.clear()),
+                          actions: [
+                            ElevatedButton.icon(
+                              onPressed: _handleBulkDeleteDiseases,
+                              icon: const Icon(
+                                Icons.delete_sweep,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              label: Text(
+                                "Xóa hàng loạt",
+                                style: Theme.of(context).textTheme.labelLarge
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
                             ),
-                          const SizedBox(height: 32),
+                          ],
+                        ),
+                      const SizedBox(height: 32),
 
-                          // Chỉ hiển thị KPI và Chart nếu KHÔNG ở màn hình Pending
-                          if (!_isViewingPending) ...[
-                            // (A) HÀNG KPI CHÍNH
-                            Row(
-                              children: [
-                                Expanded(child: _buildKPICardUI("Tổng sâu bệnh", "$totalPests", "Tổng cộng", Colors.orange)),
-                                const SizedBox(width: 16),
-                                Expanded(child: _buildKPICardUI("Thêm mới (7 ngày)", "+$newIn7Days", "Mục mới", Colors.green)),
-                                const SizedBox(width: 16),
-                                Expanded(child: _buildKPICardUI("Tỷ lệ có giải pháp", "${treatableRate.toStringAsFixed(1)}%", null, Colors.green, iconTail: Icons.trending_up)),
-                                const SizedBox(width: 16),
-                                Expanded(child: _buildKPICardUI("Chưa có giải pháp", "${untreatableRate.toStringAsFixed(1)}%", "Cần cập nhật", Colors.green)),
-                              ],
+                      // Chỉ hiển thị KPI và Chart nếu KHÔNG ở màn hình Pending
+                      if (!_isViewingPending) ...[
+                        // (A) HÀNG KPI CHÍNH
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildKPICardUI(
+                                "Tổng sâu bệnh",
+                                "$totalPests",
+                                "Tổng cộng",
+                                Colors.orange,
+                              ),
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildKPICardUI(
+                                "Thêm mới (7 ngày)",
+                                "+$newIn7Days",
+                                "Mục mới",
+                                Colors.green,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildKPICardUI(
+                                "Tỷ lệ có giải pháp",
+                                "${treatableRate.toStringAsFixed(1)}%",
+                                null,
+                                Colors.green,
+                                iconTail: Icons.trending_up,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildKPICardUI(
+                                "Chưa có giải pháp",
+                                "${untreatableRate.toStringAsFixed(1)}%",
+                                "Cần cập nhật",
+                                Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
 
-                            // (B) HÀNG PHÂN TÍCH
-                            SizedBox(
-                              height: 380,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  // Thẻ 1: Biểu đồ
-                                  Expanded(
-                                    flex: 2,
-                                    child: GlassContainer(
-                                      padding: const EdgeInsets.all(32),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                        // (B) HÀNG PHÂN TÍCH
+                        SizedBox(
+                          height: 380,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Thẻ 1: Biểu đồ
+                              Expanded(
+                                flex: 2,
+                                child: GlassContainer(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text("Tỷ trọng Phân loại trong Thư viện", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
-                                                  const SizedBox(height: 4),
-                                                  Text("Phân bổ dữ liệu theo nhóm sinh học", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
-                                                ],
+                                              Text(
+                                                "Tỷ trọng Phân loại trong Thư viện",
+                                                style: AppTextStyles.heading3
+                                                    .copyWith(
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.onSurface,
+                                                    ),
                                               ),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                                decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                                                child: Text("CẬP NHẬT: TH04/2024", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
-                                              )
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                "Phân bổ dữ liệu theo nhóm sinh học",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color: Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall
+                                                          ?.color,
+                                                    ),
+                                              ),
                                             ],
                                           ),
-                                          const SizedBox(height: 40),
-                                          // Biểu đồ cột
-                                          Expanded(
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: ['Côn trùng', 'Nấm', 'Vi-rút', 'Vi khuẩn', 'Khác'].map((key) {
-                                                double heightRatio = (typeCounts[key] ?? 0) / maxTypeCount;
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context)
+                                                  .primaryColor
+                                                  .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                            child: Text(
+                                              "CẬP NHẬT: TH04/2024",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelSmall
+                                                  ?.copyWith(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).primaryColor,
+                                                  ),
+                                            ),
+                                          ),
+                                          // Cột cập nhật
+                                        ],
+                                      ),
+                                      const SizedBox(height: 24),
+                                      // Biểu đồ cột
+                                      Expanded(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceAround,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children:
+                                              [
+                                                'Côn trùng',
+                                                'Nấm',
+                                                'Vi-rút',
+                                                'Vi khuẩn',
+                                                'Khác',
+                                              ].map((key) {
+                                                double heightRatio =
+                                                    (typeCounts[key] ?? 0) /
+                                                    maxTypeCount;
                                                 return Column(
-                                                  mainAxisAlignment: MainAxisAlignment.end,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.end,
                                                   children: [
-                                                    if ((typeCounts[key] ?? 0) > 0)
-                                                      Text("${typeCounts[key]}", style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color)),
+                                                    if ((typeCounts[key] ?? 0) >
+                                                        0)
+                                                      Text(
+                                                        "${typeCounts[key]}",
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .labelMedium
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color:
+                                                                  Theme.of(
+                                                                        context,
+                                                                      )
+                                                                      .textTheme
+                                                                      .bodySmall
+                                                                      ?.color,
+                                                            ),
+                                                      ),
                                                     const SizedBox(height: 8),
                                                     Container(
                                                       width: 35,
-                                                      height: heightRatio * 150 + 5,
-                                                      decoration: BoxDecoration(color: Theme.of(context).primaryColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(6))),
+                                                      height:
+                                                          heightRatio * 150 + 5,
+                                                      decoration: BoxDecoration(
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).primaryColor,
+                                                        borderRadius:
+                                                            const BorderRadius.vertical(
+                                                              top:
+                                                                  Radius.circular(
+                                                                    6,
+                                                                  ),
+                                                            ),
+                                                      ),
                                                     ),
                                                     const SizedBox(height: 12),
-                                                    Text(key.toUpperCase(), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 10, fontWeight: FontWeight.bold)),
+                                                    Text(
+                                                      key.toUpperCase(),
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .labelSmall
+                                                          ?.copyWith(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .textTheme
+                                                                    .bodySmall
+                                                                    ?.color,
+                                                            fontSize: 10,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                    ),
                                                   ],
                                                 );
                                               }).toList(),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 24),
-
-                                  // Cột phải
-                                  Expanded(
-                                    flex: 1,
-                                    child: Column(
-                                      children: [
-                                        // Thẻ Top AI
-                                        Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.all(24),
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.75) : Colors.white.withValues(alpha: 0.75),
-                                            borderRadius: BorderRadius.circular(24),
-                                            border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2), width: 1.5),
-                                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(4, 4))],
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text("TOP CHỦ ĐỀ HỎI AI", style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
-                                              const SizedBox(height: 20),
-                                              if (sortedTop.isEmpty) Text("Chưa có dữ liệu AI", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
-                                              ...List.generate(sortedTop.length > 3 ? 3 : sortedTop.length, (index) {
-                                                double pct = totalAILogs == 0 ? 0 : (sortedTop[index].value / totalAILogs) * 100;
-                                                return Padding(
-                                                  padding: const EdgeInsets.only(bottom: 16),
-                                                  child: Row(
-                                                    children: [
-                                                      Container(
-                                                        width: 32, height: 32,
-                                                        alignment: Alignment.center,
-                                                        decoration: BoxDecoration(color: Theme.of(context).colorScheme.secondaryContainer, borderRadius: BorderRadius.circular(8)),
-                                                        child: Text("0${index + 1}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold, fontSize: 12)),
-                                                      ),
-                                                      const SizedBox(width: 12),
-                                                      Expanded(child: Text(sortedTop[index].key, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis)),
-                                                      Text("${pct.toStringAsFixed(1)}%", style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold)),
-                                                      const SizedBox(width: 8),
-                                                      Icon(Icons.trending_up, color: Theme.of(context).colorScheme.outline, size: 16)
-                                                    ],
-                                                  ),
-                                                );
-                                              })
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        // Thẻ CẦN DUYỆT GẤP (MÀU XANH ĐẬM)
-                                        Expanded(
-                                          child: Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.all(24),
-                                            decoration: BoxDecoration(color: Theme.of(context).primaryColor, borderRadius: BorderRadius.circular(16)),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle)),
-                                                    const SizedBox(width: 8),
-                                                    Text("CẦN XỬ LÝ NGAY", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 12),
-                                                Text("Cần duyệt gấp", style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
-                                                const SizedBox(height: 4),
-                                                Text("$pendingCount mục mới đang chờ xử lý", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70)),
-                                                const Spacer(),
-                                                SizedBox(
-                                                  width: 120,
-                                                  child: ElevatedButton(
-                                                    onPressed: () => setState(() {
-                                                      _isViewingPending = true;
-                                                      _currentPage = 1;
-                                                    }),
-                                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Theme.of(context).primaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
-                                                    child: Text("Xử lý ngay", style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ], // End of Dashboard Top Section
-
-                          // (C) KHU VỰC BẢNG DỮ LIỆU CHÍNH
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // Pills Filter Type
-                              Row(
-                                children: _types.map((type) {
-                                  bool isSelected = _selectedFilterType == type;
-                                  return GestureDetector(
-                                    onTap: () => setState(() {
-                                      _selectedFilterType = type;
-                                      _currentPage = 1; // Reset trang khi đổi tab lọc
-                                    }),
-                                    child: Container(
-                                      margin: const EdgeInsets.only(right: 12),
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? Theme.of(context).primaryColor : (Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.grey.shade200),
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                      child: Text(
-                                          type,
-                                          style: TextStyle(color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                              // Nút Sort và Thêm Mới
-                              Row(
-                                children: [
-                                  // Nút Sort UI Viên Thuốc
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Theme.of(context).dividerColor),
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                    child: DropdownButtonHideUnderline(
-                                      child: DropdownButton<String>(
-                                        value: _sortBy,
-                                        icon: Icon(Icons.sort, color: Theme.of(context).textTheme.bodySmall?.color),
-                                        items: _sortOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 14)))).toList(),
-                                        onChanged: (v) => setState(() {
-                                          _sortBy = v!;
-                                          _currentPage = 1;
-                                        }),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  ElevatedButton.icon(
-                                    onPressed: () => _showDiseaseFormDialog(),
-                                    icon: const Icon(Icons.add, color: Colors.white, size: 18),
-                                    label: const Text("Thêm Sâu Bệnh", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Theme.of(context).primaryColor,
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-
-                          // TABLE KHUNG TRẮNG
-                          GlassContainer(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              children: [
-                                // Header Bảng (Căn chỉnh khoảng cách rộng ra)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 40,
-                                        child: Checkbox(
-                                          value: paginatedDocs.isNotEmpty && _selectedIds.containsAll(paginatedDocs.map((d) => d.id)),
-                                          onChanged: (val) {
-                                            setState(() {
-                                              if (val == true) {
-                                                _selectedIds.addAll(paginatedDocs.map((d) => d.id));
-                                              } else {
-                                                for (var d in paginatedDocs) {
-                                                  _selectedIds.remove(d.id);
-                                                }
-                                              }
-                                            });
-                                          },
                                         ),
                                       ),
-                                      SizedBox(width: 80, child: Text("HÌNH ẢNH", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1))),
-                                      const SizedBox(width: 32),
-                                      Expanded(flex: 3, child: Text("THÔNG TIN BỆNH", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1))),
-                                      Expanded(flex: 2, child: Text("PHÂN LOẠI", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1))),
-                                      Expanded(flex: 2, child: Text("MỨC ĐỘ NGUY HIỂM", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1))),
-                                      Expanded(flex: 2, child: Text("TRẠNG THÁI", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1))),
-                                      SizedBox(width: 80, child: Text("THAO TÁC", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1), textAlign: TextAlign.right)),
                                     ],
                                   ),
                                 ),
-                                const Divider(height: 1),
-                                // Body Bảng
-                                paginatedDocs.isEmpty
-                                    ? Padding(padding: const EdgeInsets.all(40), child: Text("Không có dữ liệu phù hợp", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)))
-                                    : ListView.separated(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: paginatedDocs.length,
-                                  separatorBuilder: (_, __) => Divider(height: 1, color: Theme.of(context).dividerColor.withOpacity(0.1)),
-                                  itemBuilder: (context, index) {
-                                    var doc = paginatedDocs[index];
-                                    var data = doc.data() as Map<String, dynamic>;
-                                    bool isActive = data['isActive'] ?? true;
+                              ),
+                              const SizedBox(width: 24),
 
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      child: Row(
-                                        children: [
-                                          SizedBox(
-                                            width: 40,
-                                            child: Checkbox(
-                                              value: _selectedIds.contains(doc.id),
-                                              onChanged: (val) {
-                                                setState(() {
-                                                  if (val == true) {
-                                                    _selectedIds.add(doc.id);
-                                                  } else {
-                                                    _selectedIds.remove(doc.id);
-                                                  }
-                                                });
-                                              },
-                                            ),
-                                          ),
-                                          // Image - Cố định width 80
-                                          SizedBox(
-                                            width: 80,
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(8),
-                                              child: data['imageUrl'] != null && data['imageUrl'].toString().isNotEmpty
-                                                  ? Image.network(data['imageUrl'], width: 80, height: 55, fit: BoxFit.cover)
-                                                  : Container(width: 80, height: 55, color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.black87, child: Icon(Icons.bug_report, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey : Colors.white54)),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 32), // Khoảng trống giữa Ảnh và Info
-                                          // Info
-                                          Expanded(
-                                            flex: 3,
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(data['name'] ?? 'Không tên', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                                                const SizedBox(height: 4),
-                                                Text("MÙA VỤ: ${(data['season'] ?? 'Không rõ').toString().toUpperCase()}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color, fontWeight: FontWeight.w600)),
-                                              ],
-                                            ),
-                                          ),
-                                          // Classification (Pill)
-                                          Expanded(
-                                            flex: 2,
-                                            child: Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: _buildBadge(data['type'] ?? 'Khác'),
-                                            ),
-                                          ),
-                                          // Severity
-                                          Expanded(
-                                            flex: 2,
-                                            child: _buildSeverityBadge(data['emergency_level'] ?? 'Bình thường'),
-                                          ),
-                                          // Status
-                                          Expanded(
-                                            flex: 2,
-                                            child: Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                                decoration: BoxDecoration(
-                                                    border: Border.all(color: isActive ? Colors.green : Colors.red),
-                                                    borderRadius: BorderRadius.circular(30)
-                                                ),
-                                                child: Text(isActive ? "ĐÃ DUYỆT" : "CHỜ DUYỆT", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: isActive ? Colors.green : Colors.red, fontWeight: FontWeight.bold)),
+                              // Cột phải
+                              Expanded(
+                                flex: 1,
+                                child: Column(
+                                  children: [
+                                    // Thẻ Top AI
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(24),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Theme.of(context)
+                                                  .colorScheme
+                                                  .surfaceContainerHighest
+                                                  .withValues(alpha: 0.75)
+                                            : Colors.white.withValues(
+                                                alpha: 0.75,
                                               ),
+                                        borderRadius: BorderRadius.circular(24),
+                                        border: Border.all(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .outline
+                                              .withValues(alpha: 0.2),
+                                          width: 1.5,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.04,
                                             ),
+                                            blurRadius: 24,
+                                            offset: const Offset(4, 4),
                                           ),
-                                          // Actions
-                                          SizedBox(
-                                            width: 80,
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.end,
-                                              children: [
-                                                IconButton(icon: const Icon(Icons.edit, color: primaryGreen, size: 18), onPressed: () => _showDiseaseFormDialog(existingDoc: doc)),
-                                                IconButton(icon: const Icon(Icons.delete, color: Colors.redAccent, size: 18), onPressed: () => _deleteDisease(doc)),
-                                              ],
-                                            ),
-                                          )
                                         ],
                                       ),
-                                    );
-                                  },
-                                ),
-                                const Divider(height: 1),
-
-                                // Giao diện Phân Trang (Pagination)
-                                if (totalPages > 0)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 24),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                            "Hiển thị ${(_currentPage - 1) * _itemsPerPage + 1} - ${((_currentPage * _itemsPerPage) > totalFilteredItems) ? totalFilteredItems : (_currentPage * _itemsPerPage)} trong $totalFilteredItems sâu bệnh",
-                                            style: const TextStyle(color: Colors.grey, fontSize: 13)
-                                        ),
-                                        Row(
-                                          children: [
-                                            _buildPageButton(
-                                                icon: Icons.chevron_left,
-                                                onPressed: _currentPage > 1 ? () => setState(() => _currentPage--) : null
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "TOP CHỦ ĐỀ HỎI AI",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                                  letterSpacing: 1.2,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          if (sortedTop.isEmpty)
+                                            Text(
+                                              "Chưa có dữ liệu AI",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.color,
+                                                  ),
                                             ),
-                                            const SizedBox(width: 8),
-                                            ...List.generate(totalPages, (index) {
-                                              int page = index + 1;
+                                          ...List.generate(
+                                            sortedTop.length > 3
+                                                ? 3
+                                                : sortedTop.length,
+                                            (index) {
+                                              double pct = totalAILogs == 0
+                                                  ? 0
+                                                  : (sortedTop[index].value /
+                                                            totalAILogs) *
+                                                        100;
                                               return Padding(
-                                                padding: const EdgeInsets.only(right: 8),
-                                                child: _buildPageButton(
-                                                    text: "$page",
-                                                    isActive: _currentPage == page,
-                                                    onPressed: () => setState(() => _currentPage = page)
+                                                padding: const EdgeInsets.only(
+                                                  bottom: 16,
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      width: 32,
+                                                      height: 32,
+                                                      alignment:
+                                                          Alignment.center,
+                                                      decoration: BoxDecoration(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondaryContainer,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                      ),
+                                                      child: Text(
+                                                        "0${index + 1}",
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .labelSmall
+                                                            ?.copyWith(
+                                                              color: Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onSecondaryContainer,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 12,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: Text(
+                                                        sortedTop[index].key,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyMedium
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color:
+                                                                  Theme.of(
+                                                                        context,
+                                                                      )
+                                                                      .colorScheme
+                                                                      .onSurface,
+                                                            ),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      "${pct.toStringAsFixed(1)}%",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .labelMedium
+                                                          ?.copyWith(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .secondary,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Icon(
+                                                      Icons.trending_up,
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.outline,
+                                                      size: 16,
+                                                    ),
+                                                  ],
                                                 ),
                                               );
-                                            }),
-                                            _buildPageButton(
-                                                icon: Icons.chevron_right,
-                                                onPressed: _currentPage < totalPages ? () => setState(() => _currentPage++) : null
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    // Thẻ CẦN DUYỆT GẤP (MÀU XANH ĐẬM)
+                                    Expanded(
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(24),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).primaryColor,
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  width: 8,
+                                                  height: 8,
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                        color: Colors.redAccent,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  "CẦN XỬ LÝ NGAY",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .labelSmall
+                                                      ?.copyWith(
+                                                        color: Colors.white70,
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        letterSpacing: 1.5,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              "Cần duyệt gấp",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .headlineSmall
+                                                  ?.copyWith(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              "$pendingCount mục mới đang chờ xử lý",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Colors.white70,
+                                                  ),
+                                            ),
+                                            const Spacer(),
+                                            SizedBox(
+                                              width: 120,
+                                              child: ElevatedButton(
+                                                onPressed: () => setState(() {
+                                                  _isViewingPending = true;
+                                                  _currentPage = 1;
+                                                }),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.white,
+                                                  foregroundColor: Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          30,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  "Xử lý ngay",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .labelLarge
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).primaryColor,
+                                                      ),
+                                                ),
+                                              ),
                                             ),
                                           ],
-                                        )
-                                      ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ], // End of Dashboard Top Section
+                      // (C) KHU VỰC BẢNG DỮ LIỆU CHÍNH
+                      CustomAdminToolbar(
+                        searchField: TextField(
+                          onChanged: _onSearchChanged,
+                          decoration: InputDecoration(
+                            hintText: 'Tìm kiếm sâu bệnh...',
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.color,
+                            ),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.black.withValues(alpha: 0.03),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 0,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        centerFilters: [
+                          DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _selectedFilterType,
+                              icon: Icon(
+                                Icons.filter_list,
+                                size: 18,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.color,
+                              ),
+                              items: _types
+                                  .map(
+                                    (type) => DropdownMenuItem(
+                                      value: type,
+                                      child: Text(
+                                        type,
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
                                     ),
                                   )
-                              ],
+                                  .toList(),
+                              onChanged: (v) => setState(() {
+                                _selectedFilterType = v!;
+                                _currentPage = 1;
+                              }),
                             ),
-                          )
+                          ),
+                          DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _sortBy,
+                              icon: Icon(
+                                Icons.sort,
+                                size: 18,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.color,
+                              ),
+                              items: _sortOptions
+                                  .map(
+                                    (e) => DropdownMenuItem(
+                                      value: e,
+                                      child: Text(
+                                        e,
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (v) => setState(() {
+                                _sortBy = v!;
+                                _currentPage = 1;
+                              }),
+                            ),
+                          ),
+                        ],
+                        trailingActions: [
+                          ElevatedButton.icon(
+                            onPressed: () => _showDiseaseFormDialog(),
+                            icon: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              "Thêm Sâu Bệnh",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                    );
-                  }
-              );
-            }
+                      const SizedBox(height: 24),
+
+                      // TABLE KHUNG TRẮNG
+                      SizedBox(
+                        height:
+                            (paginatedDocs.length * 90) +
+                            100, // Dynamic height based on items
+                        child: CustomAdminTable(
+                          flex: const [1, 2, 4, 3, 3, 3, 2],
+                          labels: const [
+                            "",
+                            "HÌNH ẢNH",
+                            "THÔNG TIN BỆNH",
+                            "PHÂN LOẠI",
+                            "MỨC ĐỘ",
+                            "TRẠNG THÁI",
+                            "THAO TÁC",
+                          ],
+                          itemCount: paginatedDocs.length,
+                          rowBuilder: (context, index) {
+                            var doc = paginatedDocs[index];
+                            var data = doc.data() as Map<String, dynamic>;
+                            bool isActive = data['isActive'] ?? true;
+
+                            return [
+                              Checkbox(
+                                value: _selectedIds.contains(doc.id),
+                                onChanged: (val) {
+                                  setState(() {
+                                    if (val == true) {
+                                      _selectedIds.add(doc.id);
+                                    } else {
+                                      _selectedIds.remove(doc.id);
+                                    }
+                                  });
+                                },
+                              ),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child:
+                                    data['imageUrl'] != null &&
+                                        data['imageUrl'].toString().isNotEmpty
+                                    ? Image.network(
+                                        data['imageUrl'],
+                                        width: 60,
+                                        height: 45,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Container(
+                                        width: 60,
+                                        height: 45,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white12
+                                            : Colors.black87,
+                                        child: const Icon(
+                                          Icons.bug_report,
+                                          size: 20,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    data['name'] ?? 'Không tên',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "MÙA VỤ: ${(data['season'] ?? 'Không rõ').toString().toUpperCase()}",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.color,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              _buildBadge(data['type'] ?? 'Khác'),
+                              _buildSeverityBadge(
+                                data['emergency_level'] ?? 'Bình thường',
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: isActive ? Colors.green : Colors.red,
+                                  ),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Text(
+                                  isActive ? "ĐÃ DUYỆT" : "CHỜ DUYỆT",
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: isActive
+                                            ? Colors.green
+                                            : Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.edit,
+                                      color: Theme.of(context).primaryColor,
+                                      size: 18,
+                                    ),
+                                    onPressed: () => _showDiseaseFormDialog(
+                                      existingDoc: doc,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.redAccent,
+                                      size: 18,
+                                    ),
+                                    onPressed: () => _deleteDisease(doc),
+                                  ),
+                                ],
+                              ),
+                            ];
+                          },
+                        ),
+                      ),
+                      const Divider(height: 1),
+
+                      // Giao diện Phân Trang (Pagination)
+                      if (totalPages > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 24),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Hiển thị ${(_currentPage - 1) * _itemsPerPage + 1} - ${((_currentPage * _itemsPerPage) > totalFilteredItems) ? totalFilteredItems : (_currentPage * _itemsPerPage)} trong $totalFilteredItems sâu bệnh",
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  _buildPageButton(
+                                    icon: Icons.chevron_left,
+                                    onPressed: _currentPage > 1
+                                        ? () => setState(() => _currentPage--)
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ...List.generate(totalPages, (index) {
+                                    int page = index + 1;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: _buildPageButton(
+                                        text: "$page",
+                                        isActive: _currentPage == page,
+                                        onPressed: () =>
+                                            setState(() => _currentPage = page),
+                                      ),
+                                    );
+                                  }),
+                                  _buildPageButton(
+                                    icon: Icons.chevron_right,
+                                    onPressed: _currentPage < totalPages
+                                        ? () => setState(() => _currentPage++)
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
         ),
       ),
     );
   }
 
   // =========================================================================
-  // WIDGET HELPERS TẠO UI GIỐNG ẢNH
+  // WIDGET HELPERS T?O UI GI?NG ?NH
   // =========================================================================
-  Widget _buildPageButton({String? text, IconData? icon, bool isActive = false, VoidCallback? onPressed}) {
+  Widget _buildPageButton({
+    String? text,
+    IconData? icon,
+    bool isActive = false,
+    VoidCallback? onPressed,
+  }) {
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        width: 36, height: 36,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF1B4332) : Colors.white,
+          color: isActive
+              ? Theme.of(context).primaryColor
+              : (Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.white),
           shape: BoxShape.circle,
-          border: Border.all(color: isActive ? const Color(0xFF1B4332) : Colors.grey.shade300),
+          border: Border.all(
+            color: isActive
+                ? Theme.of(context).primaryColor
+                : Theme.of(context).dividerColor,
+          ),
         ),
         alignment: Alignment.center,
         child: text != null
-            ? Text(text, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: isActive ? Colors.white : Colors.grey.shade700, fontWeight: FontWeight.bold))
-            : Icon(icon, color: onPressed == null ? Colors.grey.shade300 : Colors.grey.shade700, size: 20),
+            ? Text(
+                text,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: isActive ? Colors.white : Colors.grey.shade700,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            : Icon(
+                icon,
+                color: onPressed == null
+                    ? Colors.grey.shade300
+                    : Colors.grey.shade700,
+                size: 20,
+              ),
       ),
     );
   }
 
-  Widget _buildKPICardUI(String title, String value, String? subtitle, Color valueColor, {IconData? iconTail}) {
+  Widget _buildKPICardUI(
+    String title,
+    String value,
+    String? subtitle,
+    Color valueColor, {
+    IconData? iconTail,
+  }) {
     return GlassContainer(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.grey.shade600, fontWeight: FontWeight.w600, fontSize: 13)),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(value, style: Theme.of(context).textTheme.displayMedium?.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF1B4332))),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
               const SizedBox(width: 8),
-              if (subtitle != null) Text(subtitle, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: valueColor, fontWeight: FontWeight.bold)),
-              if (iconTail != null) Icon(iconTail, color: valueColor, size: 18)
+              if (subtitle != null)
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: valueColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              if (iconTail != null) Icon(iconTail, color: valueColor, size: 18),
             ],
-          )
+          ),
         ],
       ),
     );
   }
 
   Widget _buildBadge(String type) {
-    Color bg = Colors.grey.shade100;
-    Color text = Colors.grey.shade700;
-    if (type.toLowerCase().contains('côn trùng')) { bg = Colors.orange.shade100; text = Colors.orange.shade900; }
-    else if (type.toLowerCase().contains('nấm')) { bg = Colors.green.shade100; text = Colors.green.shade900; }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    Color bg = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : Colors.grey.shade100;
+    Color text = isDark ? Colors.grey.shade400 : Colors.grey.shade700;
+
+    if (type.toLowerCase().contains('c�n tr�ng')) {
+      bg = Colors.orange.withValues(alpha: 0.1);
+      text = Colors.orange;
+    } else if (type.toLowerCase().contains('n?m')) {
+      bg = AppColors.primary.withValues(alpha: 0.1);
+      text = AppColors.primary;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(type.toUpperCase(), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: text, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        type.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: text,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 
   Widget _buildSeverityBadge(String level) {
     Color color = Colors.grey;
-    if (level.toLowerCase().contains('rất cao') || level.toLowerCase().contains('nguy hiểm')) color = Colors.red;
-    else if (level.toLowerCase().contains('cao')) color = Colors.orange;
-    else if (level.toLowerCase().contains('trung bình')) color = Colors.amber;
+    if (level.toLowerCase().contains('r?t cao') ||
+        level.toLowerCase().contains('nguy hi?m')) {
+      color = AppColors.statusDanger;
+    } else if (level.toLowerCase().contains('cao')) {
+      color = Colors.orange;
+    } else if (level.toLowerCase().contains('trung b�nh')) {
+      color = Colors.amber;
+    }
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
         const SizedBox(width: 8),
-        Text(level, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: color, fontWeight: FontWeight.bold)),
+        Text(
+          level,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }
@@ -973,20 +1666,26 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xác nhận xóa hàng loạt'),
-        content: Text('Bạn có chắc chắn muốn xóa ${_selectedIds.length} mục sâu bệnh đã chọn không?'),
+        title: const Text('X�c nh?n x�a h�ng lo?t'),
+        content: Text('B?n c� ch?c ch?n mu?n x�a  m?c s�u b?nh d� ch?n kh�ng?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('H?y'),
+          ),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
               await _executeBulkDeleteDiseases();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Xóa tất cả', style: TextStyle(color: Colors.white)),
-          )
+            child: const Text(
+              'X�a t?t c?',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
         ],
-      )
+      ),
     );
   }
 
@@ -997,10 +1696,15 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
         collection: 'pest_diseases',
         docIds: _selectedIds.toList(),
         module: AuditModule.aichat,
-        actionDescription: "Xóa hàng loạt sâu bệnh khỏi thư viện",
+        actionDescription: 'X�a h�ng lo?t s�u b?nh kh?i thu vi?n',
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xóa dữ liệu thành công!'), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('�� x�a d? li?u th�nh c�ng!'),
+            backgroundColor: Colors.green,
+          ),
+        );
         setState(() {
           _selectedIds.clear();
           _isLoading = false;
@@ -1008,7 +1712,12 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi khi xóa hàng loạt: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('L?i khi x�a h�ng lo?t: '),
+            backgroundColor: Colors.red,
+          ),
+        );
         setState(() => _isLoading = false);
       }
     }
