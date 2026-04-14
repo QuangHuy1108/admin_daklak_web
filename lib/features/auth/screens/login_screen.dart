@@ -278,16 +278,28 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   // App Icon & Title
                   Container(
-                    width: 56,
-                    height: 56,
+                    width: 130,
+                    height: 130,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF156b2e),
-                      borderRadius: BorderRadius.circular(14),
+                      color: Colors.white, // Nền trắng để hòa mình cùng logo
+                      shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(color: const Color(0xFF156b2e).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3), 
+                          blurRadius: 30, 
+                          offset: const Offset(0, 10),
+                        ),
                       ],
                     ),
-                    child: const Icon(Icons.agriculture, color: Colors.white, size: 32),
+                    child: ClipOval(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Image.asset(
+                          'assets/images/ea_agri_logo.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(

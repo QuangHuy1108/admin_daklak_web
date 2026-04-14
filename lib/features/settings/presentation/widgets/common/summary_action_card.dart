@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
+import 'package:admin_daklak_web/core/widgets/common/glass_container.dart';
 
 class SummaryActionCard extends StatelessWidget {
   final IconData icon;
@@ -14,38 +15,27 @@ class SummaryActionCard extends StatelessWidget {
     required this.value,
     required this.onTap,
   });
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
+        child: GlassContainer(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.border.withOpacity(0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+          borderRadius: BorderRadius.circular(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 16, color: AppColors.textHeading),
+                  Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurface),
                   const SizedBox(width: 8),
                   Text(
                     label.toUpperCase(),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -56,8 +46,7 @@ class SummaryActionCard extends StatelessWidget {
                 value,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textHeading,
-                ),
+                  color: Theme.of(context).colorScheme.onSurface,                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

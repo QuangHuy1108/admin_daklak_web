@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:admin_daklak_web/core/widgets/common/glass_container.dart';
 
 class SkeletonContainer extends StatefulWidget {
   final double width;
@@ -29,9 +30,23 @@ class _SkeletonContainerState extends State<SkeletonContainer>
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
 
+    // Default light mode colors, will be updated in didChangeDependencies
     _colorAnimation = ColorTween(
       begin: Colors.grey[200],
       end: Colors.grey[300],
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    _colorAnimation = ColorTween(
+      begin: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+      end: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[300],
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeInOut,
@@ -67,19 +82,9 @@ class ReportSkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      borderRadius: BorderRadius.circular(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

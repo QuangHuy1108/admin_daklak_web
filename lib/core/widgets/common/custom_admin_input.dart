@@ -31,6 +31,8 @@ class CustomAdminInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -38,7 +40,7 @@ class CustomAdminInput extends StatelessWidget {
           label,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
             fontSize: 13, // Giữ kích thước nhỏ gọn cho nhãn input
-            color: AppColors.textHeading,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 8),
@@ -47,25 +49,27 @@ class CustomAdminInput extends StatelessWidget {
           maxLines: maxLines,
           keyboardType: keyboardType,
           onChanged: onChanged,
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: AppColors.textMuted,
+              color: Theme.of(context).textTheme.bodySmall?.color,
             ),
             helperText: helperText,
-            prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: AppColors.textMuted) : null,
+            prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: Theme.of(context).textTheme.bodySmall?.color) : null,
             suffixIcon: suffixIcon,
             filled: true,
-            fillColor: fillColor ?? AppColors.surfaceVariant.withOpacity(0.4),
+            fillColor: fillColor ?? (isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.surfaceVariant.withValues(alpha: 0.4)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: hasBorder ? const BorderSide(color: AppColors.border) : BorderSide.none,
+              borderSide: hasBorder ? BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border) : BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: hasBorder ? const BorderSide(color: AppColors.border) : BorderSide.none,
+              borderSide: hasBorder ? BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border) : BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

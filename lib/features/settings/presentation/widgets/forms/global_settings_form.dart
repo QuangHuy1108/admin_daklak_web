@@ -4,10 +4,11 @@ import '../../../logic/settings_provider.dart';
 import '../common/config_card.dart';
 import '../common/logo_uploader_segment.dart';
 import '../common/summary_action_card.dart';
-import '../common/settings_form_header.dart';
+
 import '../common/settings_form_footer.dart';
 import 'package:admin_daklak_web/core/widgets/common/custom_admin_input.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
+import 'package:admin_daklak_web/core/widgets/common/glass_container.dart';
 
 class GlobalSettingsForm extends StatelessWidget {
   const GlobalSettingsForm({super.key});
@@ -19,25 +20,15 @@ class GlobalSettingsForm extends StatelessWidget {
 
     if (config == null) return const SizedBox.shrink();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. Premium Header
-        SettingsFormHeader(
-          title: 'Hệ thống chung',
-          subtitle: 'Quản lý cấu hình cốt lõi và định danh thương hiệu',
-          isLoading: provider.isLoading,
-          onSave: () => provider.saveGlobal(),
-        ),
-        
-        // 2. Status Bar
-        Container(
+        // 1. Status Bar (Theme Aware)
+        GlassContainer(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border.withOpacity(0.5)),
-          ),
+          borderRadius: BorderRadius.circular(12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -52,19 +43,19 @@ class GlobalSettingsForm extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'Trạng thái hệ thống: ',
-                    style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                    style: TextStyle(fontSize: 13, color: Theme.of(context).textTheme.bodySmall?.color),
                   ),
-                  const Text(
+                  Text(
                     'Ổn định',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textHeading),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                   ),
                 ],
               ),
               Text(
                 'Cập nhật lần cuối: ${config.lastUpdated}',
-                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color),
               ),
             ],
           ),

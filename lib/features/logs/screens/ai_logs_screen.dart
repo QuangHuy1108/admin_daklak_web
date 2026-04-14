@@ -7,10 +7,10 @@ import 'dart:async';
 import 'package:admin_daklak_web/features/auth/services/admin_service.dart';
 import 'package:admin_daklak_web/features/reports/services/export_service.dart';
 import '../../../core/widgets/common/glass_container.dart';
+import '../../../core/widgets/common/custom_admin_table.dart';
+import '../../../core/widgets/common/custom_admin_toolbar.dart';
 
-  Color _getPrimaryDarkGreen(BuildContext context) => Theme.of(context).primaryColor;
-  Color _getTextGrey(BuildContext context) => Theme.of(context).textTheme.bodySmall?.color ?? const Color(0xFF6B7280);
-  Color _getCardBg(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white;
+Color _getTextGrey(BuildContext context) => Theme.of(context).textTheme.bodySmall?.color ?? const Color(0xFF6B7280);
 
 class AiLogsScreen extends StatefulWidget {
   const AiLogsScreen({super.key});
@@ -21,7 +21,7 @@ class AiLogsScreen extends StatefulWidget {
 
 class _AiLogsScreenState extends State<AiLogsScreen> {
   final ExportService _exportService = ExportService();
-  int _currentTabIndex = 0;
+  int _currentTabIndex = 0; // 0: Tất cả, 1: Có lỗi
   String _searchQuery = "";
   DateTimeRange? _selectedDateRange;
 
@@ -29,7 +29,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
   final int _rowsPerPage = 8;
   bool _isExporting = false;
 
-  // Cached data to keep export button responsive
+  // Cached data
   List<QueryDocumentSnapshot> _chatDocs = [];
   StreamSubscription? _chatSub;
   String? _chatError;
@@ -70,7 +70,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: _getPrimaryDarkGreen(context), onPrimary: Colors.white),
+            colorScheme: ColorScheme.light(primary: AppColors.primary, onPrimary: Colors.white),
           ),
           child: child!,
         );
@@ -87,7 +87,6 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
   void _handleExport() async {
     List<QueryDocumentSnapshot> sourceDocs = _chatDocs;
     
-    // Initial filtering based on search/date/tab
     List<QueryDocumentSnapshot> filteredDocs;
     
     Map<String, int> promptCounts = {};
@@ -143,38 +142,55 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
   }
 
   void _showDetailDialog(Map<String, dynamic> data) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text("Chi tiết Chat", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _getPrimaryDarkGreen(context))),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                child: Text("Hỏi:\n${data['prompt'] ?? '--'}", style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey[100], borderRadius: BorderRadius.circular(8)),
-                child: Text("AI Trả lời:\n${data['response'] ?? '--'}"),
-              ),
-            ],
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
+        child: GlassContainer(
+          padding: const EdgeInsets.all(32),
+          child: SizedBox(
+            width: 500,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Chi tiết Chat", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                  ),
+                  child: Text("Hỏi:\n${data['prompt'] ?? '--'}", style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+                  ),
+                  child: Text("AI Trả lời:\n${data['response'] ?? '--'}"),
+                ),
+                const SizedBox(height: 32),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text("Đóng", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.primary))
+                  ),
+                )
+              ],
+            ),
           ),
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Đóng", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: _getPrimaryDarkGreen(context)))
-          )
-        ],
       ),
     );
   }
@@ -192,17 +208,42 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
     return null;
   }
 
+  List<QueryDocumentSnapshot> _getFilteredChatDocs(List<QueryDocumentSnapshot> allDocs, Map<String, int> promptCounts) {
+    return allDocs.where((doc) {
+      var data = doc.data() as Map<String, dynamic>? ?? {};
+
+      String userId = (data['userId'] ?? '').toString().toLowerCase();
+      String email = (data['userEmail'] ?? '').toString().toLowerCase();
+      String docId = doc.id.toLowerCase();
+      String category = (data['category_tag'] ?? '').toString().toLowerCase();
+      bool matchSearch = userId.contains(_searchQuery) || email.contains(_searchQuery) || docId.contains(_searchQuery) || category.contains(_searchQuery);
+
+      if (!matchSearch || !_matchDate(data['timestamp'])) return false;
+
+      if (_currentTabIndex == 1) {
+        String key = "${data['userId'] ?? data['userEmail']}_${(data['prompt'] ?? '').toString().trim().toLowerCase()}";
+        bool isError = data['status'] == 'error';
+        bool isFlagged = data['isFlagged'] == true;
+        bool isRepeated = (promptCounts[key] ?? 0) > 3;
+        return isError || isFlagged || isRepeated;
+      }
+      return true;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(32.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Lịch sử & Theo dõi Hệ thống',
@@ -211,24 +252,8 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                Row(
-                  children: [
-                    if (_selectedDateRange != null)
-                      IconButton(
-                        icon: const Icon(Icons.cancel, color: Colors.redAccent),
-                        onPressed: () => setState(() {
-                          _selectedDateRange = null;
-                          _currentPage = 0;
-                        }),
-                      ),
-                    IconButton(
-                      icon: Icon(Icons.calendar_month, color: _selectedDateRange == null ? _getTextGrey(context) : _getPrimaryDarkGreen(context)),
-                      onPressed: _pickDateRange,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildSearchBar(),
-                  ],
-                ),
+                const SizedBox(height: 8),
+                Text('Thống kê và quản lý hoạt động của trợ lý tương tác AI.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
               ],
             ),
             const SizedBox(height: 32),
@@ -236,97 +261,114 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
             _buildFirestoreStats(),
             const SizedBox(height: 32),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            CustomAdminToolbar(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
               children: [
-                Row(
-                  children: [
-                    _buildTabButton("Tất cả Chat AI", 0),
-                    const SizedBox(width: 10),
-                    _buildTabButton("Câu trả lời lỗi", 1),
-                  ],
+                Expanded(
+                  flex: 4,
+                  child: TextField(
+                    onChanged: (val) {
+                      setState(() {
+                        _searchQuery = val.toLowerCase();
+                        _currentPage = 0;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Tìm theo ID, Email, Hành động...',
+                      prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color),
+                      filled: true,
+                      fillColor: isDark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                    ),
+                  ),
                 ),
-                _buildExportButton(),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: DropdownButtonFormField<int>(
+                    initialValue: _currentTabIndex,
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.filter_alt, size: 16, color: Theme.of(context).textTheme.bodySmall?.color),
+                      filled: true,
+                      fillColor: isDark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    ),
+                    items: [
+                      DropdownMenuItem(value: 0, child: Text("Tất cả Chat AI", style: Theme.of(context).textTheme.bodySmall)),
+                      DropdownMenuItem(value: 1, child: Text("Câu trả lời cần xem xét (Lỗi)", style: Theme.of(context).textTheme.bodySmall)),
+                    ],
+                    onChanged: (val) {
+                      setState(() {
+                        _currentTabIndex = val!;
+                        _currentPage = 0;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: _selectedDateRange != null ? AppColors.primary.withValues(alpha: 0.1) : (isDark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3)),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.calendar_month, color: _selectedDateRange == null ? Theme.of(context).textTheme.bodySmall?.color : AppColors.primary),
+                        onPressed: _pickDateRange,
+                      ),
+                      if (_selectedDateRange != null)
+                        IconButton(
+                          icon: const Icon(Icons.cancel, color: Colors.redAccent, size: 18),
+                          onPressed: () => setState(() {
+                            _selectedDateRange = null;
+                            _currentPage = 0;
+                          }),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton.icon(
+                      onPressed: (!_isExporting && _chatDocs.isNotEmpty) ? _handleExport : null,
+                      icon: _isExporting 
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Icon(Icons.download_rounded, color: Colors.white, size: 18),
+                      label: Text(
+                          _isExporting ? "Đang xử lý..." : "Xuất File CSV",
+                          style: const TextStyle(fontWeight: FontWeight.bold)
+                      ),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8E4A1D),
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                          minimumSize: const Size(0, 44),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          elevation: 0,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),
 
-            Expanded(
-              child: GlassContainer(
-                child: _buildChatTable(),
-              ),
-            )
+            _buildChatTable(),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Container(
-      width: 300,
-      decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey[200], borderRadius: BorderRadius.circular(30)),
-      child: TextField(
-        onChanged: (val) {
-          setState(() {
-            _searchQuery = val.toLowerCase();
-            _currentPage = 0;
-          });
-        },
-        decoration: const InputDecoration(
-            hintText: 'Tìm theo ID, Email, Hành động...',
-            prefixIcon: Icon(Icons.search),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: 12)
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabButton(String title, int index) {
-    bool isSelected = _currentTabIndex == index;
-    return InkWell(
-      onTap: () => setState(() {
-        _currentTabIndex = index;
-        _currentPage = 0;
-      }),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? _getPrimaryDarkGreen(context) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          title,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: isSelected ? Colors.white : _getTextGrey(context),
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExportButton() {
-    String label = "Xuất toàn bộ chat";
-    if (_currentTabIndex == 1) label = "Tải danh sách lỗi";
-
-    bool canExport = !_isExporting && _chatDocs.isNotEmpty;
-
-    return ElevatedButton.icon(
-      onPressed: canExport ? _handleExport : null,
-      icon: _isExporting 
-        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-        : const Icon(Icons.download_rounded, color: Colors.white, size: 18),
-      label: Text(
-          _isExporting ? "Đang xử lý..." : label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)
-      ),
-      style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF8E4A1D),
-          disabledBackgroundColor: Colors.grey,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))
       ),
     );
   }
@@ -355,59 +397,34 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
 
     return Row(
       children: [
-        _buildStatCard(context, 'Tổng số Log', NumberFormat('#,###').format(totalLogs), Icons.bar_chart, Colors.green.withOpacity(0.1), Colors.green),
+        Expanded(child: _buildStatCard('Tổng số Log', NumberFormat('#,###').format(totalLogs), Icons.bar_chart, Colors.green.withValues(alpha: 0.1), Colors.green)),
         const SizedBox(width: 24),
-        _buildStatCard(context, 'Cần huấn luyện AI', NumberFormat('#,###').format(failedCount), Icons.psychology, Colors.orange.withOpacity(0.1), Colors.orange),
+        Expanded(child: _buildStatCard('Cần huấn luyện AI', NumberFormat('#,###').format(failedCount), Icons.psychology, Colors.orange.withValues(alpha: 0.1), Colors.orange)),
         const SizedBox(width: 24),
-        _buildStatCard(context, 'Log thành công', NumberFormat('#,###').format(successCount), Icons.check_circle, Colors.teal.withOpacity(0.1), Colors.teal),
+        Expanded(child: _buildStatCard('Log thành công', NumberFormat('#,###').format(successCount), Icons.check_circle, Colors.teal.withValues(alpha: 0.1), Colors.teal)),
       ],
     );
   }
 
-  Widget _buildStatCard(BuildContext context, String label, String value, IconData icon, Color bg, Color iconColor) {
-    return Expanded(
-      child: GlassContainer(
-        padding: const EdgeInsets.all(24),
-        child: Row(
-          children: [
-            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)), child: Icon(icon, color: iconColor, size: 30)),
-            const SizedBox(width: 20),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _getTextGrey(context))),
-              Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: _getPrimaryDarkGreen(context))),
-            ])
-          ],
-        ),
+  Widget _buildStatCard(String label, String value, IconData icon, Color bg, Color iconColor) {
+    return GlassContainer(
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        children: [
+          Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)), child: Icon(icon, color: iconColor, size: 30)),
+          const SizedBox(width: 20),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _getTextGrey(context))),
+            Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.primary)),
+          ])
+        ],
       ),
     );
   }
 
-  List<QueryDocumentSnapshot> _getFilteredChatDocs(List<QueryDocumentSnapshot> allDocs, Map<String, int> promptCounts) {
-    return allDocs.where((doc) {
-      var data = doc.data() as Map<String, dynamic>? ?? {};
-
-      String userId = (data['userId'] ?? '').toString().toLowerCase();
-      String email = (data['userEmail'] ?? '').toString().toLowerCase();
-      String docId = doc.id.toLowerCase();
-      String category = (data['category_tag'] ?? '').toString().toLowerCase();
-      bool matchSearch = userId.contains(_searchQuery) || email.contains(_searchQuery) || docId.contains(_searchQuery) || category.contains(_searchQuery);
-
-      if (!matchSearch || !_matchDate(data['timestamp'])) return false;
-
-      if (_currentTabIndex == 1) {
-        String key = "${data['userId'] ?? data['userEmail']}_${(data['prompt'] ?? '').toString().trim().toLowerCase()}";
-        bool isError = data['status'] == 'error';
-        bool isFlagged = data['isFlagged'] == true;
-        bool isRepeated = (promptCounts[key] ?? 0) > 3;
-        return isError || isFlagged || isRepeated;
-      }
-      return true;
-    }).toList();
-  }
-
   Widget _buildChatTable() {
     if (_chatError != null) return _buildErrorMessage("Lỗi tải Chat: $_chatError");
-    if (_chatDocs.isEmpty) return const Center(child: CircularProgressIndicator());
+    if (_chatDocs.isEmpty) return const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()));
 
     var allDocs = _chatDocs;
     Map<String, int> promptCounts = {};
@@ -426,25 +443,30 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
 
     int startIndex = _currentPage * _rowsPerPage;
     int endIndex = min(startIndex + _rowsPerPage, totalItems);
-    var pagedDocs = totalItems == 0 ? [] : filteredDocs.sublist(startIndex, endIndex);
+    var pagedDocs = totalItems == 0 ? <QueryDocumentSnapshot>[] : filteredDocs.sublist(startIndex, endIndex);
+
+    if (totalItems == 0) {
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark ? const Color(0x441E2538) : Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.06), width: 1.5),
+        ),
+        child: const Center(child: Text("Không có dữ liệu phù hợp.")),
+      );
+    }
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(24),
-          child: Row(children: [
-            _headerCell('THỜI GIAN', flex: 2), _headerCell('ID CHAT', flex: 2),
-            _headerCell('NGƯỜI DÙNG', flex: 3), _headerCell('CHỦ ĐỀ', flex: 2),
-            _headerCell('NỘI DUNG', flex: 4), _headerCell('HÀNH ĐỘNG', flex: 1),
-          ]),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: pagedDocs.isEmpty
-              ? Center(child: Text("Không có dữ liệu phù hợp.", style: TextStyle(color: _getTextGrey(context))))
-              : ListView.builder(
+        SizedBox(
+          height: (pagedDocs.length * 90).clamp(400, 1000) + 70.0,
+          child: CustomAdminTable(
+            flex: const [2, 2, 3, 2, 4, 1],
+            labels: const ['THỜI GIAN', 'ID CHAT', 'NGƯỜI DÙNG', 'CHỦ ĐỀ', 'NỘI DUNG', 'HÀNH ĐỘNG'],
             itemCount: pagedDocs.length,
-            itemBuilder: (context, index) {
+            rowBuilder: (context, index) {
               var doc = pagedDocs[index];
               var data = doc.data() as Map<String, dynamic>? ?? {};
 
@@ -460,57 +482,45 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
               String displayPrompt = promptText.isNotEmpty ? '"$promptText"' : '--';
 
               bool isFlagged = data['isFlagged'] == true;
+              final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[50]!))),
-                child: Row(
+              return [
+                Text(timeStr, style: const TextStyle(fontSize: 13, height: 1.4)),
+                Text("#$chatId", style: TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Expanded(flex: 2, child: Text(timeStr, style: const TextStyle(fontSize: 13, height: 1.4))),
-                    Expanded(flex: 2, child: Text("#$chatId", style: TextStyle(fontSize: 13, color: _getPrimaryDarkGreen(context), fontWeight: FontWeight.bold))),
+                    CircleAvatar(radius: 16, backgroundColor: isDark ? Colors.blueGrey[800] : Colors.blueGrey[100], child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U', style: TextStyle(color: isDark ? Colors.blueGrey[200] : Colors.blueGrey, fontWeight: FontWeight.bold, fontSize: 14))),
+                    const SizedBox(width: 12),
                     Expanded(
-                        flex: 3,
-                        child: Row(
-                          children: [
-                            CircleAvatar(radius: 16, backgroundColor: Colors.blueGrey[100], child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold, fontSize: 14))),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis),
-                                  Text('ID: $userIdDisplay', style: TextStyle(color: _getTextGrey(context), fontSize: 12), overflow: TextOverflow.ellipsis),
-                                ],
-                              ),
-                            ),
-                          ],
-                        )
-                    ),
-                    Expanded(
-                        flex: 2,
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(color: const Color(0xFFFBE4D7).withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
-                            child: Text(data['category_tag'] ?? 'Khác', style: const TextStyle(color: Color(0xFFD96B40), fontSize: 12, fontWeight: FontWeight.bold)),
-                          ),
-                        )
-                    ),
-                    Expanded(flex: 4, child: Text(displayPrompt, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontStyle: FontStyle.italic, color: _getTextGrey(context), fontSize: 13))),
-                    Expanded(
-                      flex: 1,
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          IconButton(icon: Icon(Icons.remove_red_eye, color: _getTextGrey(context), size: 20), onPressed: () => _showDetailDialog(data), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
-                          IconButton(icon: Icon(isFlagged ? Icons.flag : Icons.flag_outlined, color: isFlagged ? Colors.red : _getTextGrey(context), size: 20), onPressed: () => _toggleFlag(doc.id, data['isFlagged'] == true, userIdDisplay, data['prompt'] ?? ''), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
+                          Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis),
+                          Text('ID: $userIdDisplay', style: TextStyle(color: _getTextGrey(context), fontSize: 12), overflow: TextOverflow.ellipsis),
                         ],
                       ),
                     ),
                   ],
                 ),
-              );
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: isDark ? const Color(0xFFD96B40).withValues(alpha: 0.2) : const Color(0xFFFBE4D7).withValues(alpha: 0.5), borderRadius: BorderRadius.circular(12)),
+                    child: Text(data['category_tag'] ?? 'Khác', style: TextStyle(color: isDark ? Colors.orange[300] : const Color(0xFFD96B40), fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                Text(displayPrompt, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontStyle: FontStyle.italic, color: _getTextGrey(context), fontSize: 13)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(icon: Icon(Icons.remove_red_eye, color: _getTextGrey(context), size: 20), onPressed: () => _showDetailDialog(data), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
+                    IconButton(icon: Icon(isFlagged ? Icons.flag : Icons.flag_outlined, color: isFlagged ? Colors.red : _getTextGrey(context), size: 20), onPressed: () => _toggleFlag(doc.id, data['isFlagged'] == true, userIdDisplay, data['prompt'] ?? ''), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
+                  ],
+                ),
+              ];
             },
           ),
         ),
@@ -518,7 +528,6 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
       ],
     );
   }
-
 
   Widget _buildErrorMessage(String msg) {
     return Center(
@@ -538,11 +547,9 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
     );
   }
 
-  Widget _headerCell(String label, {int flex = 1}) => Expanded(flex: flex, child: Text(label, textAlign: flex == 1 ? TextAlign.center : TextAlign.left, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: _getTextGrey(context))));
-
   Widget _buildTableFooter(int total, int totalPages) {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
       child: Row(
         children: [
           Text('Hiển thị ${total == 0 ? 0 : _currentPage * _rowsPerPage + 1} - ${min((_currentPage + 1) * _rowsPerPage, total)} trong $total kết quả', style: TextStyle(color: _getTextGrey(context), fontSize: 13)),
@@ -568,14 +575,14 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
         margin: const EdgeInsets.only(left: 8),
         width: 34, height: 34,
         decoration: BoxDecoration(
-          color: active ? _getPrimaryDarkGreen(context) : Colors.transparent,
+          color: active ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: active ? _getPrimaryDarkGreen(context) : Theme.of(context).dividerColor),
+          border: Border.all(color: active ? AppColors.primary : Theme.of(context).dividerColor),
         ),
         child: Center(
           child: content is IconData
-              ? Icon(content, size: 18, color: enabled ? (active ? Colors.white : Colors.black) : Colors.grey)
-              : Text(content.toString(), style: TextStyle(color: active ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+              ? Icon(content, size: 18, color: enabled ? (active ? Colors.white : Theme.of(context).textTheme.bodySmall?.color) : Colors.grey)
+              : Text(content.toString(), style: TextStyle(color: active ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color, fontWeight: FontWeight.bold, fontSize: 13)),
         ),
       ),
     );

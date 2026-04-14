@@ -190,8 +190,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   child: Column(
                     children: [
                       ConfigCard(
-                        title: 'Personal Information',
-                        subtitle: 'Update your photo and personal details.',
+                        title: 'Thông tin cá nhân',
+                        subtitle: 'Cập nhật ảnh đại diện và thông tin của bạn.',
                         children: [
                           Form(
                           key: _formKey,
@@ -243,7 +243,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               ),
                               const SizedBox(height: 32),
                               CustomAdminInput(
-                                label: 'Email Address',
+                                label: 'Địa chỉ Email',
                                 hintText: 'admin@domain.com',
                                 prefixIcon: Icons.email_outlined,
                                 initialValue: _emailController.text,
@@ -254,16 +254,16 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               ),
                               const SizedBox(height: 16),
                               CustomAdminInput(
-                                label: 'Display Name',
-                                hintText: 'Enter your full name',
+                                label: 'Tên hiển thị',
+                                hintText: 'Nhập tên đầy đủ của bạn',
                                 prefixIcon: Icons.badge_outlined,
                                 initialValue: _nameController.text,
                                 onChanged: (val) => _nameController.text = val,
                               ),
                               const SizedBox(height: 16),
                               CustomAdminInput(
-                                label: 'Phone Number',
-                                hintText: 'Enter your phone number',
+                                label: 'Số điện thoại',
+                                hintText: 'Nhập số điện thoại của bạn',
                                 prefixIcon: Icons.phone_outlined,
                                 initialValue: _phoneController.text,
                                 onChanged: (val) => _phoneController.text = val,
@@ -278,7 +278,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                         ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                         : const Icon(Icons.save, size: 18),
                                     label: Text(
-                                      _isSavingProfile ? 'Saving...' : 'Save Profile',
+                                      _isSavingProfile ? 'Đang lưu...' : 'Lưu Thông Tin',
                                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                         fontWeight: FontWeight.w600,
                                         color: Colors.white,
@@ -310,8 +310,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   child: Column(
                     children: [
                       ConfigCard(
-                        title: 'Security',
-                        subtitle: 'Change your password.',
+                        title: 'Bảo mật',
+                        subtitle: 'Thay đổi mật khẩu của bạn.',
                         children: [
                           Form(
                           key: _passwordFormKey,
@@ -319,22 +319,22 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               CustomAdminInput(
-                                label: 'Current Password',
-                                hintText: 'Enter current password',
+                                label: 'Mật khẩu hiện tại',
+                                hintText: 'Nhập mật khẩu hiện tại',
                                 prefixIcon: Icons.lock_outline,
                                 onChanged: (val) => _currentPasswordController.text = val,
                               ),
                               const SizedBox(height: 16),
                               CustomAdminInput(
-                                label: 'New Password',
-                                hintText: 'Enter new password',
+                                label: 'Mật khẩu mới',
+                                hintText: 'Nhập mật khẩu mới',
                                 prefixIcon: Icons.lock_reset,
                                 onChanged: (val) => _newPasswordController.text = val,
                               ),
                               const SizedBox(height: 16),
                               CustomAdminInput(
-                                label: 'Confirm New Password',
-                                hintText: 'Confirm your new password',
+                                label: 'Xác nhận mật khẩu mới',
+                                hintText: 'Xác nhận lại mật khẩu mới',
                                 prefixIcon: Icons.done_all,
                                 onChanged: (val) => _confirmPasswordController.text = val,
                               ),
@@ -347,7 +347,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                       : const Icon(Icons.security, size: 18),
                                   label: Text(
-                                    _isChangingPassword ? 'Updating...' : 'Update Password',
+                                    _isChangingPassword ? 'Đang cập nhật...' : 'Cập nhật Mật khẩu',
                                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),

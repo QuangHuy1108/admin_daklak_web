@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../../../core/widgets/common/custom_admin_table.dart';
+import '../../../core/widgets/common/custom_admin_toolbar.dart';
+import '../../../core/constants/app_colors.dart';
 
 class AgriculturalPriceDashboard extends StatefulWidget {
   const AgriculturalPriceDashboard({Key? key}) : super(key: key);
@@ -19,6 +22,8 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
   Color get _textMain => Theme.of(context).colorScheme.onSurface;
   Color get _textMuted => Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey;
   Color get _borderColor => Theme.of(context).dividerColor;
+  Color get _surfaceVariant => _isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceVariant;
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
 
   // --- Filter & Sort State ---
   String _selectedProductFilter = 'Tất cả';
@@ -297,10 +302,10 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(flex: 5, child: _buildMainChart()),
+                      Expanded(flex: 2, child: _buildMainChart()),
                       const SizedBox(width: 24),
                       Expanded(
-                        flex: 3,
+                        flex: 1,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -443,7 +448,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
               Row(
                 children: [
                   Container(
-                    height: 40, padding: const EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(20)),
+                    height: 40, padding: const EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: _surfaceVariant, borderRadius: BorderRadius.circular(20)),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: _selectedProductChart, icon: const Icon(Icons.keyboard_arrow_down, size: 18), style: Theme.of(context).textTheme.titleSmall?.copyWith(color: _textMain, fontWeight: FontWeight.w600),
@@ -459,7 +464,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                   ),
                   const SizedBox(width: 12),
                   Container(
-                    height: 40, decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(20)),
+                    height: 40, decoration: BoxDecoration(color: _surfaceVariant, borderRadius: BorderRadius.circular(20)),
                     child: Row(
                       children: ['7 Ngày', '30 Ngày', '3 Tháng'].map((time) {
                         bool isSelected = _selectedChartFilter == time;
@@ -561,7 +566,25 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
     bool isEmpty = _trendForecast['trend'].toString().isEmpty;
 
     return Container(
-      height: 140, padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: _darkGreen, borderRadius: BorderRadius.circular(16)),
+      height: 140, padding: const EdgeInsets.all(20), 
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _darkGreen,
+            _darkGreen.withOpacity(0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: _darkGreen.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          )
+        ]
+      ),
       child: Stack(
         children: [
           Positioned(right: -10, bottom: -10, child: Icon(Icons.bar_chart, size: 80, color: Colors.white.withOpacity(0.1))),
@@ -638,7 +661,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
 
   Widget _buildMoverItem(String name, String subType, String value, bool isUp) {
     String initials = name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase();
-    Color avatarBg = isUp ? const Color(0xFFC8E6C9) : const Color(0xFFFFCCBC);
+    Color avatarBg = isUp ? _darkGreen.withOpacity(0.2) : Colors.red.withOpacity(0.2);
     Color avatarText = isUp ? _darkGreen : Colors.red;
     String displaySub = subType.isNotEmpty ? ' ($subType)' : '';
 
@@ -666,11 +689,11 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
       offset: const Offset(0, 40),
       itemBuilder: (context) => options.map((choice) => PopupMenuItem<String>(value: choice, child: Text(choice, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: choice == currentValue ? FontWeight.bold : FontWeight.normal, color: choice == currentValue ? _darkGreen : _textMain)))).toList(),
       child: Container(
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(20)),
+        margin: const EdgeInsets.only(right: 0), // Margin right handles by CustomAdminToolbar 16px wrapper
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(color: _surfaceVariant, borderRadius: BorderRadius.circular(20)),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(displayText, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, color: _textMain)),
             const SizedBox(width: 6),
@@ -685,7 +708,6 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
   // HỆ THỐNG BẢNG CUSTOM VÀ PAGINATION MỚI (GIỐNG MOCKUP)
   // ============================================================================
   Widget _buildCustomTableSection(List<Map<String, dynamic>> processedTableData, List<String> dynamicCrops, String lastUpdated) {
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
     List<String> productFilterOptions = ['Tất cả', ...dynamicCrops];
 
     // Tính toán số liệu phân trang
@@ -701,106 +723,85 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
 
     List<Map<String, dynamic>> currentPageData = processedTableData.isEmpty ? [] : processedTableData.sublist(startIndex, endIndex);
 
-    return Container(
-      decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.75), 
-          borderRadius: BorderRadius.circular(24), 
-          border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), width: 1.5),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(4, 4))]
-      ),
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Standardized Toolbar
+        CustomAdminToolbar(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+          searchField: Text('Chi Tiết Giá Nông Sản', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _textMain)),
+          centerFilters: [
+            _buildDropdownPill(label: 'Nông sản', currentValue: _selectedProductFilter, options: productFilterOptions, onSelected: (val) => setState(() => _selectedProductFilter = val)),
+            _buildDropdownPill(label: 'Giá', currentValue: _selectedPriceSort, options: ['Mặc định (Giá)', 'Giá tăng dần', 'Giá giảm dần'], onSelected: (val) => setState(() => _selectedPriceSort = val)),
+            _buildDropdownPill(label: 'Cập nhật', currentValue: _selectedDateSort, options: ['Mới nhất', 'Lâu nhất'], onSelected: (val) => setState(() => _selectedDateSort = val)),
+          ],
+          trailingActions: [
+            Text('Cập nhật: $lastUpdated', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted)),
+            IconButton(
+              icon: Icon(Icons.refresh, size: 18, color: _textMain),
+              onPressed: () => _fetchChartAndForecastData(_selectedProductChart, _selectedChartFilter),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Standardized Table
+        SizedBox(
+          height: 650, // Fixed height to work inside SingleChildScrollView
+          child: CustomAdminTable(
+            flex: const [2, 2, 1, 2, 1, 2, 2],
+            labels: const ['KHU VỰC', 'NÔNG SẢN', 'PHÂN LOẠI', 'GIÁ HIỆN TẠI', 'THAY ĐỔI', 'CẬP NHẬT', 'TRẠNG THÁI'],
+            itemCount: currentPageData.length,
+            rowBuilder: (context, index) => _buildDataRow(currentPageData[index]),
+            emptyWidget: Container(
+              height: 400,
+              alignment: Alignment.center,
+              child: Text("Không có dữ liệu.", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _textMuted)),
+            ),
+          ),
+        ),
+
+        if (currentPageData.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          // Pagination Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Chi Tiết Giá Nông Sản', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _textMain)),
+              Text('Hiển thị ${startIndex + 1}-$endIndex của $totalItems khu vực', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted)),
               Row(
                 children: [
-                  Text('Cập nhật: $lastUpdated', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted)),
-                  const SizedBox(width: 8),
-                  Icon(Icons.refresh, size: 16, color: _textMain),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left, size: 20),
+                    color: _currentPage > 1 ? _textMain : _textMuted.withOpacity(0.3),
+                    onPressed: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                  ),
+                  ..._buildPageNumbers(totalPages),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right, size: 20),
+                    color: _currentPage < totalPages ? _textMain : _textMuted.withOpacity(0.3),
+                    onPressed: _currentPage < totalPages ? () => setState(() => _currentPage++) : null,
+                  ),
                 ],
               )
             ],
-          ),
-          const SizedBox(height: 16),
-
-          Row(
-            children: [
-              _buildDropdownPill(label: 'Nông sản', currentValue: _selectedProductFilter, options: productFilterOptions, onSelected: (val) => setState(() => _selectedProductFilter = val)),
-              _buildDropdownPill(label: 'Giá', currentValue: _selectedPriceSort, options: ['Mặc định (Giá)', 'Giá tăng dần', 'Giá giảm dần'], onSelected: (val) => setState(() => _selectedPriceSort = val)),
-              _buildDropdownPill(label: 'Cập nhật', currentValue: _selectedDateSort, options: ['Mới nhất', 'Lâu nhất'], onSelected: (val) => setState(() => _selectedDateSort = val)),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // VẼ BẢNG (Màu sắc giống mockup)
-          if (currentPageData.isEmpty)
-            const Padding(padding: EdgeInsets.all(40.0), child: Center(child: Text("Không có dữ liệu.")))
-          else
-            SizedBox(
-              width: double.infinity,
-              child: DataTable(
-                headingTextStyle: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: _textMuted, letterSpacing: 0.5),
-                dataRowHeight: 60,
-                headingRowHeight: 48,
-                horizontalMargin: 0,
-                columnSpacing: 20,
-                dividerThickness: 0.5,
-                columns: const [
-                  DataColumn(label: Text('KHU VỰC')),
-                  DataColumn(label: Text('NÔNG SẢN')),
-                  DataColumn(label: Text('PHÂN LOẠI')),
-                  DataColumn(label: Text('GIÁ HIỆN TẠI')),
-                  DataColumn(label: Text('THAY ĐỔI')),
-                  DataColumn(label: Text('CẬP NHẬT')),
-                  DataColumn(label: Text('TRẠNG THÁI')),
-                ],
-                rows: currentPageData.map((item) => _buildDataRow(item)).toList(),
-              ),
-            ),
-
-          if (currentPageData.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            // VẼ THANH PAGINATION GIỐNG MOCKUP
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Hiển thị ${startIndex + 1}-$endIndex của $totalItems khu vực', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted)),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left, size: 20),
-                      color: _currentPage > 1 ? _textMain : Colors.grey[300],
-                      onPressed: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
-                    ),
-                    ..._buildPageNumbers(totalPages),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right, size: 20),
-                      color: _currentPage < totalPages ? _textMain : Colors.grey[300],
-                      onPressed: _currentPage < totalPages ? () => setState(() => _currentPage++) : null,
-                    ),
-                  ],
-                )
-              ],
-            )
-          ]
-        ],
-      ),
+          )
+        ]
+      ],
     );
   }
 
-  // --- HÀM VẼ DÒNG DỮ LIỆU ---
-  DataRow _buildDataRow(Map<String, dynamic> item) {
+  // --- HÀM VẼ CÁC Ô TRONG DÒNG DỮ LIỆU ---
+  List<Widget> _buildDataRow(Map<String, dynamic> item) {
     String change = item['change']?.toString() ?? '';
     bool isUp = change.contains('+');
     bool isFlat = change.isEmpty || change.toLowerCase().contains('không đổi') || change == '0.0%' || change == '0%';
     Color changeColor = isFlat ? _textMuted : (isUp ? _darkGreen : Colors.red);
 
     String status = item['status']?.toString() ?? '';
-    Color badgeBg = isFlat ? Colors.grey[100]! : (status.contains('Tăng') ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE));
+    Color badgeBg = isFlat 
+        ? (_isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100]!) 
+        : (status.contains('Tăng') ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE));
     Color badgeText = isFlat ? _textMuted : (status.contains('Tăng') ? _darkGreen : Colors.red[800]!);
 
     String priceStr = item['price']?.toString() ?? '';
@@ -809,32 +810,31 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
       formattedPrice = NumberFormat('#,###').format(double.parse(priceStr.replaceAll(RegExp(r'[^0-9.]'), '')));
     }
 
-    Color dotColor = item['name'].toString().contains('Cà') ? _darkGreen : (item['name'].toString().contains('Sầu') ? Colors.orange[800]! : Colors.brown);
+    Color dotColor = item['name'].toString().contains('Cà') 
+        ? _darkGreen 
+        : (item['name'].toString().contains('Sầu') ? Colors.orange[800]! : Colors.brown);
 
-    return DataRow(
-      cells: [
-        DataCell(Text(item['region'].toString(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: _textMain))),
-        DataCell(Row(
-          children: [
-            Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor)),
-            const SizedBox(width: 8),
-            Text(item['name'].toString(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: _textMain)),
-          ],
-        )),
-        DataCell(Text(item['sub_type'].toString(), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted))),
-        DataCell(Text('$formattedPrice đ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: _textMain))),
-        DataCell(Text(isFlat ? '0 đ' : change, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: changeColor, fontWeight: FontWeight.bold))),
-        DataCell(Text(item['update'].toString(), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted))),
-        DataCell(status.isEmpty
-            ? const SizedBox()
-            : Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(color: badgeBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: badgeText.withOpacity(0.1))),
-          child: Text(status.toUpperCase(), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: badgeText, fontWeight: FontWeight.bold)),
-        )
-        ),
-      ],
-    );
+    return [
+      Text(item['region'].toString(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: _textMain)),
+      Row(
+        children: [
+          Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor)),
+          const SizedBox(width: 8),
+          Expanded(child: Text(item['name'].toString(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: _textMain), overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+      Text(item['sub_type'].toString(), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted)),
+      Text('$formattedPrice đ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: _textMain)),
+      Text(isFlat ? '0 đ' : change, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: changeColor, fontWeight: FontWeight.bold)),
+      Text(item['update'].toString(), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted)),
+      status.isEmpty
+          ? const SizedBox()
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: badgeBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: badgeText.withOpacity(0.1))),
+              child: Text(status.toUpperCase(), textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: badgeText, fontWeight: FontWeight.bold)),
+            ),
+    ];
   }
 
   // --- HÀM VẼ SỐ TRANG ---

@@ -13,11 +13,13 @@ class GlassContainer extends StatelessWidget {
 
   final double? width;
   final double? height;
+  final Duration duration;
+  final Curve curve;
 
   const GlassContainer({
     super.key,
     required this.child,
-    this.blur = 15.0,
+    this.blur = 24.0,
     this.opacity = 0.5,
     this.padding,
     this.margin,
@@ -26,6 +28,8 @@ class GlassContainer extends StatelessWidget {
     this.color,
     this.width,
     this.height,
+    this.duration = const Duration(milliseconds: 400),
+    this.curve = Curves.easeOutQuart,
   });
 
   @override
@@ -35,25 +39,39 @@ class GlassContainer extends StatelessWidget {
 
     return Container(
       margin: margin,
-      padding: padding,
-      width: width,
-      height: height,
       decoration: BoxDecoration(
-        color: color ?? (isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.75)),
         borderRadius: defaultBorderRadius,
-        border: border ?? Border.all(
-          color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), 
-          width: 1.5
-        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: isDark ? Colors.black.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.03),
             blurRadius: 24,
-            offset: const Offset(4, 4),
+            spreadRadius: 0,
+            offset: const Offset(0, 8),
           )
         ],
       ),
-      child: child,
+      child: ClipRRect(
+        borderRadius: defaultBorderRadius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          child: AnimatedContainer(
+            duration: duration,
+            curve: curve,
+            padding: padding,
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: color ?? (isDark ? const Color(0x991E2538) : Colors.white.withValues(alpha: 0.35)),
+              borderRadius: defaultBorderRadius,
+              border: border ?? Border.all(
+                color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.6), 
+                width: 0.5,
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      ),
     );
   }
 }

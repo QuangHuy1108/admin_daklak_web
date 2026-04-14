@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../logic/settings_provider.dart';
 import '../common/config_card.dart';
-import '../common/settings_form_header.dart';
+
 import '../common/settings_form_footer.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
 
@@ -16,22 +16,15 @@ class MonitoringSettingsForm extends StatelessWidget {
 
     if (config == null) return const Center(child: CircularProgressIndicator(color: AppColors.primary));
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. Premium Header
-        SettingsFormHeader(
-          title: 'Monitoring & Health',
-          subtitle: 'Theo dõi hiệu năng hệ thống, ngưỡng cảnh báo và quy tắc lưu trữ nhật ký.',
-          isLoading: provider.isLoading,
-          onSave: () => provider.saveMonitoring(),
-        ),
-
-        // 2. Performance & Alerts
+        // 1. Performance & Alerts
         ConfigCard(
           title: 'Hiệu năng & Cảnh báo',
           icon: Icons.speed_rounded,
-          iconCircleColor: const Color(0xFFE8ECEB),
           children: [
             _buildSliderTile(
               context: context,
@@ -40,6 +33,7 @@ class MonitoringSettingsForm extends StatelessWidget {
               min: 100,
               max: 5000,
               divisions: 49,
+              isDark: isDark,
               displayValue: '${config.apiLatencyThresholdMs}ms',
               onChanged: (val) => provider.updateMonitoring(config.copyWith(apiLatencyThresholdMs: val.toInt())),
             ),
@@ -51,6 +45,7 @@ class MonitoringSettingsForm extends StatelessWidget {
               min: 0,
               max: 20,
               divisions: 20,
+              isDark: isDark,
               displayValue: '${config.errorRateAlertThreshold}%',
               activeTrackColor: Colors.redAccent,
               onChanged: (val) => provider.updateMonitoring(config.copyWith(errorRateAlertThreshold: val)),
@@ -60,29 +55,32 @@ class MonitoringSettingsForm extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // 3. Logs Data
+        // 2. Logs Data
         ConfigCard(
           title: 'Dữ liệu nhật ký (Logs)',
           icon: Icons.receipt_long_rounded,
-          iconCircleColor: const Color(0xFFE1F5FE),
           children: [
             _buildSwitchTile(
+              context,
               title: 'Theo dõi Firestore Usage',
               subtitle: 'Ghi lại các hoạt động đọc/ghi để tối ưu chi phí',
               value: config.enableFirestoreUsageTracking,
               onChanged: (val) => provider.updateMonitoring(config.copyWith(enableFirestoreUsageTracking: val)),
             ),
-            const Divider(height: 32, color: AppColors.border),
+            Divider(height: 32, color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border),
             _buildSwitchTile(
+              context,
               title: 'Thống kê AI Usage',
               subtitle: 'Theo dõi mức độ sử dụng AI và token',
               value: config.enableAIUsageStats,
               onChanged: (val) => provider.updateMonitoring(config.copyWith(enableAIUsageStats: val)),
             ),
-            const Divider(height: 32, color: AppColors.border),
+            Divider(height: 32, color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border),
             _buildDropdown(
+              context,
               label: 'Thời gian lưu trữ Logs',
               value: config.logRetentionDays,
+              isDark: isDark,
               items: const [
                 DropdownMenuItem(value: 7, child: Text('7 Ngày')),
                 DropdownMenuItem(value: 30, child: Text('30 Ngày')),
@@ -96,7 +94,7 @@ class MonitoringSettingsForm extends StatelessWidget {
           ],
         ),
 
-        // 4. Premium Footer
+        // 3. Premium Footer
         SettingsFormFooter(
           isLoading: provider.isLoading,
           onSave: () => provider.saveMonitoring(),
@@ -113,6 +111,7 @@ class MonitoringSettingsForm extends StatelessWidget {
     required double min,
     required double max,
     required int divisions,
+    required bool isDark,
     required String displayValue,
     required ValueChanged<double> onChanged,
     Color? activeTrackColor,
@@ -123,19 +122,22 @@ class MonitoringSettingsForm extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
+            Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
             Text(displayValue, style: TextStyle(fontWeight: FontWeight.bold, color: activeTrackColor ?? AppColors.primary)),
           ],
         ),
         const SizedBox(height: 12),
         SliderTheme(
-          data: SliderTheme.of(context).copyWith(trackHeight: 4),
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: activeTrackColor ?? AppColors.primary,
+            inactiveTrackColor: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border,
+            trackHeight: 4,
+          ),
           child: Slider(
             value: value,
             min: min,
             max: max,
             divisions: divisions,
-            activeColor: activeTrackColor ?? AppColors.primary,
             onChanged: onChanged,
           ),
         ),
@@ -143,10 +145,10 @@ class MonitoringSettingsForm extends StatelessWidget {
     );
   }
 
-  Widget _buildSwitchTile({required String title, required String subtitle, required bool value, required ValueChanged<bool> onChanged}) {
+  Widget _buildSwitchTile(BuildContext context, {required String title, required String subtitle, required bool value, required ValueChanged<bool> onChanged}) {
     return SwitchListTile(
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+      title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color)),
       value: value,
       activeColor: AppColors.primary,
       onChanged: onChanged,
@@ -154,22 +156,23 @@ class MonitoringSettingsForm extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdown({required String label, required int value, required List<DropdownMenuItem<int>> items, required ValueChanged<int?> onChanged}) {
+  Widget _buildDropdown(BuildContext context, {required String label, required int value, required bool isDark, required List<DropdownMenuItem<int>> items, required ValueChanged<int?> onChanged}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
+        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
         const SizedBox(height: 8),
         DropdownButtonFormField<int>(
           decoration: InputDecoration(
             filled: true,
-            fillColor: AppColors.surfaceVariant.withOpacity(0.4),
+            fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.surfaceVariant.withValues(alpha: 0.4),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
           ),
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textHeading),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          dropdownColor: Theme.of(context).colorScheme.surface,
           value: value,
           items: items,
           onChanged: onChanged,

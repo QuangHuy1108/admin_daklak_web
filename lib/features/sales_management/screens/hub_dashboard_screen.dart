@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
+import 'package:admin_daklak_web/core/constants/app_text_styles.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:admin_daklak_web/features/sales_management/widgets/create_order_dialog.dart';
+import 'package:admin_daklak_web/core/widgets/common/glass_container.dart';
 
 // --- Shared Theme Information ---
 // Theme-aware color constants logic moved into build or resolved via helpers
@@ -221,8 +223,8 @@ class _KPISection extends StatelessWidget {
                 trend: inTransit > 0 ? '● Đang giao' : '○ Trống',
                 isPositiveChange: true,
                 icon: Icons.local_shipping_rounded,
-                iconBgColor: Colors.purple.withOpacity(0.1),
-                iconColor: Colors.purple,
+                iconBgColor: const Color(0xFF6366F1).withOpacity(0.1),
+                iconColor: const Color(0xFF6366F1),
               ),
             ),
             const SizedBox(width: 16),
@@ -328,7 +330,7 @@ class _ChartSectionState extends State<_ChartSection> {
   @override
   Widget build(BuildContext context) {
     return _DashboardCard(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -337,7 +339,7 @@ class _ChartSectionState extends State<_ChartSection> {
             children: [
               Text(
                 'Hiệu suất kinh doanh 7 ngày qua',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textHeading),
+                style: AppTextStyles.heading3.copyWith(color: Theme.of(context).colorScheme.onSurface),
               ),
               Row(
                 children: [
@@ -350,7 +352,11 @@ class _ChartSectionState extends State<_ChartSection> {
                     },
                   ),
                   Container(
-                    decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFF5F7FA), borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : const Color(0xFFF5F7FA),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: AppColors.darkBorder.withOpacity(0.5)) : null,
+                    ),
                     child: Row(
                       children: [
                         _buildChartToggleButton('Doanh thu', true),
@@ -362,7 +368,7 @@ class _ChartSectionState extends State<_ChartSection> {
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _chartFuture,
             builder: (context, snapshot) {
@@ -371,7 +377,7 @@ class _ChartSectionState extends State<_ChartSection> {
                 return const SizedBox(height: 300, child: Center(child: CircularProgressIndicator()));
               }
               if (snapshot.hasError) {
-                return Text("Firebase Error: ${snapshot.error}", style: const TextStyle(color: Colors.red));
+                return Center(child: Text("Lỗi Firebase: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
               }
               if (!snapshot.hasData) {
                 return const SizedBox(height: 300, child: Center(child: Text("Không có dữ liệu biểu đồ.")));
@@ -384,7 +390,7 @@ class _ChartSectionState extends State<_ChartSection> {
 
               for (int i = 0; i < stats.length; i++) {
                 final data = stats[i]['data'];
-                dates.add(stats[i]['id'].toString().substring(5)); // just keep MM-DD
+                dates.add(stats[i]['id'].toString().substring(5));
                 
                 double val = 0;
                 if (_isShowingRevenue) {
@@ -399,7 +405,6 @@ class _ChartSectionState extends State<_ChartSection> {
 
               if (maxValue == 0) maxValue = 10;
               
-              // Ensure we have 7 spots for layout
               if (spots.length < 7) {
                  int missing = 7 - spots.length;
                  for(int i = 0; i < missing; i++) {
@@ -407,7 +412,6 @@ class _ChartSectionState extends State<_ChartSection> {
                      dates.insert(i, "${fakeDate.month.toString().padLeft(2, '0')}-${fakeDate.day.toString().padLeft(2, '0')}");
                      spots.insert(i, FlSpot(i.toDouble(), 0));
                  }
-                 // reindex remaining spots
                  for(int i = missing; i < 7; i++){
                      spots[i] = FlSpot(i.toDouble(), spots[i].y);
                  }
@@ -492,18 +496,21 @@ class _ChartSectionState extends State<_ChartSection> {
 
   Widget _buildChartToggleButton(String label, bool isRevenueBtn) {
     final isSelected = isRevenueBtn == _isShowingRevenue;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: () => setState(() => _isShowingRevenue = isRevenueBtn),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).colorScheme.surface : Colors.transparent,
+          color: isSelected
+              ? (isDark ? AppColors.darkCardBg : Theme.of(context).colorScheme.surface)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))] : null,
+          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 4, offset: const Offset(0, 2))] : null,
         ),
         child: Text(
           label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400, color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).textTheme.bodySmall?.color),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400, color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
         ),
       ),
     );
@@ -516,7 +523,7 @@ class _TopProductsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DashboardCard(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -524,12 +531,12 @@ class _TopProductsSection extends StatelessWidget {
             children: [
               Icon(Icons.insights, color: Theme.of(context).primaryColor, size: 20),
               const SizedBox(width: 8),
-              Text('Phân tích sản phẩm bán chạy', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+              Text('Phân tích sản phẩm bán chạy', style: AppTextStyles.heading3.copyWith(color: Theme.of(context).colorScheme.onSurface)),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           FutureBuilder<QuerySnapshot>(
-            future: FirebaseFirestore.instance.collection('product_stats').orderBy('quantitySold', descending: true).limit(3).get(),
+            future: FirebaseFirestore.instance.collection('product_stats').orderBy('quantitySold', descending: true).limit(2).get(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) return const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()));
               
@@ -538,7 +545,7 @@ class _TopProductsSection extends StatelessWidget {
               
               if (!hasStats) {
                 return FutureBuilder<QuerySnapshot>(
-                  future: FirebaseFirestore.instance.collection('products').limit(3).get(),
+                  future: FirebaseFirestore.instance.collection('products').limit(2).get(),
                   builder: (context, prodSnapshot) {
                     if (prodSnapshot.connectionState == ConnectionState.waiting) return const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()));
                     if (!prodSnapshot.hasData || prodSnapshot.data!.docs.isEmpty) {
@@ -601,61 +608,112 @@ class _TopProductsSection extends StatelessWidget {
 class _ProblematicOrdersSection extends StatelessWidget {
   const _ProblematicOrdersSection({Key? key}) : super(key: key);
 
+  static const int _maxVisibleItems = 1;
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return _DashboardCard(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
               Icon(Icons.warning_amber_rounded, color: Theme.of(context).colorScheme.error, size: 20),
               const SizedBox(width: 8),
-              Text('Đơn hàng cần xử lý', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+              Text('Đơn hàng cần xử lý', style: AppTextStyles.heading3.copyWith(color: Theme.of(context).colorScheme.onSurface)),
             ],
           ),
           const SizedBox(height: 16),
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('orders').where('status', whereIn: ['Cancelled', 'Failed']).orderBy('createdAt', descending: true).limit(5).snapshots(),
+            stream: FirebaseFirestore.instance.collection('orders').where('status', whereIn: ['Cancelled', 'Failed']).orderBy('createdAt', descending: true).limit(10).snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) return const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()));
-              if (snapshot.hasError) return Text("Error loading issues.", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error));
+              if (snapshot.hasError) return Text("Lỗi khi tải danh sách vấn đề.", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error));
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return Padding(padding: const EdgeInsets.all(8.0), child: Text("Không có vấn đề gì. Hệ thống ổn định!", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.green, fontWeight: FontWeight.w500)));
               }
 
-              return Column(
-                children: snapshot.data!.docs.map((doc) {
-                   final data = doc.data() as Map<String, dynamic>;
-                  final status = data['status'] as String? ?? 'Thất bại';
-                  final color = (status == 'Cancelled' || status == 'Đã hủy') ? Colors.orange : Theme.of(context).colorScheme.error;
-                  final displayStatus = status == 'Cancelled' ? 'Đã hủy' : (status == 'Failed' ? 'Thất bại' : status);
+              final allDocs = snapshot.data!.docs;
+              final visibleDocs = allDocs.take(_maxVisibleItems).toList();
+              final hasMore = allDocs.length > _maxVisibleItems;
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: color.withOpacity(0.05), border: Border.all(color: color.withOpacity(0.2)), borderRadius: BorderRadius.circular(8)),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(displayStatus, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 13, color: color)),
-                            const SizedBox(height: 4),
-                            Text('#${doc.id.substring(0, 8).toUpperCase()}', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color)),
-                          ],
-                        ),
-                        TextButton(
-                          onPressed: () => _showToast(context, 'Đang kiểm tra đơn hàng: ${doc.id}'),
-                          style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(50, 30)),
-                          child: Text('Kiểm tra', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
-                        )
-                      ],
+              return ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 280),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: const ClampingScrollPhysics(),
+                        itemCount: visibleDocs.length,
+                        itemBuilder: (context, index) {
+                          final doc = visibleDocs[index];
+                          final data = doc.data() as Map<String, dynamic>;
+                          final status = data['status'] as String? ?? 'Thất bại';
+                          final color = (status == 'Cancelled' || status == 'Đã hủy') ? Colors.orange : Theme.of(context).colorScheme.error;
+                          String displayStatus = status;
+                          if (status == 'Cancelled') displayStatus = 'Đã hủy';
+                          else if (status == 'Failed') displayStatus = 'Thất bại';
+                          else if (status == 'Pending') displayStatus = 'Đang chờ';
+                          else if (status == 'Processing') displayStatus = 'Đang xử lý';
+                          else if (status == 'In Transit') displayStatus = 'Đang giao';
+                          else if (status == 'Completed') displayStatus = 'Hoàn thành';
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(isDark ? 0.1 : 0.05),
+                              border: Border.all(color: color.withOpacity(isDark ? 0.3 : 0.2)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(displayStatus, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 13, color: color)),
+                                      const SizedBox(height: 4),
+                                      Text('#${doc.id.substring(0, 8).toUpperCase()}', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                                    ],
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => _showToast(context, 'Đang kiểm tra đơn hàng: ${doc.id}'),
+                                  style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(50, 30)),
+                                  child: Text('Kiểm tra', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+                                )
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  );
-                }).toList(),
+                    if (hasMore) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showToast(context, 'Mở danh sách đầy đủ đơn hàng cần xử lý'),
+                          icon: const Icon(Icons.visibility_outlined, size: 16),
+                          label: Text('Xem tất cả (${allDocs.length})'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Theme.of(context).colorScheme.error,
+                            side: BorderSide(color: Theme.of(context).colorScheme.error.withOpacity(0.3)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               );
             },
           ),
@@ -768,15 +826,9 @@ class _DashboardCardState extends State<_DashboardCard> {
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
         transform: Matrix4.translationValues(0, _isHovered ? -2 : 0, 0),
-         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.surfaceVariant : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(_isHovered ? 0.08 : 0.04), blurRadius: _isHovered ? 20 : 10, offset: Offset(0, _isHovered ? 8 : 4)),
-          ],
-        ),
-        child: Padding(
+        child: GlassContainer(
           padding: widget.padding,
+          borderRadius: BorderRadius.circular(16),
           child: widget.child,
         ),
       ),
@@ -794,7 +846,7 @@ class _NavigationGridSection extends StatelessWidget {
       children: [
         Text(
           'Phân hệ nhanh',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textHeading),
+          style: AppTextStyles.heading3.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         const SizedBox(height: 16),
         GridView.count(
@@ -806,27 +858,27 @@ class _NavigationGridSection extends StatelessWidget {
           childAspectRatio: 2.0, // Wider
           children: [
             const _NavCard(
-              title: 'Order Management',
+              title: 'Quản lý Đơn hàng',
               icon: Icons.inventory_2_rounded,
               color: _infoBlue,
               route: '/orders',
             ),
             const _NavCard(
-              title: 'Agricultural Products',
+              title: 'Sản phẩm Nông sản',
               icon: Icons.eco_rounded,
               color: _primaryGreen,
               route: '/products',
             ),
             const _NavCard(
-              title: 'Promotions & Vouchers',
+              title: 'Khuyến mãi & Voucher',
               icon: Icons.card_giftcard_rounded,
               color: _warningOrange,
               route: '/promotions',
             ),
             const _NavCard(
-              title: 'Finance & Permissions',
+              title: 'Tài chính & Phân quyền',
               icon: Icons.account_balance_wallet_rounded,
-              color: Colors.purple,
+              color: Color(0xFF6366F1),
               route: '/finance',
             ),
           ],
@@ -858,7 +910,6 @@ class _NavCardState extends State<_NavCard> {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = Theme.of(context).dividerColor;
     final textPrimary = Theme.of(context).colorScheme.onSurface;
 
     return MouseRegion(
@@ -866,27 +917,29 @@ class _NavCardState extends State<_NavCard> {
       onExit: (_) => setState(() => _isHovering = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () => context.push(widget.route), // Navigate to module
+        onTap: () => context.push(widget.route),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white,
+          transform: Matrix4.translationValues(0, _isHovering ? -2 : 0, 0),
+          child: GlassContainer(
+            padding: const EdgeInsets.all(16),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _isHovering ? widget.color : borderColor, width: _isHovering ? 2 : 1),
-            boxShadow: _isHovering ? [BoxShadow(color: widget.color.withOpacity(0.15), spreadRadius: 2, blurRadius: 10)] : [const BoxShadow(color: Color(0x05000000), offset: Offset(0, 4), blurRadius: 10)],
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(widget.icon, size: 36, color: widget.color),
-              const SizedBox(height: 12),
-              Text(
-                widget.title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: textPrimary, fontSize: 13),
-              ),
-            ],
+            border: Border.all(
+              color: _isHovering ? widget.color : Colors.white.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.15 : 0.6),
+              width: _isHovering ? 2 : 0.5,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(widget.icon, size: 36, color: widget.color),
+                const SizedBox(height: 12),
+                Text(
+                  widget.title,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: textPrimary, fontSize: 13),
+                ),
+              ],
+            ),
           ),
         ),
       ),

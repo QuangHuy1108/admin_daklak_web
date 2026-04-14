@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../logic/settings_provider.dart';
 import '../common/config_card.dart';
-import '../common/settings_form_header.dart';
+
 import '../common/settings_form_footer.dart';
 import 'package:admin_daklak_web/core/widgets/common/custom_admin_input.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
@@ -17,36 +17,32 @@ class BackupSettingsForm extends StatelessWidget {
 
     if (config == null) return const Center(child: CircularProgressIndicator(color: AppColors.primary));
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. Premium Header
-        SettingsFormHeader(
-          title: 'Sao lưu & Dữ liệu',
-          subtitle: 'Tự động sao lưu dữ liệu hệ thống để đảm bảo an toàn thông tin.',
-          isLoading: provider.isLoading,
-          onSave: () => provider.saveBackup(),
-        ),
-
-        // 2. Backup Schedule
+        // 1. Backup Schedule
         ConfigCard(
           title: 'Lịch trình sao lưu',
           icon: Icons.calendar_month_rounded,
-          iconCircleColor: const Color(0xFFE8ECEB),
           children: [
             _buildSwitchTile(
+              context,
               title: 'Tự động sao lưu',
               subtitle: 'Hệ thống sẽ tự động thực hiện sao lưu theo lịch',
               value: config.enableAutoBackup,
               onChanged: (val) => provider.updateBackup(config.copyWith(enableAutoBackup: val)),
             ),
-            const Divider(height: 32, color: AppColors.border),
+            Divider(height: 32, color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border),
             Row(
               children: [
                 Expanded(
                   child: _buildDropdown(
+                    context,
                     label: 'Tần suất sao lưu',
                     value: config.backupFrequency,
+                    isDark: isDark,
                     items: const [
                       DropdownMenuItem(value: 'daily', child: Text('Hàng ngày')),
                       DropdownMenuItem(value: 'weekly', child: Text('Hàng tuần')),
@@ -84,20 +80,21 @@ class BackupSettingsForm extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // 3. Backup Destination
+        // 2. Backup Destination
         ConfigCard(
           title: 'Điểm đến sao lưu',
           icon: Icons.storage_rounded,
-          iconCircleColor: const Color(0xFFE1F5FE),
           children: [
             _buildSwitchTile(
+              context,
               title: 'Sao lưu lên Cloud Storage',
               subtitle: 'Firebase Storage / Google Cloud',
               value: config.backupToCloudStorage,
               onChanged: (val) => provider.updateBackup(config.copyWith(backupToCloudStorage: val)),
             ),
-            const Divider(height: 32, color: AppColors.border),
+            Divider(height: 32, color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border),
             _buildSwitchTile(
+              context,
               title: 'Sao lưu lên Server bên ngoài',
               subtitle: 'Tự lưu trữ trên hạ tầng riêng (SFTP/API)',
               value: config.backupToExternalServer,
@@ -115,7 +112,7 @@ class BackupSettingsForm extends StatelessWidget {
           ],
         ),
 
-        // 4. Premium Footer
+        // 3. Premium Footer
         SettingsFormFooter(
           isLoading: provider.isLoading,
           onSave: () => provider.saveBackup(),
@@ -125,10 +122,10 @@ class BackupSettingsForm extends StatelessWidget {
     );
   }
 
-  Widget _buildSwitchTile({required String title, required String subtitle, required bool value, required ValueChanged<bool> onChanged}) {
+  Widget _buildSwitchTile(BuildContext context, {required String title, required String subtitle, required bool value, required ValueChanged<bool> onChanged}) {
     return SwitchListTile(
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+      title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color)),
       value: value,
       activeColor: AppColors.primary,
       onChanged: onChanged,
@@ -136,22 +133,23 @@ class BackupSettingsForm extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdown({required String label, required String value, required List<DropdownMenuItem<String>> items, required ValueChanged<String?> onChanged}) {
+  Widget _buildDropdown(BuildContext context, {required String label, required String value, required bool isDark, required List<DropdownMenuItem<String>> items, required ValueChanged<String?> onChanged}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
+        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           decoration: InputDecoration(
             filled: true,
-            fillColor: AppColors.surfaceVariant.withOpacity(0.4),
+            fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.surfaceVariant.withValues(alpha: 0.4),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
           ),
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textHeading),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          dropdownColor: Theme.of(context).colorScheme.surface,
           value: value,
           items: items,
           onChanged: onChanged,

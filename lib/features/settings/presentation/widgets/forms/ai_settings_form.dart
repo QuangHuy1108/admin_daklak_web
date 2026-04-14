@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../logic/settings_provider.dart';
 import '../common/config_card.dart';
 import '../common/secure_text_field.dart';
-import '../common/settings_form_header.dart';
+
 import '../common/settings_form_footer.dart';
 import 'package:admin_daklak_web/core/widgets/common/custom_admin_input.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
@@ -18,33 +18,26 @@ class AISettingsForm extends StatelessWidget {
 
     if (config == null) return const SizedBox.shrink();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. Premium Header
-        SettingsFormHeader(
-          title: 'AI & Tích hợp',
-          subtitle: 'Cấu hình các thành phần trí tuệ nhân tạo và các dịch vụ tích hợp bên thứ ba.',
-          isLoading: provider.isLoading,
-          onSave: () => provider.saveAI(),
-        ),
-
-        // 2. Gemini & LLM Config
+        // 1. Gemini & LLM Config
         ConfigCard(
           title: 'Cấu hình Gemini & LLM',
           icon: Icons.auto_awesome_rounded,
-          iconCircleColor: const Color(0xFFF3E5F5),
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Model AI chính', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
+                Text('Model AI chính', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: config.selectedModel,
-                  decoration: _dropdownDecoration(),
+                  decoration: _dropdownDecoration(context, isDark),
                   items: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gpt-4o', 'gpt-4o-mini']
-                      .map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))))
+                      .map((m) => DropdownMenuItem(value: m, child: Text(m, style: Theme.of(context).textTheme.bodyMedium)))
                       .toList(),
                   onChanged: (val) {
                     if (val != null) provider.updateAI(config.copyWith(selectedModel: val));
@@ -59,7 +52,7 @@ class AISettingsForm extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Temperature', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
+                    Text('Temperature', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
                     Text(config.temperature.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
                   ],
                 ),
@@ -67,9 +60,9 @@ class AISettingsForm extends StatelessWidget {
                 SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     activeTrackColor: AppColors.primary,
-                    inactiveTrackColor: AppColors.border,
+                    inactiveTrackColor: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border,
                     thumbColor: AppColors.primary,
-                    overlayColor: AppColors.primary.withOpacity(0.1),
+                    overlayColor: AppColors.primary.withValues(alpha: 0.1),
                     trackHeight: 4,
                   ),
                   child: Slider(
@@ -94,11 +87,10 @@ class AISettingsForm extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // 3. API Keys & Secrets
+        // 2. API Keys & Secrets
         ConfigCard(
           title: 'API Keys & Secrets',
           icon: Icons.vpn_key_rounded,
-          iconCircleColor: const Color(0xFFEFEBE9),
           subtitle: 'Các khóa bí mật dùng để kết nối với các dịch vụ bên thứ ba.',
           children: [
             SecureTextField(
@@ -131,11 +123,10 @@ class AISettingsForm extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // 4. AI Governance
+        // 3. AI Governance
         ConfigCard(
           title: 'AI Governance',
           icon: Icons.gavel_rounded,
-          iconCircleColor: const Color(0xFFECEFF1),
           children: [
             Row(
               children: [
@@ -157,13 +148,13 @@ class AISettingsForm extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Model dự phòng', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
+                      Text('Model dự phòng', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
                         value: config.governance.fallbackModel,
-                        decoration: _dropdownDecoration(),
+                        decoration: _dropdownDecoration(context, isDark),
                         items: ['gpt-4o-mini', 'claude-3-haiku', 'gemini-1.5-flash']
-                            .map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))))
+                            .map((m) => DropdownMenuItem(value: m, child: Text(m, style: Theme.of(context).textTheme.bodyMedium)))
                             .toList(),
                         onChanged: (val) {
                           if (val != null) {
@@ -182,12 +173,12 @@ class AISettingsForm extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.surfaceVariant.withOpacity(0.3),
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.surfaceVariant.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: SwitchListTile(
-                title: const Text('Bật bộ lọc an toàn (Safety Filters)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                subtitle: const Text('Tự động chặn các phản hồi không phù hợp hoặc nguy hiểm.', style: TextStyle(fontSize: 12)),
+                title: Text('Bật bộ lọc an toàn (Safety Filters)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+                subtitle: Text('Tự động chặn các phản hồi không phù hợp hoặc nguy hiểm.', style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color)),
                 value: config.governance.enableSafetyFilters,
                 activeColor: AppColors.primary,
                 onChanged: (val) {
@@ -201,7 +192,7 @@ class AISettingsForm extends StatelessWidget {
           ],
         ),
 
-        // 5. Premium Footer
+        // 4. Premium Footer
         SettingsFormFooter(
           isLoading: provider.isLoading,
           onSave: () => provider.saveAI(),
@@ -211,12 +202,12 @@ class AISettingsForm extends StatelessWidget {
     );
   }
 
-  InputDecoration _dropdownDecoration() => InputDecoration(
+  InputDecoration _dropdownDecoration(BuildContext context, bool isDark) => InputDecoration(
     filled: true,
-    fillColor: AppColors.surfaceVariant.withOpacity(0.4),
+    fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.surfaceVariant.withValues(alpha: 0.4),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border)),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border)),
     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
   );
 }

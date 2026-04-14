@@ -478,12 +478,12 @@ class _DashboardStatCardState extends State<DashboardStatCard> {
                     color: activeColor,
                     radius: 35,
                     title: '${onlinePercent.toStringAsFixed(1)}%',
-                    titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                    titleStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.surface),
                     showTitle: true,
                   ),
                   PieChartSectionData(
                     value: offline.toDouble(),
-                    color: Theme.of(context).dividerColor,
+                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1),
                     radius: 28,
                     title: '${offlinePercent.toStringAsFixed(1)}%',
                     titleStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
@@ -536,9 +536,53 @@ class _DashboardStatCardState extends State<DashboardStatCard> {
               getTooltipItems: (touchedSpots) => touchedSpots.map((s) => LineTooltipItem(s.y.toInt().toString(), TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12))).toList(),
             ),
           ),
-          gridData: const FlGridData(show: false),
-          titlesData: const FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 1,
+            getDrawingHorizontalLine: (value) => FlLine(color: Theme.of(context).dividerColor.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'T-${value.toInt()}', // To represent days ago or something
+                      style: TextStyle(fontSize: 9, color: Theme.of(context).textTheme.bodySmall?.color),
+                    ),
+                  );
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 24,
+                getTitlesWidget: (value, meta) {
+                  if (value % 1 != 0) return const SizedBox();
+                  return Text(
+                    value.toInt().toString(),
+                    style: TextStyle(fontSize: 10, color: Theme.of(context).textTheme.bodySmall?.color),
+                  );
+                },
+              ),
+            ),
+          ),
+          borderData: FlBorderData(
+            show: true,
+            border: Border(
+              bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
+              left: BorderSide(color: Theme.of(context).dividerColor, width: 1),
+              right: BorderSide.none,
+              top: BorderSide.none,
+            ),
+          ),
           minX: 0, maxX: 6, minY: 0,
           lineBarsData: [
             LineChartBarData(
@@ -804,8 +848,8 @@ class _ExpertOverviewCardState extends State<ExpertOverviewCard> {
                               aspectRatio: 1.0,
                               child: PieChart(
                                 PieChartData(sectionsSpace: 2, centerSpaceRadius: 12, sections: [
-                                  PieChartSectionData(value: online.toDouble(), color: Colors.lightBlue, radius: 20, title: '${((online/total)*100).toStringAsFixed(0)}%', titleStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
-                                  PieChartSectionData(value: (total - online).toDouble(), color: Theme.of(context).dividerColor, radius: 16, title: '${(((total-online)/total)*100).toStringAsFixed(0)}%', titleStyle: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                                  PieChartSectionData(value: online.toDouble(), color: Colors.lightBlue, radius: 20, title: '${((online/total)*100).toStringAsFixed(0)}%', titleStyle: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.surface)),
+                                  PieChartSectionData(value: (total - online).toDouble(), color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1), radius: 16, title: '${(((total-online)/total)*100).toStringAsFixed(0)}%', titleStyle: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                                 ]),
                               ),
                             );
@@ -866,7 +910,7 @@ class _ProductionOverviewCardState extends State<_ProductionOverviewCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Production Overview', style: AppTextStyles.heading3),
+          Text('Production Overview', style: AppTextStyles.heading3.copyWith(color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 24),
           Expanded(
             child: FutureBuilder<Map<String, double>>(
@@ -1049,7 +1093,7 @@ class _SalesPriceTrendCardState extends State<_SalesPriceTrendCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-                Expanded(child: Text('Biến động Giá Nông Sản', style: AppTextStyles.heading3, overflow: TextOverflow.ellipsis)),
+                Expanded(child: Text('Biến động Giá Nông Sản', style: AppTextStyles.heading3.copyWith(color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis)),
               DropdownButton<String>(
                 value: crop,
                 underline: const SizedBox(),
@@ -1184,7 +1228,7 @@ class _PopularDiseaseMentionCardState extends State<_PopularDiseaseMentionCard> 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Tần Suất Đề Cập Sâu Bệnh', style: AppTextStyles.heading3),
+          Text('Tần Suất Đề Cập Sâu Bệnh', style: AppTextStyles.heading3.copyWith(color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 24),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -1248,7 +1292,7 @@ class _FieldImageCardState extends State<_FieldImageCard> {
           final data = snapshot.data;
           return Column(
             children: [
-              Padding(padding: const EdgeInsets.all(20), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Khu Vực', style: AppTextStyles.heading3), DropdownButton<String>(value: id, underline: const SizedBox(), items: const [DropdownMenuItem(value: 'primary_field', child: Text('Khu Vực Chính')), DropdownMenuItem(value: 'field_2', child: Text('Khu Vực 2'))], onChanged: (v) { if (v != null) context.read<DashboardProvider>().setSelectedField(v); })])),
+              Padding(padding: const EdgeInsets.all(20), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Khu Vực', style: AppTextStyles.heading3.copyWith(color: Theme.of(context).colorScheme.onSurface)), DropdownButton<String>(value: id, underline: const SizedBox(), items: const [DropdownMenuItem(value: 'primary_field', child: Text('Khu Vực Chính')), DropdownMenuItem(value: 'field_2', child: Text('Khu Vực 2'))], onChanged: (v) { if (v != null) context.read<DashboardProvider>().setSelectedField(v); })])),
               if (data == null) const SizedBox(height: 200, child: Center(child: Text('No data')))
               else ...[
                 Image.network(data['imageUrl'] ?? 'https://images.unsplash.com/photo-1595974482597-4b8da8879cee', height: 180, width: double.infinity, fit: BoxFit.cover),

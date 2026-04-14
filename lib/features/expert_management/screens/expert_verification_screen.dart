@@ -24,7 +24,8 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
   
   // State variables for filtering and pagination
   final ValueNotifier<String> _searchQuery = ValueNotifier<String>('');
-  final ValueNotifier<String> _selectedStatus = ValueNotifier<String>('Tất cả');
+  final ValueNotifier<String> _selectedStatus = ValueNotifier<String>('Lọc theo trạng thái');
+  final ValueNotifier<DateTimeRange?> _selectedDateRange = ValueNotifier<DateTimeRange?>(null);
   final ValueNotifier<int> _currentPage = ValueNotifier<int>(1);
   final int _itemsPerPage = 10;
 
@@ -32,6 +33,7 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
   void dispose() {
     _searchQuery.dispose();
     _selectedStatus.dispose();
+    _selectedDateRange.dispose();
     _currentPage.dispose();
     super.dispose();
   }
@@ -108,15 +110,30 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
             builder: (context, query, _) {
               return ValueListenableBuilder<String>(
                 valueListenable: _selectedStatus,
-                builder: (context, status, _) {
-                  final filteredData = allData.where((item) {
-                    final matchesSearch = item.fullName.toLowerCase().contains(query.toLowerCase()) || 
-                                         item.expertise.toLowerCase().contains(query.toLowerCase());
-                    final matchesStatus = status == 'Tất cả' || _getStatusText(item.status) == status;
-                    return matchesSearch && matchesStatus;
-                  }).toList();
+                builder: (context, statusFilter, _) {
+                  return ValueListenableBuilder<DateTimeRange?>(
+                    valueListenable: _selectedDateRange,
+                    builder: (context, dateRange, _) {
+                      final filteredData = allData.where((item) {
+                        final matchesSearch = item.fullName.toLowerCase().contains(query.toLowerCase()) || 
+                                             item.expertise.toLowerCase().contains(query.toLowerCase());
+                        final matchesStatus = statusFilter == 'Lọc theo trạng thái' || _getStatusText(item.status) == statusFilter;
+                        
+                        bool matchesDate = true;
+                        if (dateRange != null) {
+                          // Lọc bao gồm cả ngày kết thúc (đến 23:59:59)
+                          final startDate = DateTime(dateRange.start.year, dateRange.start.month, dateRange.start.day);
+                          final endDate = DateTime(dateRange.end.year, dateRange.end.month, dateRange.end.day, 23, 59, 59);
+                          matchesDate = item.createdAt.isAfter(startDate.subtract(const Duration(seconds: 1))) && 
+                                        item.createdAt.isBefore(endDate.add(const Duration(seconds: 1)));
+                        }
+                        
+                        return matchesSearch && matchesStatus && matchesDate;
+                      }).toList();
 
-                  return _buildMainContent(filteredData);
+                      return _buildMainContent(filteredData);
+                    },
+                  );
                 },
               );
             },
@@ -133,8 +150,8 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(data),
-          const SizedBox(height: 32),
-          _buildToolbar(),
+          const SizedBox(height: 24),
+          _buildToolbar(data),
           const SizedBox(height: 24),
           Expanded(child: _buildTable(data)),
         ],
@@ -163,78 +180,176 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
             ),
           ],
         ),
-        ElevatedButton.icon(
-          onPressed: () => _exportToCsv(data),
-          icon: const Icon(Icons.download_rounded, size: 20),
-          label: const Text('Xuất CSV'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            elevation: 0,
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildToolbar() {
-    return CustomAdminToolbar(
-      searchField: TextField(
-        onChanged: (val) {
-          _searchQuery.value = val;
-          _currentPage.value = 1;
-        },
-        decoration: InputDecoration(
-          hintText: 'Tìm kiếm chuyên gia...',
-          prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color),
-          filled: true,
-          fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : AppColors.background,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+  Future<void> _selectDateRange() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      initialDateRange: _selectedDateRange.value,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'Chọn khoảng thời gian',
+      saveText: 'Chọn',
+      cancelText: 'Hủy',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+            ),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
-        ),
-      ),
-      centerFilters: [
-        ValueListenableBuilder<String>(
-          valueListenable: _selectedStatus,
-          builder: (context, current, _) {
-            return DropdownButtonFormField<String>(
-              value: current,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : AppColors.background,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      _selectedDateRange.value = picked;
+      _currentPage.value = 1;
+    }
+  }
+
+  Widget _buildToolbar(List<ExpertVerificationRequestModel> data) {
+    return CustomAdminToolbar(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+      children: [
+        // Column 1 & 2: Search (Flex 3 + 3 = 6)
+        Expanded(
+          flex: 6,
+          child: TextField(
+            onChanged: (val) {
+              _searchQuery.value = val;
+              _currentPage.value = 1;
+            },
+            decoration: InputDecoration(
+              hintText: 'Tìm kiếm chuyên gia...',
+              prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color),
+              filled: true,
+              fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
               ),
-              items: ['Tất cả', 'Chờ duyệt', 'Đã duyệt', 'Đã từ chối']
-                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  _selectedStatus.value = val;
-                  _currentPage.value = 1;
-                }
-              },
-            );
-          },
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+            ),
+          ),
         ),
-      ],
-      trailingActions: [
-        OutlinedButton.icon(
-          onPressed: () {},
-          icon: const Icon(Icons.filter_list, size: 20),
-          label: const Text('Thêm bộ lọc'),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            side: BorderSide(color: Theme.of(context).dividerColor),
+        const SizedBox(width: 16),
+        // Column 3: Status Filter (Flex 2)
+        Expanded(
+          flex: 2,
+          child: ValueListenableBuilder<String>(
+            valueListenable: _selectedStatus,
+            builder: (context, current, _) {
+              return DropdownButtonFormField<String>(
+                value: current,
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.filter_list_rounded, size: 16, color: Theme.of(context).textTheme.bodySmall?.color),
+                  filled: true,
+                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                ),
+                items: ['Lọc theo trạng thái', 'Chờ duyệt', 'Đã duyệt', 'Đã từ chối']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s, style: Theme.of(context).textTheme.bodySmall)))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    _selectedStatus.value = val;
+                    _currentPage.value = 1;
+                  }
+                },
+              );
+            },
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Column 4: Date Filter (Flex 2)
+        Expanded(
+          flex: 2,
+          child: ValueListenableBuilder<DateTimeRange?>(
+            valueListenable: _selectedDateRange,
+            builder: (context, range, _) {
+              return InkWell(
+                onTap: _selectDateRange,
+                borderRadius: BorderRadius.circular(30),
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today_outlined, 
+                          size: 16, color: Theme.of(context).textTheme.bodySmall?.color),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          range == null 
+                              ? 'Lọc theo ngày' 
+                              : '${DateFormat('dd/MM').format(range.start)} - ${DateFormat('dd/MM').format(range.end)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (range != null)
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 14),
+                          onPressed: () => _selectedDateRange.value = null,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Column 5: Export Button (Flex 1)
+        Expanded(
+          flex: 1,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton.icon(
+              onPressed: () => _exportToCsv(data),
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text('Xuất file'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                minimumSize: const Size(0, 44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                elevation: 0,
+              ),
+            ),
           ),
         ),
       ],
@@ -288,7 +403,7 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                       alignment: Alignment.centerLeft,
                       child: Chip(
                         label: Text(item.expertise, style: Theme.of(context).textTheme.labelSmall),
-                        backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : AppColors.background,
+                        backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.4),
                         side: BorderSide.none,
                       ),
                     ),

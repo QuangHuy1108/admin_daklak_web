@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
+import 'package:admin_daklak_web/core/widgets/common/glass_container.dart';
 
 class LogoUploaderSegment extends StatefulWidget {
   final String? initialLogoUrl;
@@ -39,28 +40,22 @@ class _LogoUploaderSegmentState extends State<LogoUploaderSegment> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Logo thương hiệu',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textHeading,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 12),
-        Container(
+        GlassContainer(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.border,
-              style: BorderStyle.solid, // Dash effect would require custom painter or package
-            ),
-          ),
+          borderRadius: BorderRadius.circular(16),
           child: Row(
             children: [
               // Logo Preview
@@ -68,7 +63,7 @@ class _LogoUploaderSegmentState extends State<LogoUploaderSegment> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.background,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ClipRRect(
@@ -95,11 +90,11 @@ class _LogoUploaderSegmentState extends State<LogoUploaderSegment> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Định dạng khuyên dùng: PNG, SVG (Tối đa 2MB)',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -108,8 +103,8 @@ class _LogoUploaderSegmentState extends State<LogoUploaderSegment> {
                         ElevatedButton(
                           onPressed: _pickImage,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.surfaceVariant,
-                            foregroundColor: AppColors.textHeading,
+                            backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.surfaceVariant,
+                            foregroundColor: Theme.of(context).colorScheme.onSurface,
                             elevation: 0,
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             shape: RoundedRectangleBorder(

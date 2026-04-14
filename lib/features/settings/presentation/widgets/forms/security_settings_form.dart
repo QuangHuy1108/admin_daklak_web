@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../logic/settings_provider.dart';
 import '../common/config_card.dart';
-import '../common/settings_form_header.dart';
+
 import '../common/settings_form_footer.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:admin_daklak_web/core/widgets/common/custom_admin_input.dart';
@@ -18,22 +18,15 @@ class SecuritySettingsForm extends StatelessWidget {
 
     if (config == null) return const SizedBox.shrink();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. Premium Header
-        SettingsFormHeader(
-          title: 'Bảo mật & Quyền',
-          subtitle: 'Quản lý các chính sách bảo mật, truy cập và bảo vệ dữ liệu hệ thống.',
-          isLoading: provider.isLoading,
-          onSave: () => provider.saveSecurity(),
-        ),
-
-        // 2. Access Policy
+        // 1. Access Policy
         ConfigCard(
           title: 'Chính sách truy cập',
           icon: Icons.lock_person_rounded,
-          iconCircleColor: const Color(0xFFE8ECEB),
           children: [
             Row(
               children: [
@@ -67,14 +60,14 @@ class SecuritySettingsForm extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.surfaceVariant.withOpacity(0.3),
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.surfaceVariant.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: SwitchListTile(
                 activeColor: AppColors.primary,
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Bắt buộc xác thực 2 lớp (2FA)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textHeading)),
-                subtitle: const Text('Áp dụng cho tất cả tài khoản quản trị viên và chuyên gia.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                title: Text('Bắt buộc xác thực 2 lớp (2FA)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+                subtitle: Text('Áp dụng cho tất cả tài khoản quản trị viên và chuyên gia.', style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color)),
                 value: config.forceTwoFactorAuth,
                 onChanged: (val) {
                   provider.updateSecurity(config.copyWith(forceTwoFactorAuth: val));
@@ -86,19 +79,18 @@ class SecuritySettingsForm extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // 3. Emergency Actions
+        // 2. Emergency Actions
         ConfigCard(
           title: 'Hành động khẩn cấp',
           icon: Icons.emergency_share_rounded,
-          iconCircleColor: const Color(0xFFFFEBEE),
           subtitle: 'Các thao tác ảnh hưởng đến tất cả người dùng.',
           children: [
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.04),
+                color: Colors.redAccent.withValues(alpha: isDark ? 0.08 : 0.04),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.red.withOpacity(0.1)),
+                border: Border.all(color: Colors.redAccent.withValues(alpha: isDark ? 0.2 : 0.1)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,9 +106,9 @@ class SecuritySettingsForm extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Thao tác này sẽ yêu cầu TẤT CẢ người dùng phải xác thực lại. Chỉ sử dụng trong sự cố bảo mật nghiêm trọng.',
-                    style: TextStyle(fontSize: 14, color: AppColors.textHeading, height: 1.5),
+                    style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9), height: 1.5),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
@@ -135,7 +127,7 @@ class SecuritySettingsForm extends StatelessWidget {
                     const SizedBox(height: 16),
                     Text(
                       'Lần thực hiện cuối: ${DateFormat('HH:mm dd/MM/yyyy').format(config.globalForceLogoutTimestamp!)}',
-                      style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 12, color: AppColors.textMuted),
+                      style: TextStyle(fontStyle: FontStyle.italic, fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color),
                     ),
                   ],
                 ],

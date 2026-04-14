@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/common/glass_container.dart';
+import '../../../core/widgets/common/custom_admin_table.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -59,7 +60,7 @@ class FinanceScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Sổ Cái Tài Chính & Đối Soát',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context)),
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context)),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -107,7 +108,7 @@ class FinanceScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Phân Tích Dòng Tiền Thật', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context))),
+                        Text('Phân Tích Dòng Tiền Thật', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                         const SizedBox(height: 24),
                         SizedBox(
                           height: 350,
@@ -125,7 +126,7 @@ class FinanceScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Biểu đồ Doanh thu (7 ngày)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context))),
+                        Text('Biểu đồ Doanh thu (7 ngày)', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                         const SizedBox(height: 24),
                         SizedBox(
                           height: 350,
@@ -301,52 +302,81 @@ class FinanceScreen extends StatelessWidget {
   }
 
   Widget _buildExpenseTable(BuildContext context, FinanceProvider provider, NumberFormat formatter) {
-    return GlassContainer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Nhật Ký Chi Phí Thực Tế', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context))),
-                Text('${provider.expenses.length} bản ghi', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _getTextSecondary(context))),
-              ],
-            ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Nhật Ký Chi Phí Thực Tế', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+              Text('${provider.expenses.length} bản ghi', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _getTextSecondary(context))),
+            ],
           ),
-          const Divider(height: 1),
-          if (provider.expenses.isEmpty)
-            const Padding(padding: EdgeInsets.all(48), child: Center(child: Text('Chưa có ghi nhận chi phí nào.')))
-          else
-            DataTable(
-              headingRowColor: WidgetStateProperty.all(_getBgGray(context)),
-              columns: const [
-                DataColumn(label: Text('Ngày')),
-                DataColumn(label: Text('Danh mục')),
-                DataColumn(label: Text('Mô tả')),
-                DataColumn(label: Text('Số tiền')),
-                DataColumn(label: Text('Thao tác')),
-              ],
-              rows: provider.expenses.map((expense) {
-                return DataRow(cells: [
-                  DataCell(Text(DateFormat('dd/MM/yyyy').format(expense.date))),
-                  DataCell(Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: _getInfoBlue(context).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                    child: Text(expense.category, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _getInfoBlue(context), fontWeight: FontWeight.bold, fontSize: 12)),
-                  )),
-                  DataCell(Text(expense.description)),
-                  DataCell(Text(formatter.format(expense.amount), style: TextStyle(fontWeight: FontWeight.bold, color: _getWarningRed(context)))),
-                  DataCell(IconButton(
-                    icon: Icon(Icons.delete_outline, color: _getWarningRed(context)),
+        ),
+
+        // CustomAdminTable — golden rule
+        SizedBox(
+          height: provider.expenses.isEmpty ? 200 : (provider.expenses.length * 72.0 + 80).clamp(200, 600),
+          child: CustomAdminTable(
+            flex: const [2, 2, 4, 2, 1],
+            labels: const ['Ngày', 'Danh mục', 'Mô tả', 'Số tiền', 'Thao tác'],
+            itemCount: provider.expenses.length,
+            onRowTapWithIndex: (_) {},
+            rowBuilder: (context, index) {
+              final expense = provider.expenses[index];
+              return [
+                // Date
+                Text(
+                  DateFormat('dd/MM/yyyy').format(expense.date),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+
+                // Category — Chip
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Chip(
+                    label: Text(expense.category, style: Theme.of(context).textTheme.labelSmall),
+                    backgroundColor: isDark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.4),
+                    side: BorderSide.none,
+                  ),
+                ),
+
+                // Description
+                Text(
+                  expense.description,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _getTextPrimary(context)),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                // Amount
+                Text(
+                  formatter.format(expense.amount),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: _getWarningRed(context),
+                  ),
+                ),
+
+                // Delete action
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: Icon(Icons.delete_outline, color: _getWarningRed(context), size: 20),
+                    tooltip: 'Xóa',
                     onPressed: () => provider.deleteExpense(expense.id),
-                  )),
-                ]);
-              }).toList(),
-            ),
-        ],
-      ),
+                  ),
+                ),
+              ];
+            },
+          ),
+        ),
+      ],
     );
   }
 

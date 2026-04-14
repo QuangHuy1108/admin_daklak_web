@@ -7,21 +7,21 @@ import 'package:csv/csv.dart';
 import 'dart:html' as html;
 
 import 'order_detail_dialog.dart';
-import 'order_detail_dialog.dart';
 import 'package:admin_daklak_web/features/logs/services/bulk_service.dart';
 import 'package:admin_daklak_web/features/logs/widgets/bulk_action_bar.dart';
 import 'package:admin_daklak_web/features/logs/models/audit_log_model.dart';
 import '../../../core/widgets/common/glass_container.dart';
+import '../../../core/widgets/common/custom_admin_toolbar.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
 
-  Color _getBgGray(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant.withValues(alpha: 0.5) : const Color(0xFFF5F7FA);
-  Color _getTextPrimary(BuildContext context) => Theme.of(context).colorScheme.onSurface;
-  Color _getTextSecondary(BuildContext context) => Theme.of(context).textTheme.bodySmall?.color ?? const Color(0xFF6B7280);
-  Color _getBorderColor(BuildContext context) => Theme.of(context).dividerColor;
-  Color _getPrimaryGreen(BuildContext context) => Theme.of(context).primaryColor;
-  Color _getSuccessGreen(BuildContext context) => Colors.green;
-  Color _getErrorRed(BuildContext context) => Theme.of(context).colorScheme.error;
-  Color _getInfoBlue(BuildContext context) => Colors.blue;
+Color _getBgGray(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant.withValues(alpha: 0.5) : const Color(0xFFF5F7FA);
+Color _getTextPrimary(BuildContext context) => Theme.of(context).colorScheme.onSurface;
+Color _getTextSecondary(BuildContext context) => Theme.of(context).textTheme.bodySmall?.color ?? const Color(0xFF6B7280);
+Color _getBorderColor(BuildContext context) => Theme.of(context).dividerColor;
+Color _getPrimaryGreen(BuildContext context) => Theme.of(context).primaryColor;
+Color _getSuccessGreen(BuildContext context) => Colors.green;
+Color _getErrorRed(BuildContext context) => Theme.of(context).colorScheme.error;
+Color _getInfoBlue(BuildContext context) => Colors.blue;
 
 void _showToast(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
@@ -37,7 +37,7 @@ void _showToast(BuildContext context, String message) {
 
 class OrdersTableWidget extends StatefulWidget {
   final DateTimeRange? dateRange;
-  final bool isDashboard; // Add flag to conditionally style for hub
+  final bool isDashboard;
   
   const OrdersTableWidget({
     Key? key,
@@ -65,12 +65,15 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
   bool _isSearchMode = false;
   String _activeSearchId = '';
   String? _firebaseIndexErrorUrl;
+  DateTimeRange? _internalDateRange;
   
   List<DocumentSnapshot> _docs = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   StreamSubscription? _streamSub;
+
+  DateTimeRange? get _effectiveDateRange => widget.dateRange ?? _internalDateRange;
 
   @override
   void initState() {
@@ -101,9 +104,10 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
       q = q.where('status', isEqualTo: firestoreStatus);
     }
     
-    if (widget.dateRange != null) {
-      q = q.where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(widget.dateRange!.start))
-           .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(widget.dateRange!.end));
+    final dateRange = _effectiveDateRange;
+    if (dateRange != null) {
+      q = q.where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(dateRange.start))
+           .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(dateRange.end));
     }
 
     q = q.orderBy('createdAt', descending: true).limit(50);
@@ -127,7 +131,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
               _firebaseIndexErrorUrl = match.group(0);
             }
          } else {
-             _showToast(context, 'Firebase Error: $error');
+             _showToast(context, 'Lỗi Firebase: $error');
          }
       });
     });
@@ -141,9 +145,10 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
     final firestoreStatus = _statusValueMap[_selectedStatus] ?? 'All Status';
     if (firestoreStatus != 'All Status') q = q.where('status', isEqualTo: firestoreStatus);
     
-    if (widget.dateRange != null) {
-       q = q.where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(widget.dateRange!.start))
-            .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(widget.dateRange!.end));
+    final dateRange = _effectiveDateRange;
+    if (dateRange != null) {
+       q = q.where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(dateRange.start))
+            .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(dateRange.end));
     }
     
     q = q.orderBy('createdAt', descending: true)
@@ -188,6 +193,31 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
     });
   }
 
+  Future<void> _pickDateRange() async {
+    final now = DateTime.now();
+    final newRange = await showDateRangePicker(
+      context: context,
+      initialDateRange: _internalDateRange ?? DateTimeRange(start: now.subtract(const Duration(days: 7)), end: now),
+      firstDate: DateTime(2020),
+      lastDate: now,
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(primary: Theme.of(context).primaryColor),
+        ),
+        child: child!,
+      ),
+    );
+    if (newRange != null) {
+      setState(() {
+        _internalDateRange = DateTimeRange(
+          start: DateTime(newRange.start.year, newRange.start.month, newRange.start.day),
+          end: DateTime(newRange.end.year, newRange.end.month, newRange.end.day, 23, 59, 59),
+        );
+      });
+      _startListeningToOrders();
+    }
+  }
+
   @override
   void dispose() {
     _streamSub?.cancel();
@@ -196,18 +226,18 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
 
   void exportToCSV() {
     if (_docs.isEmpty) {
-      _showToast(context, 'No data to export.');
+      _showToast(context, 'Không có dữ liệu để xuất.');
       return;
     }
 
     final List<List<dynamic>> rows = [
-      ['Order ID', 'Customer Name', 'Total Amount']
+      ['Mã đơn hàng', 'Tên khách hàng', 'Tổng tiền']
     ];
 
     for (var doc in _docs) {
       final data = doc.data() as Map<String, dynamic>? ?? {};
       final amount = (data['totalAmount'] ?? 0) is num ? (data['totalAmount'] as num).toDouble() : double.tryParse((data['totalAmount']).toString()) ?? 0;
-      final customerName = data['customerName'] ?? 'No Name';
+      final customerName = data['customerName'] ?? 'Không có tên';
       rows.add([doc.id.toUpperCase(), customerName, amount]);
     }
 
@@ -224,105 +254,227 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
     html.document.body!.children.remove(anchor);
     html.Url.revokeObjectUrl(url);
 
-    _showToast(context, 'Export successful!');
+    _showToast(context, 'Xuất file thành công!');
   }
 
   @override
   Widget build(BuildContext context) {
-    return GlassContainer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Đơn hàng gần đây', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context))),
-                _selectedIds.isNotEmpty 
-                ? Expanded(
-                    child: BulkActionBar(
-                      selectedCount: _selectedIds.length,
-                      onClearSelection: () => setState(() => _selectedIds.clear()),
-                      actions: [
-                        _buildBulkStatusDropdown(),
-                      ],
-                    ),
-                  )
-                : Row(
-                    children: [
-                      SizedBox(
-                        width: 250,
-                        height: 40,
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Tìm mã đơn hàng chính xác...',
-                            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _getTextSecondary(context), fontSize: 13),
-                            prefixIcon: Icon(Icons.search, size: 20, color: _getTextSecondary(context)),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: _getBorderColor(context))),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: _getBorderColor(context))),
-                          ),
-                          onChanged: (val) {
-                            if (val.isEmpty) _performSearch('');
-                          },
-                          onSubmitted: (val) => _performSearch(val),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Container(
-                        height: 40,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(border: Border.all(color: _getBorderColor(context)), borderRadius: BorderRadius.circular(8)),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedStatus,
-                            icon: Icon(Icons.arrow_drop_down, color: _getTextSecondary(context)),
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _getTextPrimary(context)),
-                            items: <String>['Tất cả trạng thái', 'Đang chờ', 'Đang xử lý', 'Đang giao', 'Hoàn thành', 'Đã hủy', 'Thất bại']
-                                .map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
-                            onChanged: (newValue) {
-                              if (newValue != null) {
-                                setState(() { _selectedStatus = newValue; });
-                                if (!_isSearchMode) _startListeningToOrders();
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-              ],
-            ),
-          ),
-          Divider(height: 1, color: _getBorderColor(context)),
-          
-          if (_firebaseIndexErrorUrl != null)
-             _buildFirebaseIndexErrorBubble()
-          else if (_isSearchMode)
-             _buildSearchFutureResult()
-          else if (_isLoading)
-             const Padding(padding: EdgeInsets.all(48.0), child: Center(child: CircularProgressIndicator()))
-          else if (_docs.isEmpty)
-             const Padding(padding: EdgeInsets.all(48.0), child: Center(child: Text("No orders found matching the filter.")))
-          else
-             _buildDataTableBody(_docs),
-             
-          if (!_isSearchMode && _hasMore && !_isLoading && _firebaseIndexErrorUrl == null)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: _isLoadingMore 
-                  ? const CircularProgressIndicator() 
-                  : TextButton.icon(
-                      onPressed: _fetchMoreOrders,
-                      icon: Icon(Icons.refresh, color: _getPrimaryGreen(context)),
-                      label: Text("Tải thêm đơn hàng", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: _getPrimaryGreen(context), fontWeight: FontWeight.w600)),
-                    ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ═══════════════════════════════════════════════
+        // STANDALONE PILL TOOLBAR
+        // ═══════════════════════════════════════════════
+        _selectedIds.isNotEmpty
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: BulkActionBar(
+                selectedCount: _selectedIds.length,
+                onClearSelection: () => setState(() => _selectedIds.clear()),
+                actions: [_buildBulkStatusDropdown()],
               ),
             )
-        ],
-      ),
+          : Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: _buildToolbar(context, isDark),
+            ),
+
+        // ═══════════════════════════════════════════════
+        // GLASS TABLE CARD
+        // ═══════════════════════════════════════════════
+        GlassContainer(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_firebaseIndexErrorUrl != null)
+                _buildFirebaseIndexErrorBubble()
+              else if (_isSearchMode)
+                _buildSearchFutureResult()
+              else if (_isLoading)
+                const Padding(padding: EdgeInsets.all(48.0), child: Center(child: CircularProgressIndicator()))
+              else if (_docs.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(48.0),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.inbox_rounded, size: 48, color: _getTextSecondary(context)),
+                        const SizedBox(height: 12),
+                        Text("Không tìm thấy đơn hàng nào.", style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: _getTextSecondary(context))),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                _buildDataTableBody(_docs),
+                
+              if (!_isSearchMode && _hasMore && !_isLoading && _firebaseIndexErrorUrl == null)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Center(
+                    child: _isLoadingMore 
+                      ? const CircularProgressIndicator() 
+                      : TextButton.icon(
+                          onPressed: _fetchMoreOrders,
+                          icon: Icon(Icons.refresh, color: _getPrimaryGreen(context)),
+                          label: Text("Tải thêm đơn hàng", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: _getPrimaryGreen(context), fontWeight: FontWeight.w600)),
+                        ),
+                  ),
+                )
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Toolbar using CustomAdminToolbar — same specs as Expert Verification
+  /// height: 56, padding: h24/v6, flex: 6:2:2:1, borderRadius: 30
+  Widget _buildToolbar(BuildContext context, bool isDark) {
+    final fillColor = isDark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3);
+
+    String dateLabel = 'Lọc theo ngày';
+    if (_internalDateRange != null) {
+      final s = _internalDateRange!.start;
+      final e = _internalDateRange!.end;
+      dateLabel = '${s.day}/${s.month}/${s.year} - ${e.day}/${e.month}/${e.year}';
+    }
+
+    return CustomAdminToolbar(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+      children: [
+        // Search — flex 6
+        Expanded(
+          flex: 6,
+          child: TextField(
+            onChanged: (val) {
+              if (val.isEmpty) _performSearch('');
+            },
+            onSubmitted: (val) => _performSearch(val),
+            decoration: InputDecoration(
+              hintText: 'Tìm kiếm đơn hàng...',
+              prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color),
+              filled: true,
+              fillColor: fillColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+
+        // Status Filter — flex 2
+        Expanded(
+          flex: 2,
+          child: DropdownButtonFormField<String>(
+            value: _selectedStatus,
+            decoration: InputDecoration(
+              prefixIcon: Icon(Icons.filter_list_rounded, size: 16, color: Theme.of(context).textTheme.bodySmall?.color),
+              filled: true,
+              fillColor: fillColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+            ),
+            items: <String>['Tất cả trạng thái', 'Đang chờ', 'Đang xử lý', 'Đang giao', 'Hoàn thành', 'Đã hủy', 'Thất bại']
+                .map((s) => DropdownMenuItem(value: s, child: Text(s, style: Theme.of(context).textTheme.bodySmall))).toList(),
+            onChanged: (newValue) {
+              if (newValue != null) {
+                setState(() { _selectedStatus = newValue; });
+                if (!_isSearchMode) _startListeningToOrders();
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: 16),
+
+        // Date Filter — flex 2
+        Expanded(
+          flex: 2,
+          child: InkWell(
+            onTap: _pickDateRange,
+            borderRadius: BorderRadius.circular(30),
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: fillColor,
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_today_outlined, size: 16, color: Theme.of(context).textTheme.bodySmall?.color),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      dateLabel,
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (_internalDateRange != null)
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 14),
+                      onPressed: () {
+                        setState(() => _internalDateRange = null);
+                        _startListeningToOrders();
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+
+        // Export Button — flex 1
+        Expanded(
+          flex: 1,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton.icon(
+              onPressed: exportToCSV,
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text('Xuất file'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _getPrimaryGreen(context),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                minimumSize: const Size(0, 44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -332,9 +484,9 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.1),
+            color: Colors.red.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.red.withOpacity(0.3)),
+            border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
           ),
           child: Column(
              crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,13 +495,13 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
                    children: [
                        const Icon(Icons.warning_rounded, color: Colors.red),
                        const SizedBox(width: 8),
-                       Text("Firebase Index Required", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.red)),
+                       Text("Yêu cầu thiết lập Index Firebase", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.red)),
                     ]
                  ),
                  const SizedBox(height: 4),
-                 Text("This specific filter requires a Composite Index in Firestore.", style: Theme.of(context).textTheme.bodySmall),
+                 Text("Bộ lọc này yêu cầu một 'Composite Index' trong Firestore để hoạt động.", style: Theme.of(context).textTheme.bodySmall),
                  const SizedBox(height: 8),
-                 SelectableText("Please copy and paste this link in your browser to build the index:\n${_firebaseIndexErrorUrl!}", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.blue, decoration: TextDecoration.underline)),
+                 SelectableText("Vui lòng sao chép và dán liên kết này vào trình duyệt của bạn để tạo index:\n${_firebaseIndexErrorUrl!}", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.blue, decoration: TextDecoration.underline)),
              ]
           )
         )
@@ -364,9 +516,19 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
            return const Padding(padding: EdgeInsets.all(48.0), child: Center(child: CircularProgressIndicator()));
         }
         if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
-           return const Padding(padding: EdgeInsets.all(48.0), child: Center(child: Text("No exact match found for this Order ID.")));
+           return Padding(
+             padding: const EdgeInsets.all(48.0),
+             child: Center(
+               child: Column(
+                 children: [
+                   Icon(Icons.search_off_rounded, size: 48, color: _getTextSecondary(context)),
+                   const SizedBox(height: 12),
+                   Text("Không tìm thấy đơn hàng với mã này.", style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: _getTextSecondary(context))),
+                 ],
+               ),
+             ),
+           );
         }
-        
         return _buildDataTableBody([snapshot.data!]);
       },
     );
@@ -376,7 +538,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - (widget.isDashboard ? 100 : 64)),
+        constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - (widget.isDashboard ? 100 : 96)),
         child: DataTable(
           headingRowColor: WidgetStateProperty.all(_getBgGray(context)),
           showCheckboxColumn: true,
@@ -397,7 +559,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
             _buildDataColumn('Tổng tiền'),
             _buildDataColumn('Trạng thái'),
             _buildDataColumn('Ngày tạo'),
-            _buildDataColumn('Hành động'),
+            _buildDataColumn('Thao tác'),
           ],
           rows: displayDocs.map((doc) {
             Map<String, dynamic> data;
@@ -426,28 +588,31 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
                 DataCell(
                   InkWell(
                     onTap: () => _viewOrderDetail(doc.id, data),
-                    child: Text(doc.id.length > 8 ? doc.id.substring(0, 8).toUpperCase() : doc.id.toUpperCase(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                    child: Text(doc.id.length > 8 ? doc.id.substring(0, 8).toUpperCase() : doc.id.toUpperCase(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: _getPrimaryGreen(context))),
                   )
                 ),
-                DataCell(Text(data['customerName'] ?? 'No Name', style: Theme.of(context).textTheme.bodyMedium)),
+                DataCell(Text(data['customerName'] ?? 'Không có tên', style: Theme.of(context).textTheme.bodyMedium)),
                 DataCell(Text('${amount.toStringAsFixed(0)} đ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600))),
                 DataCell(_buildStatusBadge(data['status'] ?? 'Pending')),
                 DataCell(Text(dateString, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _getTextSecondary(context)))),
                 DataCell(
-                  PopupMenuButton<String>(
-                    onSelected: (val) => _updateOrderStatus(doc.id, val),
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'Processing', child: Text('Đang xử lý')),
-                      PopupMenuItem(value: 'Completed', child: Text('Hoàn thành')),
-                      PopupMenuItem(value: 'Cancelled', child: Text('Hủy đơn hàng', style: TextStyle(color: Colors.red))),
-                    ]
-                  )
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Eye icon — view detail
+                      IconButton(
+                        onPressed: () => _viewOrderDetail(doc.id, data),
+                        icon: Icon(Icons.visibility_outlined, size: 20, color: _getPrimaryGreen(context)),
+                        tooltip: 'Xem chi tiết',
+                        splashRadius: 20,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             );
           }).toList(),
         ),
-
       ),
     );
   }
@@ -458,6 +623,19 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
     );
   }
 
+  /// Map Firestore status → Vietnamese display label
+  String _statusToVietnamese(String status) {
+    switch (status) {
+      case 'Pending': return 'Đang chờ';
+      case 'Processing': return 'Đang xử lý';
+      case 'In Transit': return 'Đang giao';
+      case 'Completed': return 'Hoàn thành';
+      case 'Cancelled': return 'Đã hủy';
+      case 'Failed': return 'Thất bại';
+      default: return status;
+    }
+  }
+
   Widget _buildStatusBadge(String status) {
     Color statusColor;
     Color statusBg;
@@ -465,24 +643,24 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
     switch (status) {
       case 'Pending':
         statusColor = Colors.orange;
-        statusBg = Colors.orange.withOpacity(0.1);
+        statusBg = Colors.orange.withValues(alpha: 0.1);
         break;
       case 'Processing':
         statusColor = _getInfoBlue(context);
-        statusBg = _getInfoBlue(context).withOpacity(0.1);
+        statusBg = _getInfoBlue(context).withValues(alpha: 0.1);
         break;
       case 'In Transit':
-        statusColor = Colors.purple;
-        statusBg = Colors.purple.withOpacity(0.1);
+        statusColor = const Color(0xFF6366F1);
+        statusBg = const Color(0xFF6366F1).withValues(alpha: 0.1);
         break;
       case 'Completed':
         statusColor = _getSuccessGreen(context);
-        statusBg = _getSuccessGreen(context).withOpacity(0.1);
+        statusBg = _getSuccessGreen(context).withValues(alpha: 0.1);
         break;
       case 'Cancelled':
       case 'Failed':
         statusColor = _getErrorRed(context);
-        statusBg = _getErrorRed(context).withOpacity(0.1);
+        statusBg = _getErrorRed(context).withValues(alpha: 0.1);
         break;
       default:
         statusColor = _getTextSecondary(context);
@@ -490,9 +668,9 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(12)),
-      child: Text(status, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: statusColor, fontWeight: FontWeight.w600)),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(50)),
+      child: Text(_statusToVietnamese(status), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: statusColor, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -502,9 +680,9 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
         'status': newStatus,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      if (mounted) _showToast(context, 'Order updated to $newStatus');
+      if (mounted) _showToast(context, 'Đã cập nhật đơn hàng sang ${_statusToVietnamese(newStatus)}');
     } catch (e) {
-      if (mounted) _showToast(context, 'Error updating order: $e');
+      if (mounted) _showToast(context, 'Lỗi cập nhật đơn hàng: $e');
     }
   }
 
@@ -525,7 +703,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(50),
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: DropdownButtonHideUnderline(
@@ -533,7 +711,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
           hint: Text("Cập nhật trạng thái", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
           icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).primaryColor),
           items: <String>['Pending', 'Processing', 'In Transit', 'Completed', 'Cancelled']
-              .map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
+              .map((value) => DropdownMenuItem(value: value, child: Text(_statusToVietnamese(value)))).toList(),
           onChanged: (newValue) {
             if (newValue != null) {
               _confirmBulkUpdate(newValue);
@@ -549,7 +727,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text("Xác nhận cập nhật hàng loạt", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-        content: Text("Bạn có chắc chắn muốn cập nhật trạng thái cho ${_selectedIds.length} đơn hàng sang '$newStatus'?", style: Theme.of(context).textTheme.bodyMedium),
+        content: Text("Bạn có chắc chắn muốn cập nhật trạng thái cho ${_selectedIds.length} đơn hàng sang '${_statusToVietnamese(newStatus)}'?", style: Theme.of(context).textTheme.bodyMedium),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Hủy")),
           ElevatedButton(
@@ -573,7 +751,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
         docIds: _selectedIds.toList(),
         data: {'status': newStatus},
         module: AuditModule.orders,
-        actionDescription: "Cập nhật hàng loạt trạng thái đơn hàng sang '$newStatus'",
+        actionDescription: "Cập nhật hàng loạt trạng thái đơn hàng sang '${_statusToVietnamese(newStatus)}'",
       );
       if (mounted) {
         _showToast(context, "Đã cập nhật ${_selectedIds.length} đơn hàng thành công.");

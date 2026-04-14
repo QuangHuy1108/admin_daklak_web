@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
+import 'package:admin_daklak_web/core/widgets/common/glass_container.dart';
 
 class SettingsFormFooter extends StatelessWidget {
   final bool isLoading;
@@ -19,14 +20,13 @@ class SettingsFormFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.only(top: 64, bottom: 100),
-      child: Container(
+      child: GlassContainer(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF2EEE4),
-          borderRadius: BorderRadius.circular(16),
-        ),
+        borderRadius: BorderRadius.circular(16),
         child: Row(
           children: [
             const Icon(Icons.info_rounded, color: AppColors.primary, size: 20),
@@ -34,13 +34,13 @@ class SettingsFormFooter extends StatelessWidget {
             Expanded(
               child: Text(
                 infoText,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textBody, fontWeight: FontWeight.w500),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color, fontWeight: FontWeight.w500),
               ),
             ),
             const SizedBox(width: 24),
             TextButton(
               onPressed: onDiscard,
-              child: Text('Hủy bỏ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textBody)),
+              child: Text('Hủy bỏ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
             ),
             const SizedBox(width: 12),
             ElevatedButton(

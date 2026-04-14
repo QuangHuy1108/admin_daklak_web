@@ -5,6 +5,7 @@ class CustomAdminToolbar extends StatelessWidget {
   final Widget? searchField;
   final List<Widget>? centerFilters;
   final List<Widget>? trailingActions;
+  final List<Widget>? children;
   final double height;
   final EdgeInsets padding;
 
@@ -13,6 +14,7 @@ class CustomAdminToolbar extends StatelessWidget {
     this.searchField,
     this.centerFilters,
     this.trailingActions,
+    this.children,
     this.height = 72,
     this.padding = const EdgeInsets.all(16),
   });
@@ -21,6 +23,7 @@ class CustomAdminToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
+      height: height,
       padding: padding,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.75),
@@ -34,28 +37,30 @@ class CustomAdminToolbar extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          if (searchField != null) 
-            Expanded(flex: 3, child: searchField!),
-          
-          if (centerFilters != null && centerFilters!.isNotEmpty) ...[
-            const SizedBox(width: 16),
-            ...centerFilters!.map((w) => Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: SizedBox(width: 200, child: w),
-            )),
-          ],
+      child: children != null 
+        ? Row(children: children!)
+        : Row(
+            children: [
+              if (searchField != null) 
+                Expanded(flex: 3, child: searchField!),
+              
+              if (centerFilters != null && centerFilters!.isNotEmpty) ...[
+                const SizedBox(width: 16),
+                ...centerFilters!.map((w) => Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: SizedBox(width: 200, child: w),
+                )),
+              ],
 
-          if (trailingActions != null && trailingActions!.isNotEmpty) ...[
-            const Spacer(),
-            ...trailingActions!.map((w) => Padding(
-              padding: const EdgeInsets.only(left: 12),
-              child: w,
-            )),
-          ],
-        ],
-      ),
+              if (trailingActions != null && trailingActions!.isNotEmpty) ...[
+                const Spacer(),
+                ...trailingActions!.map((w) => Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: w,
+                )),
+              ],
+            ],
+          ),
     );
   }
 }

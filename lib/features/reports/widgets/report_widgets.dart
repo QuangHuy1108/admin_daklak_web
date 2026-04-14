@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
+import 'package:admin_daklak_web/core/constants/app_text_styles.dart';
+import 'package:admin_daklak_web/core/widgets/common/glass_container.dart';
 
 // --- KPI Card with Drill-down Effect ---
 
@@ -46,25 +48,10 @@ class _ReportKPICardState extends State<ReportKPICard> {
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
           transform: Matrix4.translationValues(0, _isHovered ? -4 : 0, 0),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.75),
+          child: GlassContainer(
+            padding: const EdgeInsets.all(20),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: _isHovered
-                  ? widget.iconColor.withValues(alpha: 0.3)
-                  : Colors.white.withValues(alpha: isDark ? 0.08 : 0.6),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: _isHovered ? 0.08 : 0.04),
-                blurRadius: 24,
-                offset: const Offset(4, 4),
-              ),
-            ],
-          ),
-          child: Column(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -80,9 +67,14 @@ class _ReportKPICardState extends State<ReportKPICard> {
                     child: Icon(widget.icon, color: widget.iconColor, size: 22),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: widget.isPositive ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                      color: widget.isPositive
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -90,7 +82,9 @@ class _ReportKPICardState extends State<ReportKPICard> {
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: widget.isPositive ? Colors.green[400] : Colors.red[400],
+                        color: widget.isPositive
+                            ? Colors.green[400]
+                            : Colors.red[400],
                       ),
                     ),
                   ),
@@ -116,11 +110,14 @@ class _ReportKPICardState extends State<ReportKPICard> {
               const SizedBox(height: 4),
               Text(
                 widget.subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
+          ),
           ),
         ),
       ),
@@ -154,9 +151,9 @@ class _AIHealthCardState extends State<AIHealthCard> {
   }
 
   String get _statusText {
-    if (widget.fallbackPercent < 5) return "Operating Optimally";
-    if (widget.fallbackPercent <= 15) return "Needs Training";
-    return "System Overwhelmed";
+    if (widget.fallbackPercent < 5) return "Hoạt động tối ưu";
+    if (widget.fallbackPercent <= 15) return "Cần thêm dữ liệu";
+    return "Hệ thống quá tải";
   }
 
   @override
@@ -170,23 +167,10 @@ class _AIHealthCardState extends State<AIHealthCard> {
         borderRadius: BorderRadius.circular(24),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.75),
+          child: GlassContainer(
+            padding: const EdgeInsets.all(20),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: _isHovered ? _healthColor : Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), 
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: _healthColor.withValues(alpha: _isHovered ? 0.15 : 0.05),
-                blurRadius: 24,
-                offset: const Offset(4, 4),
-              ),
-            ],
-          ),
-          child: Column(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -194,10 +178,7 @@ class _AIHealthCardState extends State<AIHealthCard> {
                 children: [
                   Text(
                     "Theo dõi sức khỏe AI",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                    style: AppTextStyles.heading3.copyWith(color: Theme.of(context).colorScheme.onSurface),
                   ),
                   Icon(Icons.psychology, color: _healthColor),
                 ],
@@ -211,17 +192,21 @@ class _AIHealthCardState extends State<AIHealthCard> {
                       children: [
                         Text(
                           "${widget.fallbackPercent.toStringAsFixed(1)}%",
-                          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: _healthColor,
-                          ),
+                          style: Theme.of(context).textTheme.displaySmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: _healthColor,
+                              ),
                         ),
                         Text(
-                          "Fallback Rate",
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Theme.of(context).textTheme.bodySmall?.color,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          "Tỷ lệ Fallback",
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.color,
+                                fontWeight: FontWeight.w500,
+                              ),
                         ),
                       ],
                     ),
@@ -241,16 +226,20 @@ class _AIHealthCardState extends State<AIHealthCard> {
                       children: [
                         Text(
                           _statusText,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: _healthColor,
-                          ),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: _healthColor,
+                              ),
                         ),
                         Text(
-                          "Status",
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Theme.of(context).textTheme.bodySmall?.color,
-                          ),
+                          "Trạng thái",
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.color,
+                              ),
                         ),
                       ],
                     ),
@@ -273,7 +262,7 @@ class _AIHealthCardState extends State<AIHealthCard> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
-                      "View Detailed Logs",
+                      "Xem nhật ký chi tiết",
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: _healthColor,
@@ -284,6 +273,7 @@ class _AIHealthCardState extends State<AIHealthCard> {
                 ),
               ],
             ],
+          ),
           ),
         ),
       ),
@@ -323,25 +313,10 @@ class _RankingListState extends State<RankingList> {
         borderRadius: BorderRadius.circular(24),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.75),
+          child: GlassContainer(
+            padding: const EdgeInsets.all(20),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: _isHovered
-                  ? AppColors.primary
-                  : Colors.white.withValues(alpha: isDark ? 0.08 : 0.6),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: _isHovered ? 0.08 : 0.04),
-                blurRadius: 24,
-                offset: const Offset(4, 4),
-              ),
-            ],
-          ),
-          child: Column(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -349,16 +324,17 @@ class _RankingListState extends State<RankingList> {
                 children: [
                   Text(
                     widget.title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                    style: AppTextStyles.heading3.copyWith(color: Theme.of(context).colorScheme.onSurface),
                   ),
                   if (_isHovered)
-                    const Icon(Icons.launch, size: 16, color: AppColors.primary),
+                    const Icon(
+                      Icons.launch,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               ...widget.items.asMap().entries.map((entry) {
                 int idx = entry.key;
                 var data = entry.value;
@@ -374,26 +350,36 @@ class _RankingListState extends State<RankingList> {
                         height: 28,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: idx == 0 ? Colors.amber[100] : Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+                          color: idx == 0
+                              ? Colors.amber[100]
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.surface.withValues(alpha: 0.5),
                           shape: BoxShape.circle,
                         ),
                         child: Text(
                           "${idx + 1}",
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: idx == 0 ? Colors.amber[900] : Theme.of(context).textTheme.bodySmall?.color,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: idx == 0
+                                    ? Colors.amber[900]
+                                    : Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.color,
+                              ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           name,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontWeight: FontWeight.w500,
+                              ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -415,11 +401,14 @@ class _RankingListState extends State<RankingList> {
                   child: Center(
                     child: Text(
                       "Chưa có đủ dữ liệu thống kê",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
                     ),
                   ),
                 ),
             ],
+          ),
           ),
         ),
       ),

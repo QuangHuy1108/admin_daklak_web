@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 const Color _primaryGreen = Color(0xFF2E7D32);
-const Color _textPrimary = Color(0xFF1C2826);
-const Color _textSecondary = Color(0xFF6B7280);
 
 class CreateOrderDialog extends StatefulWidget {
   const CreateOrderDialog({Key? key}) : super(key: key);
@@ -29,7 +27,7 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(message, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
-      backgroundColor: _textPrimary,
+      backgroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ));
@@ -38,7 +36,7 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
   Future<void> _submitOrder() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_selectedProductId == null) {
-      _showToast("Please select a product");
+      _showToast("Vui lòng chọn sản phẩm");
       return;
     }
 
@@ -70,8 +68,6 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
         'status': 'Pending',
         'createdAt': FieldValue.serverTimestamp(),
         // sellerId is required by the analytics pipeline.
-        // Read from the product's nested seller map (seller.id),
-        // which is how the mobile app stores seller info.
         if (_selectedProductSellerId != null)
           'sellerId': _selectedProductSellerId,
       });
@@ -88,10 +84,10 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
 
       await batch.commit();
 
-      _showToast("Order created successfully!");
+      _showToast("Đã tạo đơn hàng thành công!");
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      _showToast("Error creating order: $e");
+      _showToast("Lỗi khi tạo đơn hàng: $e");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -100,8 +96,8 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Create Manual Order', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _textPrimary)),
-      backgroundColor: Colors.white,
+      title: Text('Tạo Đơn hàng Thủ công', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+      backgroundColor: Theme.of(context).dialogBackgroundColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       content: SizedBox(
         width: 400,
@@ -113,57 +109,55 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
               children: [
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Customer Name', border: OutlineInputBorder()),
-                  validator: (val) => (val == null || val.trim().isEmpty) ? 'Required' : null,
+                  decoration: const InputDecoration(labelText: 'Tên khách hàng', border: OutlineInputBorder()),
+                  validator: (val) => (val == null || val.trim().isEmpty) ? 'Bắt buộc' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(labelText: 'Phone Number', border: OutlineInputBorder()),
-                  validator: (val) => (val == null || val.trim().isEmpty) ? 'Required' : null,
+                  decoration: const InputDecoration(labelText: 'Số điện thoại', border: OutlineInputBorder()),
+                  validator: (val) => (val == null || val.trim().isEmpty) ? 'Bắt buộc' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _addressController,
                   maxLines: 2,
-                  decoration: const InputDecoration(labelText: 'Delivery Address', border: OutlineInputBorder()),
-                  validator: (val) => (val == null || val.trim().isEmpty) ? 'Required' : null,
+                  decoration: const InputDecoration(labelText: 'Địa chỉ giao hàng', border: OutlineInputBorder()),
+                  validator: (val) => (val == null || val.trim().isEmpty) ? 'Bắt buộc' : null,
                 ),
                 const SizedBox(height: 16),
                 FutureBuilder<QuerySnapshot>(
                   future: FirebaseFirestore.instance.collection('products').get(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const CircularProgressIndicator();
+                      return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError || !snapshot.hasData) {
-                      return Text("Could not load products", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red));
+                      return Text("Không thể tải danh sách sản phẩm", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red));
                     }
                     final products = snapshot.data!.docs;
                     return DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(labelText: 'Product', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(labelText: 'Sản phẩm', border: OutlineInputBorder()),
                       value: _selectedProductId,
                       items: products.map((doc) {
                         final data = doc.data() as Map<String, dynamic>;
                         final rawPrice = data['price'] ?? 0;
                         final price = rawPrice is num ? rawPrice.toDouble() : double.tryParse(rawPrice.toString()) ?? 0.0;
-                        // Resolve sellerId: mobile app nests it as seller.id;
-                        // fall back to root-level sellerId for older docs.
                         final sellerMap = data['seller'] as Map<String, dynamic>?;
                         final sellerId = (sellerMap?['id'] as String?) ?? data['sellerId'] as String?;
                         return DropdownMenuItem<String>(
                           value: doc.id,
-                          child: Text(data['name'] ?? 'Unnamed Product'),
+                          child: Text(data['name'] ?? 'Sản phẩm không tên'),
                           onTap: () {
-                            _selectedProductName = data['name'] ?? 'Unnamed Product';
+                            _selectedProductName = data['name'] ?? 'Sản phẩm không tên';
                             _selectedProductPrice = price;
                             _selectedProductSellerId = sellerId;
                           },
                         );
                       }).toList(),
                       onChanged: (val) => setState(() => _selectedProductId = val),
-                      validator: (val) => val == null ? 'Required' : null,
+                      validator: (val) => val == null ? 'Bắt buộc' : null,
                     );
                   },
                 ),
@@ -171,10 +165,10 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
                 TextFormField(
                   controller: _quantityController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Quantity', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Số lượng', border: OutlineInputBorder()),
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Required';
-                    if (int.tryParse(val) == null || int.parse(val) <= 0) return 'Invalid number';
+                    if (val == null || val.trim().isEmpty) return 'Bắt buộc';
+                    if (int.tryParse(val) == null || int.parse(val) <= 0) return 'Số lượng không hợp lệ';
                     return null;
                   },
                 ),
@@ -186,14 +180,14 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: Text('Cancel', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: _textSecondary)),
+          child: Text('Hủy', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submitOrder,
           style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen),
           child: _isLoading 
             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : Text('Create', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
+            : Text('Tạo mới', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
         ),
       ],
     );

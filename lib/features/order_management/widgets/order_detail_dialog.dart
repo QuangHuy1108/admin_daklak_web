@@ -21,9 +21,9 @@ class OrderDetailDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final customerName = orderData['customerName'] ?? 'No Name';
-    final phone = orderData['phone'] ?? 'N/A';
-    final address = orderData['address'] ?? 'N/A';
+    final customerName = orderData['customerName'] ?? 'Không có tên';
+    final phone = orderData['phone'] ?? 'Không có';
+    final address = orderData['address'] ?? 'Không có';
     final status = orderData['status'] ?? 'Pending';
     final amount = (orderData['totalAmount'] ?? 0) is num ? (orderData['totalAmount'] as num).toDouble() : double.tryParse((orderData['totalAmount']).toString()) ?? 0;
     
@@ -54,7 +54,7 @@ class OrderDetailDialog extends StatelessWidget {
                          Column(
                              crossAxisAlignment: CrossAxisAlignment.start,
                              children: [
-                                Text('Order Details', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context))),
+                                Text('Chi tiết Đơn hàng', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context))),
                                 const SizedBox(height: 4),
                                 Text('#${orderId.toUpperCase()}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _getTextSecondary(context))),
                              ]
@@ -73,24 +73,24 @@ class OrderDetailDialog extends StatelessWidget {
                          crossAxisAlignment: CrossAxisAlignment.start,
                          children: [
                              // User Info Section
-                            Text('Customer Information', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: _getTextPrimary(context))),
+                            Text('Thông tin Khách hàng', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: _getTextPrimary(context))),
                             const SizedBox(height: 16),
                             Container(
                                padding: const EdgeInsets.all(16),
                                decoration: BoxDecoration(color: _getBgGray(context), borderRadius: BorderRadius.circular(12)),
                                child: Column(
                                   children: [
-                                     _buildInfoRow(Icons.person_outline, 'Name', customerName, context),
+                                     _buildInfoRow(Icons.person_outline, 'Tên', customerName, context),
                                      const SizedBox(height: 12),
-                                     _buildInfoRow(Icons.phone_outlined, 'Phone', phone, context),
+                                     _buildInfoRow(Icons.phone_outlined, 'Điện thoại', phone, context),
                                      const SizedBox(height: 12),
-                                     _buildInfoRow(Icons.location_on_outlined, 'Address', address, context),
+                                     _buildInfoRow(Icons.location_on_outlined, 'Địa chỉ', address, context),
                                   ]
                                )
                             ),
                              const SizedBox(height: 32),
                             // Products Table
-                            Text('Ordered Items', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: _getTextPrimary(context))),
+                            Text('Danh sách sản phẩm', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: _getTextPrimary(context))),
                             const SizedBox(height: 16),
                             Container(
                                decoration: BoxDecoration(
@@ -101,18 +101,18 @@ class OrderDetailDialog extends StatelessWidget {
                                   children: [
                                      Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                        decoration: BoxDecoration(color: _getBgGray(context), borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+                                        decoration: BoxDecoration(color: _getBgGray(context), borderRadius: const BorderRadius.vertical(top: Radius.circular(12))),
                                          child: Row(
                                             children: [
-                                               Expanded(flex: 3, child: Text('Product Name', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
-                                               Expanded(flex: 1, child: Text('Qty', textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
-                                               Expanded(flex: 2, child: Text('Unit Price', textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
-                                               Expanded(flex: 2, child: Text('Total', textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
+                                               Expanded(flex: 3, child: Text('Tên sản phẩm', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
+                                               Expanded(flex: 1, child: Text('SL', textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
+                                               Expanded(flex: 2, child: Text('Đơn giá', textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
+                                               Expanded(flex: 2, child: Text('Thành tiền', textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
                                             ]
                                          )
                                      ),
                                      ...items.map((item) {
-                                         final itemName = item['productName'] ?? 'Unknown';
+                                         final itemName = item['productName'] ?? 'Không rõ';
                                          final qty = item['quantity'] ?? 1;
                                          final price = (item['price'] ?? 0) is num ? (item['price'] as num).toDouble() : double.tryParse(item['price'].toString()) ?? 0;
                                          return Container(
@@ -136,7 +136,7 @@ class OrderDetailDialog extends StatelessWidget {
                             Row(
                                mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                   Text('Total Amount:', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: _getTextSecondary(context))),
+                                   Text('Tổng cộng:', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: _getTextSecondary(context))),
                                    const SizedBox(width: 16),
                                    Text('${amount.toStringAsFixed(0)} đ', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: _primaryGreen)),
                                 ]
@@ -157,19 +157,19 @@ class OrderDetailDialog extends StatelessWidget {
                      child: Row(
                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                           Text('Change Status:', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: _getTextPrimary(context))),
+                           Text('Chuyển trạng thái:', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: _getTextPrimary(context))),
                            const SizedBox(width: 16),
                            Row(
                               children: [
-                                 _buildStatusButton('Pending', Colors.orange, status, context),
+                                 _buildStatusButton('Pending', 'Đang chờ', Colors.orange, status, context),
                                  const SizedBox(width: 8),
-                                 _buildStatusButton('Processing', Colors.blue, status, context),
+                                 _buildStatusButton('Processing', 'Đang xử lý', Colors.blue, status, context),
                                  const SizedBox(width: 8),
-                                 _buildStatusButton('In Transit', Colors.purple, status, context),
+                                 _buildStatusButton('In Transit', 'Đang giao', const Color(0xFF6366F1), status, context),
                                  const SizedBox(width: 8),
-                                 _buildStatusButton('Completed', Colors.green, status, context),
+                                 _buildStatusButton('Completed', 'Hoàn thành', Colors.green, status, context),
                                  const SizedBox(width: 8),
-                                 _buildStatusButton('Cancelled', Colors.red, status, context),
+                                 _buildStatusButton('Cancelled', 'Đã hủy', Colors.red, status, context),
                               ]
                            )
                         ]
@@ -197,7 +197,7 @@ class OrderDetailDialog extends StatelessWidget {
       );
   }
 
-  Widget _buildStatusButton(String targetStatus, MaterialColor color, String currentStatus, BuildContext context) {
+  Widget _buildStatusButton(String targetStatus, String displayLabel, Color color, String currentStatus, BuildContext context) {
       final isCurrent = currentStatus == targetStatus;
       return InkWell(
          onTap: () {
@@ -215,7 +215,7 @@ class OrderDetailDialog extends StatelessWidget {
                borderRadius: BorderRadius.circular(8),
             ),
              child: Text(
-                targetStatus,
+                displayLabel,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                    color: isCurrent ? Colors.white : _getTextSecondary(context),
                    fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,

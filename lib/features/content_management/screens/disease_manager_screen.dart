@@ -12,6 +12,7 @@ import 'package:admin_daklak_web/core/constants/app_text_styles.dart';
 import '../../../core/widgets/common/glass_container.dart';
 import '../../../core/widgets/common/custom_admin_table.dart';
 import '../../../core/widgets/common/custom_admin_toolbar.dart';
+import '../../../core/widgets/common/custom_admin_badge.dart';
 
 class DiseaseManagerScreen extends StatefulWidget {
   const DiseaseManagerScreen({super.key});
@@ -99,8 +100,9 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
     );
 
     String selectedType = data['type'] ?? 'Nấm';
-    if (!_types.contains(selectedType) && selectedType != 'Tất cả')
+    if (!_types.contains(selectedType) && selectedType != 'Tất cả') {
       selectedType = 'Khác';
+    }
 
     bool isActive = data['isActive'] ?? true;
 
@@ -110,246 +112,224 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setStateDialog) => AlertDialog(
-          title: Text(
-            isEditing ? 'Chỉnh sửa: ${data['name']}' : 'Thêm Sâu bệnh Mới',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          content: SizedBox(
-            width: 700,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  InkWell(
-                    onTap: () async {
-                      final XFile? image = await ImagePicker().pickImage(
-                        source: ImageSource.gallery,
-                      );
-                      if (image != null) {
-                        final bytes = await image.readAsBytes();
-                        setStateDialog(() => newImageBytes = bytes);
-                      }
-                    },
-                    child: Container(
-                      height: 180,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white12
-                            : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: newImageBytes != null
-                          ? Image.memory(newImageBytes!, fit: BoxFit.contain)
-                          : (existingImageUrl != null
-                                ? Image.network(existingImageUrl)
-                                : Icon(
-                                    Icons.add_a_photo,
-                                    size: 50,
-                                    color: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall?.color,
-                                  )),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  Row(
+        builder: (context, setStateDialog) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          
+          InputDecoration glassInputDecoration(String label) {
+            return InputDecoration(
+              labelText: label,
+              labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 13),
+              filled: true,
+              fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            );
+          }
+
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.all(24),
+            child: GlassContainer(
+              padding: const EdgeInsets.all(32),
+              child: SizedBox(
+                width: 700,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: TextField(
-                          controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Tên bệnh',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Switch(
-                        value: isActive,
-                        onChanged: (val) =>
-                            setStateDialog(() => isActive = val),
-                        activeThumbColor: Theme.of(context).primaryColor,
-                      ),
                       Text(
-                        isActive
-                            ? "Đã duyệt (Đang hiển thị)"
-                            : "Chờ xử lý (Đang ẩn)",
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: isActive ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold,
+                        isEditing ? 'Chỉnh sửa: ${data['name']}' : 'Thêm Sâu bệnh Mới',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                      ),
+                      const SizedBox(height: 24),
+                      InkWell(
+                        onTap: () async {
+                          final XFile? image = await ImagePicker().pickImage(source: ImageSource.gallery);
+                          if (image != null) {
+                            final bytes = await image.readAsBytes();
+                            setStateDialog(() => newImageBytes = bytes);
+                          }
+                        },
+                        child: Container(
+                          height: 220,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: newImageBytes != null
+                              ? ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.memory(newImageBytes!, fit: BoxFit.cover))
+                              : (existingImageUrl != null && existingImageUrl.isNotEmpty
+                                  ? ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(existingImageUrl, fit: BoxFit.cover))
+                                  : Icon(Icons.add_a_photo, size: 50, color: Theme.of(context).textTheme.bodySmall?.color)),
                         ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: nameController,
+                              decoration: glassInputDecoration('Tên bệnh'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Row(
+                            children: [
+                              Switch(
+                                value: isActive,
+                                onChanged: (val) => setStateDialog(() => isActive = val),
+                                activeTrackColor: AppColors.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                isActive ? "Đã duyệt (Đang hiển thị)" : "Chờ xử lý (Đang ẩn)",
+                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                      color: isActive ? AppColors.primary : Colors.orange,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              initialValue: selectedType,
+                              decoration: glassInputDecoration('Loại'),
+                              items: ['Côn trùng', 'Nấm', 'Vi-rút', 'Khác']
+                                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                                  .toList(),
+                              onChanged: (v) => setStateDialog(() => selectedType = v!),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: TextField(
+                              controller: seasonController,
+                              decoration: glassInputDecoration('Mùa vụ (VD: Mùa mưa)'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: emergencyController,
+                              decoration: glassInputDecoration('Mức độ khẩn cấp'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: TextField(
+                              controller: affectedPartsController,
+                              decoration: glassInputDecoration('Bộ phận bị hại (cách bởi dấu phẩy)'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: symptomsController,
+                        maxLines: 4,
+                        decoration: glassInputDecoration('Triệu chứng (mỗi dòng 1 ý)'),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: treatmentController,
+                        maxLines: 4,
+                        decoration: glassInputDecoration('Cách điều trị (mỗi dòng 1 ý)'),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: preventionController,
+                        maxLines: 4,
+                        decoration: glassInputDecoration('Cách phòng ngừa (mỗi dòng 1 ý)'),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: tagsController,
+                        decoration: glassInputDecoration('Tags từ khóa (cách bởi dấu phẩy)'),
+                      ),
+                      const SizedBox(height: 32),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(
+                              'Hủy',
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    color: Theme.of(context).textTheme.bodySmall?.color,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          ElevatedButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () async {
+                                    setStateDialog(() => _isLoading = true);
+                                    try {
+                                      String finalImageUrl = existingImageUrl ?? '';
+                                      if (newImageBytes != null) {
+                                        String fileName = 'pest_diseases/${DateTime.now().millisecondsSinceEpoch}.png';
+                                        TaskSnapshot snapshot = await FirebaseStorage.instance.ref(fileName).putData(newImageBytes!);
+                                        finalImageUrl = await snapshot.ref.getDownloadURL();
+                                      }
+
+                                      Map<String, dynamic> diseaseData = {
+                                        'name': nameController.text.trim(),
+                                        'type': selectedType,
+                                        'season': seasonController.text.trim(),
+                                        'emergency_level': emergencyController.text.trim(),
+                                        'isActive': isActive,
+                                        'affected_parts': _stringToList(affectedPartsController.text),
+                                        'symptoms': _stringToList(symptomsController.text),
+                                        'treatment': _stringToList(treatmentController.text),
+                                        'prevention': _stringToList(preventionController.text),
+                                        'tags': _stringToList(tagsController.text),
+                                        'imageUrl': finalImageUrl,
+                                        'updatedAt': FieldValue.serverTimestamp(),
+                                      };
+
+                                      if (isEditing) {
+                                        await existingDoc.reference.update(diseaseData);
+                                      } else {
+                                        diseaseData['createdAt'] = FieldValue.serverTimestamp();
+                                        await _firestore.collection('pest_diseases').add(diseaseData);
+                                      }
+
+                                      if (context.mounted) Navigator.pop(context);
+                                    } finally {
+                                      setStateDialog(() => _isLoading = false);
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            ),
+                            child: Text(
+                              'Lưu dữ liệu',
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          initialValue: selectedType,
-                          items: ['Côn trùng', 'Nấm', 'Vi-rút', 'Khác']
-                              .map(
-                                (e) =>
-                                    DropdownMenuItem(value: e, child: Text(e)),
-                              )
-                              .toList(),
-                          onChanged: (v) => selectedType = v!,
-                          decoration: const InputDecoration(
-                            labelText: 'Loại',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: seasonController,
-                          decoration: const InputDecoration(
-                            labelText: 'Mùa vụ (VD: Mùa mưa)',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: emergencyController,
-                          decoration: const InputDecoration(
-                            labelText: 'Mức độ khẩn cấp',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: affectedPartsController,
-                          decoration: const InputDecoration(
-                            labelText: 'Bộ phận bị hại (cách bởi dấu phẩy)',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: symptomsController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Triệu chứng (mỗi dòng 1 ý)',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: treatmentController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Cách điều trị (mỗi dòng 1 ý)',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: preventionController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Cách phòng ngừa (mỗi dòng 1 ý)',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: tagsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Tags từ khóa (cách bởi dấu phẩy)',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Hủy',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
               ),
             ),
-            ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () async {
-                      setStateDialog(() => _isLoading = true);
-                      try {
-                        String finalImageUrl = existingImageUrl ?? '';
-                        if (newImageBytes != null) {
-                          String fileName =
-                              'pest_diseases/${DateTime.now().millisecondsSinceEpoch}.png';
-                          TaskSnapshot snapshot = await FirebaseStorage.instance
-                              .ref(fileName)
-                              .putData(newImageBytes!);
-                          finalImageUrl = await snapshot.ref.getDownloadURL();
-                        }
-
-                        Map<String, dynamic> diseaseData = {
-                          'name': nameController.text.trim(),
-                          'type': selectedType,
-                          'season': seasonController.text.trim(),
-                          'emergency_level': emergencyController.text.trim(),
-                          'isActive': isActive,
-                          'affected_parts': _stringToList(
-                            affectedPartsController.text,
-                          ),
-                          'symptoms': _stringToList(symptomsController.text),
-                          'treatment': _stringToList(treatmentController.text),
-                          'prevention': _stringToList(
-                            preventionController.text,
-                          ),
-                          'tags': _stringToList(tagsController.text),
-                          'imageUrl': finalImageUrl,
-                          'updatedAt': FieldValue.serverTimestamp(),
-                        };
-
-                        if (isEditing) {
-                          await existingDoc.reference.update(diseaseData);
-                        } else {
-                          diseaseData['createdAt'] =
-                              FieldValue.serverTimestamp();
-                          await _firestore
-                              .collection('pest_diseases')
-                              .add(diseaseData);
-                        }
-
-                        if (context.mounted) Navigator.pop(context);
-                      } finally {
-                        setStateDialog(() => _isLoading = false);
-                      }
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-              ),
-              child: Text(
-                'Lưu dữ liệu',
-                style: Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -1189,109 +1169,84 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                       ], // End of Dashboard Top Section
                       // (C) KHU VỰC BẢNG DỮ LIỆU CHÍNH
                       CustomAdminToolbar(
-                        searchField: TextField(
-                          onChanged: _onSearchChanged,
-                          decoration: InputDecoration(
-                            hintText: 'Tìm kiếm sâu bệnh...',
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodySmall?.color,
-                            ),
-                            filled: true,
-                            fillColor:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.black.withValues(alpha: 0.03),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 0,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide.none,
+                        height: 56,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                        children: [
+                          Expanded(
+                            flex: 6,
+                            child: TextField(
+                              onChanged: _onSearchChanged,
+                              decoration: InputDecoration(
+                                hintText: 'Tìm kiếm sâu bệnh...',
+                                prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color),
+                                filled: true,
+                                fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                              ),
                             ),
                           ),
-                        ),
-                        centerFilters: [
-                          DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedFilterType,
-                              icon: Icon(
-                                Icons.filter_list,
-                                size: 18,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodySmall?.color,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              initialValue: _selectedFilterType,
+                              decoration: InputDecoration(
+                                prefixIcon: Icon(Icons.filter_list_rounded, size: 16, color: Theme.of(context).textTheme.bodySmall?.color),
+                                filled: true,
+                                fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                               ),
-                              items: _types
-                                  .map(
-                                    (type) => DropdownMenuItem(
-                                      value: type,
-                                      child: Text(
-                                        type,
-                                        style: const TextStyle(fontSize: 14),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
+                              items: _types.map((type) => DropdownMenuItem(value: type, child: Text(type, style: Theme.of(context).textTheme.bodySmall))).toList(),
                               onChanged: (v) => setState(() {
                                 _selectedFilterType = v!;
                                 _currentPage = 1;
                               }),
                             ),
                           ),
-                          DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _sortBy,
-                              icon: Icon(
-                                Icons.sort,
-                                size: 18,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodySmall?.color,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              initialValue: _sortBy,
+                              decoration: InputDecoration(
+                                prefixIcon: Icon(Icons.sort, size: 16, color: Theme.of(context).textTheme.bodySmall?.color),
+                                filled: true,
+                                fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                               ),
-                              items: _sortOptions
-                                  .map(
-                                    (e) => DropdownMenuItem(
-                                      value: e,
-                                      child: Text(
-                                        e,
-                                        style: const TextStyle(fontSize: 14),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
+                              items: _sortOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: Theme.of(context).textTheme.bodySmall))).toList(),
                               onChanged: (v) => setState(() {
                                 _sortBy = v!;
                                 _currentPage = 1;
                               }),
                             ),
                           ),
-                        ],
-                        trailingActions: [
-                          ElevatedButton.icon(
-                            onPressed: () => _showDiseaseFormDialog(),
-                            icon: const Icon(
-                              Icons.add,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            label: const Text(
-                              "Thêm Sâu Bệnh",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).primaryColor,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 16,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 2,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: ElevatedButton.icon(
+                                onPressed: () => _showDiseaseFormDialog(),
+                                icon: const Icon(Icons.add, color: Colors.white, size: 18),
+                                label: const Text('Thêm Sâu Bệnh', style: TextStyle(fontWeight: FontWeight.bold)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                  minimumSize: const Size(0, 44),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                  elevation: 0,
+                                ),
                               ),
                             ),
                           ),
@@ -1305,16 +1260,27 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                             (paginatedDocs.length * 90) +
                             100, // Dynamic height based on items
                         child: CustomAdminTable(
-                          flex: const [1, 2, 4, 3, 3, 3, 2],
+                          flex: const [4, 2, 2, 2, 1],
                           labels: const [
-                            "",
-                            "HÌNH ẢNH",
-                            "THÔNG TIN BỆNH",
+                            "SÂU BỆNH",
                             "PHÂN LOẠI",
                             "MỨC ĐỘ",
                             "TRẠNG THÁI",
                             "THAO TÁC",
                           ],
+                          showHeaderCheckbox: true,
+                          headerCheckboxValue: paginatedDocs.isNotEmpty && paginatedDocs.every((doc) => _selectedIds.contains(doc.id)),
+                          onHeaderCheckboxChanged: (val) {
+                            setState(() {
+                              if (val == true) {
+                                _selectedIds.addAll(paginatedDocs.map((e) => e.id));
+                              } else {
+                                for (var doc in paginatedDocs) {
+                                  _selectedIds.remove(doc.id);
+                                }
+                              }
+                            });
+                          },
                           itemCount: paginatedDocs.length,
                           rowBuilder: (context, index) {
                             var doc = paginatedDocs[index];
@@ -1322,120 +1288,89 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                             bool isActive = data['isActive'] ?? true;
 
                             return [
-                              Checkbox(
-                                value: _selectedIds.contains(doc.id),
-                                onChanged: (val) {
-                                  setState(() {
-                                    if (val == true) {
-                                      _selectedIds.add(doc.id);
-                                    } else {
-                                      _selectedIds.remove(doc.id);
-                                    }
-                                  });
-                                },
-                              ),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child:
-                                    data['imageUrl'] != null &&
-                                        data['imageUrl'].toString().isNotEmpty
-                                    ? Image.network(
-                                        data['imageUrl'],
-                                        width: 60,
-                                        height: 45,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Container(
-                                        width: 60,
-                                        height: 45,
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.white12
-                                            : Colors.black87,
-                                        child: const Icon(
-                                          Icons.bug_report,
-                                          size: 20,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
+                              Row(
                                 children: [
-                                  Text(
-                                    data['name'] ?? 'Không tên',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
-                                        ),
+                                  Checkbox(
+                                    value: _selectedIds.contains(doc.id),
+                                    onChanged: (val) {
+                                      setState(() {
+                                        if (val == true) {
+                                          _selectedIds.add(doc.id);
+                                        } else {
+                                          _selectedIds.remove(doc.id);
+                                        }
+                                      });
+                                    },
+                                    activeColor: AppColors.primary,
+                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "MÙA VỤ: ${(data['season'] ?? 'Không rõ').toString().toUpperCase()}",
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall
-                                        ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall?.color,
-                                          fontWeight: FontWeight.w600,
+                                  const SizedBox(width: 8),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: data['imageUrl'] != null && data['imageUrl'].toString().isNotEmpty
+                                        ? Image.network(
+                                            data['imageUrl'],
+                                            width: 60,
+                                            height: 45,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Container(
+                                            width: 60,
+                                            height: 45,
+                                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.black87,
+                                            child: const Icon(Icons.bug_report, size: 20, color: Colors.grey),
+                                          ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          data['name'] ?? 'Không tên',
+                                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                          ),
                                         ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "MÙA VỤ: ${(data['season'] ?? 'Không rõ').toString().toUpperCase()}",
+                                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                            color: Theme.of(context).textTheme.bodySmall?.color,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
-                              _buildBadge(data['type'] ?? 'Khác'),
-                              _buildSeverityBadge(
-                                data['emergency_level'] ?? 'Bình thường',
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: _buildBadge(data['type'] ?? 'Khác'),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: isActive ? Colors.green : Colors.red,
-                                  ),
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                child: Text(
-                                  isActive ? "ĐÃ DUYỆT" : "CHỜ DUYỆT",
-                                  style: Theme.of(context).textTheme.labelSmall
-                                      ?.copyWith(
-                                        color: isActive
-                                            ? Colors.green
-                                            : Colors.red,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: _buildSeverityBadge(data['emergency_level'] ?? 'Bình thường'),
+                              ),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: CustomAdminBadge(
+                                  text: isActive ? "Đã duyệt" : "Chờ duyệt",
+                                  color: isActive ? Colors.green : Colors.orange,
                                 ),
                               ),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   IconButton(
-                                    icon: Icon(
-                                      Icons.edit,
-                                      color: Theme.of(context).primaryColor,
-                                      size: 18,
-                                    ),
-                                    onPressed: () => _showDiseaseFormDialog(
-                                      existingDoc: doc,
-                                    ),
+                                    icon: Icon(Icons.edit, color: Theme.of(context).primaryColor, size: 18),
+                                    onPressed: () => _showDiseaseFormDialog(existingDoc: doc),
                                   ),
                                   IconButton(
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.redAccent,
-                                      size: 18,
-                                    ),
+                                    icon: const Icon(Icons.delete, color: Colors.redAccent, size: 18),
                                     onPressed: () => _deleteDisease(doc),
                                   ),
                                 ],

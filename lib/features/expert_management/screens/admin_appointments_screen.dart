@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import '../../../core/widgets/common/glass_container.dart';
+import '../../../core/widgets/common/custom_admin_toolbar.dart';
 
 class AdminAppointmentsScreen extends StatefulWidget {
   const AdminAppointmentsScreen({super.key});
@@ -13,8 +14,9 @@ class AdminAppointmentsScreen extends StatefulWidget {
 
 class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
   String _searchQuery = "";
-  String _selectedFilter = "Tất cả";
-  final List<String> _filters = ["Tất cả", "Đang chờ", "Đã xác nhận", "Hoàn thành", "Đã hủy"];
+  String _selectedFilter = "Lọc theo trạng thái";
+  DateTimeRange? _selectedDateRange;
+  final List<String> _filters = ["Lọc theo trạng thái", "Đang chờ", "Đã xác nhận", "Hoàn thành", "Đã hủy"];
 
   // Phân trang
   int _currentPage = 1;
@@ -24,8 +26,6 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
   Color _getPrimaryGreen(BuildContext context) => Theme.of(context).primaryColor;
   Color _getTextDark(BuildContext context) => Theme.of(context).colorScheme.onSurface;
   Color _getTextGrey(BuildContext context) => Theme.of(context).textTheme.bodySmall?.color ?? const Color(0xFF718096);
-  Color _getBgColor(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : const Color(0xFFF9FAF9);
-  final Color _accentBrown = const Color(0xFF8D4A20);
 
   // Khởi tạo Stream 1 lần duy nhất để chống giật/nháy màn hình
   late Stream<QuerySnapshot> _appointmentsStream;
@@ -188,6 +188,35 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
     );
   }
 
+  Future<void> _selectDateRange() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      initialDateRange: _selectedDateRange,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'Chọn khoảng thời gian',
+      saveText: 'Chọn',
+      cancelText: 'Hủy',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDateRange = picked;
+        _currentPage = 1;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -204,22 +233,31 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
           int upcoming = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'confirmed').length;
           int completed = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'completed').length;
 
-          // Xử lý bộ lọc & Tìm kiếm (Tìm theo từng chữ cái)
-          final filteredDocs = docs.where((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final status = data['status'] ?? 'pending';
-            final farmerName = (data['farmerName'] ?? '').toString().toLowerCase();
-            final expertName = (data['expertName'] ?? '').toString().toLowerCase();
-            final docId = doc.id.toLowerCase();
+            // Xử lý bộ lọc & Tìm kiếm (Tìm theo từng chữ cái)
+            final filteredDocs = docs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              final status = data['status'] ?? 'pending';
+              final farmerName = (data['farmerName'] ?? '').toString().toLowerCase();
+              final expertName = (data['expertName'] ?? '').toString().toLowerCase();
+              final docId = doc.id.toLowerCase();
+              final DateTime appointmentTime = data['time'] != null ? (data['time'] as Timestamp).toDate() : DateTime.now();
 
-            bool matchTab = _selectedFilter == "Tất cả" || status == _mapFilterToStatus(_selectedFilter);
-            bool matchSearch = _searchQuery.isEmpty ||
-                farmerName.contains(_searchQuery) ||
-                expertName.contains(_searchQuery) ||
-                docId.contains(_searchQuery);
+              bool matchTab = _selectedFilter == "Lọc theo trạng thái" || status == _mapFilterToStatus(_selectedFilter);
+              bool matchSearch = _searchQuery.isEmpty ||
+                  farmerName.contains(_searchQuery) ||
+                  expertName.contains(_searchQuery) ||
+                  docId.contains(_searchQuery);
 
-            return matchTab && matchSearch;
-          }).toList();
+              bool matchDate = true;
+              if (_selectedDateRange != null) {
+                final start = DateTime(_selectedDateRange!.start.year, _selectedDateRange!.start.month, _selectedDateRange!.start.day);
+                final end = DateTime(_selectedDateRange!.end.year, _selectedDateRange!.end.month, _selectedDateRange!.end.day, 23, 59, 59);
+                matchDate = appointmentTime.isAfter(start.subtract(const Duration(seconds: 1))) &&
+                    appointmentTime.isBefore(end.add(const Duration(seconds: 1)));
+              }
+
+              return matchTab && matchSearch && matchDate;
+            }).toList();
 
           // Xử lý logic Phân trang
           int totalPages = (filteredDocs.length / _itemsPerPage).ceil();
@@ -233,7 +271,7 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
           List<DocumentSnapshot> paginatedDocs = filteredDocs.sublist(startIndex, endIndex);
 
           return Padding(
-            padding: const EdgeInsets.all(32.0),
+            padding: const EdgeInsets.all(32.0), // Standardized to dashboard 32px
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -260,27 +298,9 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
                         ),
                       ],
                     ),
-                    Container(
-                      width: 320,
-                      decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.grey[200], borderRadius: BorderRadius.circular(24)),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: "Tìm theo tên, mã lịch hẹn...",
-                          prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color, size: 20),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        onChanged: (val) {
-                          setState(() {
-                            _searchQuery = val.trim().toLowerCase();
-                            _currentPage = 1; // Nhập phím thì trở về trang 1
-                          });
-                        },
-                      ),
-                    )
                   ],
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
                 // --- SUMMARY CARDS ---
                 Row(
@@ -292,56 +312,173 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
                     _buildStatCard("Đã hoàn thành", completed.toString(), Icons.check_circle, const Color(0xFF4CAF50), const Color(0xFFE8F5E9).withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.2 : 1.0), _getTextDark(context)),
                   ],
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24), // Standardized gap from 32 to 24
 
                 // --- TOOLBAR ---
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                CustomAdminToolbar(
+                  height: 56,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.grey[200], borderRadius: BorderRadius.circular(30)),
-                      child: Row(
-                        children: _filters.map((filter) => _buildFilterTab(filter)).toList(),
+                    // Ô tìm kiếm (Flex 6 = Khớp với 3 cột đầu: 1 + 2 + 3)
+                    Expanded(
+                      flex: 6,
+                      child: TextField(
+                        onChanged: (val) {
+                          setState(() {
+                            _searchQuery = val.trim().toLowerCase();
+                            _currentPage = 1;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Tìm kiếm lịch hẹn...',
+                          prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color, size: 20),
+                          filled: true,
+                          fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : AppColors.background,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                        ),
                       ),
                     ),
-                    ElevatedButton.icon(
-                      onPressed: _showCreateAppointmentDialog,
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text("Tạo lịch hẹn mới"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _accentBrown, foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    const SizedBox(width: 16),
+                    
+                    // Bộ lọc trạng thái (Flex 2 - Khớp với cột TRẠNG THÁI)
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedFilter,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.filter_list_rounded, size: 16, color: Theme.of(context).textTheme.bodySmall?.color),
+                          filled: true,
+                          fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : AppColors.background,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                        ),
+                        items: _filters
+                            .map((s) => DropdownMenuItem(value: s, child: Text(s, style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color))))
+                            .toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _selectedFilter = val;
+                              _currentPage = 1;
+                            });
+                          }
+                        },
                       ),
-                    )
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Bộ lọc ngày (Flex 2 - Khớp với cột THỜI GIAN)
+                    Expanded(
+                      flex: 2,
+                      child: InkWell(
+                        onTap: _selectDateRange,
+                        borderRadius: BorderRadius.circular(30),
+                        child: Container(
+                          height: 44,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : AppColors.background,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.calendar_today_outlined, size: 16, color: Theme.of(context).textTheme.bodySmall?.color),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _selectedDateRange == null
+                                      ? 'Lọc theo ngày'
+                                      : '${DateFormat('dd/MM').format(_selectedDateRange!.start)} - ${DateFormat('dd/MM').format(_selectedDateRange!.end)}',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 12),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (_selectedDateRange != null)
+                                IconButton(
+                                  icon: const Icon(Icons.close, size: 14),
+                                  onPressed: () => setState(() => _selectedDateRange = null),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Nút tạo mới (Flex 1 - Khớp với cột HÀNH ĐỘNG)
+                    Expanded(
+                      flex: 1,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: ElevatedButton(
+                          onPressed: _showCreateAppointmentDialog,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _getPrimaryGreen(context),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            minimumSize: const Size(0, 44),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            elevation: 0,
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add_rounded, size: 18),
+                              SizedBox(width: 4),
+                              Text("Tạo mới", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
 
                 // --- DATA TABLE ---
                 Expanded(
-                  child: GlassContainer(
-                    child: Column(
-                      children: [
-                        // Table Header
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfacePrimary.withValues(alpha: 0.1) : const Color(0xFFF5F7F5),
-                            borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(flex: 2, child: Text("MÃ LỊCH HẸN", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _getTextGrey(context), fontWeight: FontWeight.bold, fontSize: 12))),
-                              Expanded(flex: 3, child: Text("NÔNG DÂN", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _getTextGrey(context), fontWeight: FontWeight.bold, fontSize: 12))),
-                              Expanded(flex: 3, child: Text("CHUYÊN GIA", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _getTextGrey(context), fontWeight: FontWeight.bold, fontSize: 12))),
-                              Expanded(flex: 2, child: Text("THỜI GIAN", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _getTextGrey(context), fontWeight: FontWeight.bold, fontSize: 12))),
-                              Expanded(flex: 2, child: Text("TRẠNG THÁI", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _getTextGrey(context), fontWeight: FontWeight.bold, fontSize: 12))),
-                              Expanded(flex: 1, child: Text("HÀNH ĐỘNG", textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _getTextGrey(context), fontWeight: FontWeight.bold, fontSize: 12))),
-                            ],
-                          ),
+                  child: Builder(
+                    builder: (context) {
+                      final bool isDark = Theme.of(context).brightness == Brightness.dark;
+                      final headerGlassColor = isDark ? const Color(0x881E2538) : Colors.white.withValues(alpha: 0.4);
+                      final bodyGlassColor = isDark ? const Color(0x441E2538) : Colors.white.withValues(alpha: 0.15);
+                      final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.06);
+
+                      final headerTextColor = isDark ? _getTextGrey(context) : Colors.black87;
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: bodyGlassColor,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: borderColor, width: 1.5),
                         ),
+                        child: Column(
+                          children: [
+                            // Table Header
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                              decoration: BoxDecoration(
+                                color: headerGlassColor,
+                                borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(flex: 1, child: Text("MÃ LỊCH HẸN", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: headerTextColor, fontWeight: FontWeight.bold, fontSize: 12))),
+                                  Expanded(flex: 2, child: Text("NÔNG DÂN", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: headerTextColor, fontWeight: FontWeight.bold, fontSize: 12))),
+                                  Expanded(flex: 3, child: Text("CHUYÊN GIA", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: headerTextColor, fontWeight: FontWeight.bold, fontSize: 12))),
+                                  Expanded(flex: 2, child: Text("TRẠNG THÁI", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: headerTextColor, fontWeight: FontWeight.bold, fontSize: 12))),
+                                  Expanded(flex: 2, child: Text("THỜI GIAN", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: headerTextColor, fontWeight: FontWeight.bold, fontSize: 12))),
+                                  Expanded(flex: 1, child: Text("HÀNH ĐỘNG", textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: headerTextColor, fontWeight: FontWeight.bold, fontSize: 12))),
+                                ],
+                              ),
+                            ),
 
                         // Table Body
                         Expanded(
@@ -350,7 +487,7 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
                               : ListView.separated(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             itemCount: paginatedDocs.length,
-                            separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).dividerColor),
+                            separatorBuilder: (context, index) => Divider(height: 1, color: borderColor),
                             itemBuilder: (context, index) {
                               final doc = paginatedDocs[index];
                               final data = doc.data() as Map<String, dynamic>;
@@ -362,7 +499,7 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
                         // Pagination Footer
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          decoration: BoxDecoration(border: Border(top: BorderSide(color: Theme.of(context).dividerColor))),
+                          decoration: BoxDecoration(border: Border(top: BorderSide(color: borderColor))),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -397,10 +534,12 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
                         )
                       ],
                     ),
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
+          ],
+        ),
           );
         },
       ),
@@ -429,24 +568,11 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
     );
   }
 
-  Widget _buildFilterTab(String title) {
-    bool isSelected = _selectedFilter == title;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedFilter = title;
-          _currentPage = 1;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(color: isSelected ? _getPrimaryGreen(context) : Colors.transparent, borderRadius: BorderRadius.circular(24)),
-        child: Text(title, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: isSelected ? Colors.white : _getTextGrey(context), fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-      ),
-    );
-  }
 
   Widget _buildDataRow(String docId, Map<String, dynamic> data) {
+    bool isHovered = false;
+    final rowHoverColor = Colors.white.withValues(alpha: 0.03);
+
     final DateTime time = data['time'] != null ? (data['time'] as Timestamp).toDate() : DateTime.now();
     final String farmerName = data['farmerName'] ?? "N/A";
     final String farmerId = data['farmerId']?.toString() ?? "Chưa có ID";
@@ -456,16 +582,22 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
 
     String initials = farmerName.isNotEmpty ? farmerName[0].toUpperCase() : "N";
 
-    return Padding(
+    return StatefulBuilder(
+      builder: (context, setRowState) {
+        return MouseRegion(
+          onEnter: (_) => setRowState(() => isHovered = true),
+          onExit: (_) => setRowState(() => isHovered = false),
+          child: Container(
+            color: isHovered ? rowHoverColor : Colors.transparent,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
         children: [
           // Cột 1: Mã Lịch Hẹn
-          Expanded(flex: 2, child: Text(docId.substring(0, 8).toUpperCase(), style: Theme.of(context).textTheme.labelMedium?.copyWith(color: _getTextGrey(context), fontWeight: FontWeight.bold))),
+          Expanded(flex: 1, child: Text(docId.substring(0, 8).toUpperCase(), style: Theme.of(context).textTheme.labelMedium?.copyWith(color: _getTextGrey(context), fontWeight: FontWeight.bold, fontSize: 12))),
 
           // Cột 2: Nông dân
           Expanded(
-            flex: 3,
+            flex: 2,
             child: Row(
               children: [
                 CircleAvatar(radius: 20, backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.grey[200], child: Text(initials, style: TextStyle(color: _getTextDark(context), fontWeight: FontWeight.bold, fontSize: 13))),
@@ -473,6 +605,7 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(farmerName, style: TextStyle(fontWeight: FontWeight.bold, color: _getTextDark(context), fontSize: 14), overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 4),
@@ -489,13 +622,14 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
             flex: 3,
             child: Row(
               children: [
-                Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(20)), child: const Icon(Icons.person, color: Color(0xFF4CAF50), size: 16)),
+                Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: const Color(0xFFE8F5E9).withValues(alpha: 0.5), borderRadius: BorderRadius.circular(20)), child: const Icon(Icons.person, color: Color(0xFF4CAF50), size: 16)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(expertName, style: TextStyle(fontWeight: FontWeight.w600, color: _getTextDark(context), fontSize: 14)),
+                      Text(expertName, style: TextStyle(fontWeight: FontWeight.w600, color: _getTextDark(context), fontSize: 14), overflow: TextOverflow.ellipsis),
                       Text("ID: $expertId", style: TextStyle(color: _getTextGrey(context), fontSize: 12), overflow: TextOverflow.ellipsis),
                     ],
                   ),
@@ -504,11 +638,15 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
             ),
           ),
 
-          // Cột 4: Thời gian
+          // Cột 4: Trạng thái
+          Expanded(flex: 2, child: Align(alignment: Alignment.centerLeft, child: _buildStatusBadge(status))),
+
+          // Cột 5: Thời gian
           Expanded(
             flex: 2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(DateFormat('HH:mm').format(time), style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: _getTextDark(context))),
                 const SizedBox(height: 4),
@@ -517,30 +655,33 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
             ),
           ),
 
-          // Cột 5: Trạng thái
-          Expanded(flex: 2, child: Align(alignment: Alignment.centerLeft, child: _buildStatusBadge(status))),
-
           // Cột 6: Hành động
           Expanded(
             flex: 1,
             child: Align(
               alignment: Alignment.centerRight,
-              child: PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.grey),
-                onSelected: (value) {
-                  if (value == 'delete') _deleteAppointment(docId);
-                },
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Row(children: [Icon(Icons.delete, color: Colors.red, size: 20), SizedBox(width: 8), Text('Xóa cuộc hẹn', style: TextStyle(color: Colors.red))]),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_horiz, color: Colors.grey),
+                  onSelected: (value) {
+                    if (value == 'delete') _deleteAppointment(docId);
+                  },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(children: [Icon(Icons.delete_outline, color: Colors.red, size: 20), SizedBox(width: 8), Text('Xóa cuộc hẹn', style: TextStyle(color: Colors.red))]),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
+          ),
+        );
+      }
     );
   }
 
@@ -582,7 +723,7 @@ class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
       width: 32, height: 32,
-      decoration: BoxDecoration(color: isSelected ? _getPrimaryGreen(context) : Colors.transparent, shape: BoxShape.circle, border: isSelected ? null : Border.all(color: Theme.of(context).dividerColor)),
+      decoration: BoxDecoration(color: isSelected ? _getPrimaryGreen(context) : Colors.transparent, shape: BoxShape.circle, border: isSelected ? null : Border.all(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBorder : Theme.of(context).dividerColor)),
       alignment: Alignment.center,
       child: Text(number, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: isSelected ? Colors.white : _getTextDark(context), fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
     );

@@ -58,27 +58,10 @@ class AdminSidebar extends StatelessWidget {
     final themeProvider = context.watch<ThemeProvider>();
     final isDark = themeProvider.isDarkMode;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOutCubic,
+    return GlassContainer(
       width: isExpanded ? 260 : 88,
       height: MediaQuery.of(context).size.height,
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(32), // Liquid glass rounded
-        border: Border.all(
-           color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6),
-           width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 24,
-            spreadRadius: 0,
-            offset: const Offset(4, 4),
-          ),
-        ],
-      ),
+      borderRadius: BorderRadius.circular(32), // Liquid glass rounded
       child: Column(
         children: [
             // ── Logo ─────────────────────────────────────────────
@@ -98,10 +81,25 @@ class AdminSidebar extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFFE8F5E9) : const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: Icon(Icons.eco_rounded, color: const Color(0xFF2E7D32), size: 26),
+                    child: ClipOval(
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Image.asset(
+                          'assets/images/ea_agri_logo.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
                   ),
                   if (isExpanded)
                     Expanded(
@@ -117,18 +115,19 @@ class AdminSidebar extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Dak Lak Estate',
+                                  'EaAgri',
                                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w900,
+                                    fontSize: 18,
                                     color: isDark ? Colors.white : const Color(0xFF1E1E1E),
                                   ),
                                 ),
                                 const Text(
-                                  'ACTIVE HARVEST',
+                                  'SMART FARMING',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w800,
                                     color: Color(0xFF13B26F),
-                                    fontSize: 10,
+                                    fontSize: 9, // Slightly smaller to match long English word
                                     letterSpacing: 1.2,
                                   ),
                                 ),

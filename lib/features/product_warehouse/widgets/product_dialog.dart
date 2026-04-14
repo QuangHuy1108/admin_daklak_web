@@ -25,13 +25,13 @@ class _ProductDialogState extends State<ProductDialog> {
   bool _isLoading = false;
 
   final List<String> _categories = [
-    'Durian',
-    'Coffee',
-    'Pepper',
-    'Fruits',
-    'Vegetables',
-    'Seeds',
-    'Agricultural Supplies'
+    'Sầu riêng',
+    'Cà phê',
+    'Hồ tiêu',
+    'Trái cây',
+    'Rau củ',
+    'Hạt giống',
+    'Vật tư nông nghiệp'
   ];
 
   @override
@@ -42,10 +42,27 @@ class _ProductDialogState extends State<ProductDialog> {
     _stockController = TextEditingController(text: widget.initialData?['stock']?.toString() ?? '');
     _imageController = TextEditingController(text: widget.initialData?['imageUrl'] ?? '');
     
-    // Ensure category is in our list
+    // Ensure category is in our list, supporting legacy English values
     if (widget.initialData != null && widget.initialData!['category'] != null) {
-      if (_categories.contains(widget.initialData!['category'])) {
-        _selectedCategory = widget.initialData!['category'];
+      final String cat = widget.initialData!['category'];
+      if (_categories.contains(cat)) {
+        _selectedCategory = cat;
+      } else {
+        // Map legacy EN to VN
+        final mapping = {
+          'Durian': 'Sầu riêng',
+          'Coffee': 'Cà phê',
+          'Pepper': 'Hồ tiêu',
+          'Fruits': 'Trái cây',
+          'Vegetables': 'Rau củ',
+          'Seeds': 'Hạt giống',
+          'Agricultural Supplies': 'Vật tư nông nghiệp'
+        };
+        _selectedCategory = mapping[cat] ?? cat;
+        // If still not in list, fallback to null or first
+        if (!_categories.contains(_selectedCategory)) {
+          _selectedCategory = null;
+        }
       }
     }
   }
@@ -63,7 +80,7 @@ class _ProductDialogState extends State<ProductDialog> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_selectedCategory == null) {
-      _showToast("Please select a category.");
+      _showToast("Vui lòng chọn danh mục.");
       return;
     }
 
@@ -96,7 +113,7 @@ class _ProductDialogState extends State<ProductDialog> {
         }, SetOptions(merge: true));
         
         await batch.commit();
-        _showToast('Product added successfully!');
+        _showToast('Đã thêm sản phẩm thành công!');
       } else {
         // Update existing
         // Update purely the name in stats as well to keep consistency
@@ -113,12 +130,12 @@ class _ProductDialogState extends State<ProductDialog> {
         }, SetOptions(merge: true));
 
         await batch.commit();
-        _showToast('Product updated successfully!');
+        _showToast('Đã cập nhật sản phẩm thành công!');
       }
       
       if (mounted) Navigator.of(context).pop(true);
     } catch(e) {
-      _showToast('Error saving product: $e');
+      _showToast('Lỗi khi lưu sản phẩm: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -127,7 +144,7 @@ class _ProductDialogState extends State<ProductDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.productId == null ? 'Add New Product' : 'Edit Product', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: _textPrimary)),
+      title: Text(widget.productId == null ? 'Thêm Sản phẩm mới' : 'Chỉnh sửa Sản phẩm', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: _textPrimary)),
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       content: SizedBox(
@@ -141,16 +158,16 @@ class _ProductDialogState extends State<ProductDialog> {
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(
-                    labelText: 'Product Name',
+                    labelText: 'Tên sản phẩm',
                     labelStyle: Theme.of(context).textTheme.titleSmall,
                     border: const OutlineInputBorder(),
                   ),
-                  validator: (val) => (val == null || val.trim().isEmpty) ? 'Name is required' : null,
+                  validator: (val) => (val == null || val.trim().isEmpty) ? 'Vui lòng nhập tên' : null,
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   decoration: InputDecoration(
-                    labelText: 'Category',
+                    labelText: 'Danh mục',
                     labelStyle: Theme.of(context).textTheme.titleSmall,
                     border: const OutlineInputBorder(),
                   ),
@@ -162,7 +179,7 @@ class _ProductDialogState extends State<ProductDialog> {
                     );
                   }).toList(),
                   onChanged: (val) => setState(() => _selectedCategory = val),
-                  validator: (val) => val == null ? 'Category is required' : null,
+                  validator: (val) => val == null ? 'Vui lòng chọn danh mục' : null,
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -172,13 +189,13 @@ class _ProductDialogState extends State<ProductDialog> {
                         controller: _priceController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'Selling Price (đ)',
+                          labelText: 'Giá bán (đ)',
                           labelStyle: Theme.of(context).textTheme.titleSmall,
                           border: const OutlineInputBorder(),
                         ),
                         validator: (val) {
-                          if (val == null || val.trim().isEmpty) return 'Required';
-                          if (double.tryParse(val) == null) return 'Invalid price';
+                          if (val == null || val.trim().isEmpty) return 'Bắt buộc';
+                          if (double.tryParse(val) == null) return 'Giá không hợp lệ';
                           return null;
                         },
                       ),
@@ -189,13 +206,13 @@ class _ProductDialogState extends State<ProductDialog> {
                         controller: _stockController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'Inventory Stock',
+                          labelText: 'Số lượng tồn kho',
                           labelStyle: Theme.of(context).textTheme.titleSmall,
                           border: const OutlineInputBorder(),
                         ),
                         validator: (val) {
-                          if (val == null || val.trim().isEmpty) return 'Required';
-                          if (int.tryParse(val) == null) return 'Invalid stock';
+                          if (val == null || val.trim().isEmpty) return 'Bắt buộc';
+                          if (int.tryParse(val) == null) return 'Số lượng không hợp lệ';
                           return null;
                         },
                       ),
@@ -206,7 +223,7 @@ class _ProductDialogState extends State<ProductDialog> {
                 TextFormField(
                   controller: _imageController,
                   decoration: InputDecoration(
-                    labelText: 'Image URL (Optional)',
+                    labelText: 'URL Hình ảnh (Không bắt buộc)',
                     labelStyle: Theme.of(context).textTheme.titleSmall,
                     border: const OutlineInputBorder(),
                     hintText: 'https://...',
@@ -220,14 +237,14 @@ class _ProductDialogState extends State<ProductDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: Text('Cancel', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: _textSecondary)),
+          child: Text('Hủy', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: _textSecondary)),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen),
           child: _isLoading 
             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : Text(widget.productId == null ? 'Create Product' : 'Save Changes', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
+            : Text(widget.productId == null ? 'Tạo Sản phẩm' : 'Lưu thay đổi', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
         ),
       ],
     );

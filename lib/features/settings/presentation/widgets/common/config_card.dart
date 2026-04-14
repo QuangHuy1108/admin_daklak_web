@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
-import 'package:admin_daklak_web/core/constants/app_text_styles.dart';
+import 'package:admin_daklak_web/core/widgets/common/glass_container.dart';
 
 class ConfigCard extends StatelessWidget {
   final String title;
@@ -23,22 +23,11 @@ class ConfigCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GlassContainer(
       margin: const EdgeInsets.only(bottom: 24),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 24,
-            offset: const Offset(4, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24), // Unified padding
+      padding: const EdgeInsets.all(24), // Unified padding
+      borderRadius: BorderRadius.circular(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -49,7 +38,7 @@ class ConfigCard extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: iconCircleColor ?? AppColors.background,
+                      color: iconCircleColor ?? (isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.background),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(icon, size: 22, color: AppColors.primary),
@@ -64,7 +53,7 @@ class ConfigCard extends StatelessWidget {
                         title,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textHeading,
+                          color: Theme.of(context).colorScheme.onSurface,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -73,8 +62,7 @@ class ConfigCard extends StatelessWidget {
                         Text(
                           subtitle!,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textMuted,
-                          ),
+                            color: Theme.of(context).textTheme.bodySmall?.color,                          ),
                         ),
                       ],
                     ],
@@ -87,7 +75,6 @@ class ConfigCard extends StatelessWidget {
             ...children,
           ],
         ),
-      ),
     );
   }
 }

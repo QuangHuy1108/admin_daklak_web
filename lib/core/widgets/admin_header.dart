@@ -132,24 +132,10 @@ class _AdminHeaderState extends State<AdminHeader> {
     final email = userProvider.email ?? 'admin@farmvista.com';
     final photoURL = userProvider.photoURL;
 
-    final masterBg = isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.85);
-    final borderCol = Colors.white.withValues(alpha: isDark ? 0.08 : 0.8);
-    final glassShadow = BoxShadow(
-      color: Colors.black.withValues(alpha: 0.04),
-      blurRadius: 24,
-      spreadRadius: 0,
-      offset: const Offset(4, 4),
-    );
-
-    return Container(
+    return GlassContainer(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: masterBg,
-        borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: borderCol, width: 1.5),
-        boxShadow: [glassShadow],
-      ),
+      borderRadius: BorderRadius.circular(100),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -322,7 +308,7 @@ class _AdminHeaderState extends State<AdminHeader> {
                   children: [
                     const Icon(Icons.person_outline_rounded, size: 18),
                     const SizedBox(width: 10),
-                    const Text('My Account'),
+                    const Text('Tài khoản'),
                   ],
                 ),
               ),
@@ -332,7 +318,7 @@ class _AdminHeaderState extends State<AdminHeader> {
                   children: [
                     const Icon(Icons.settings_outlined, size: 18),
                     const SizedBox(width: 10),
-                    const Text('Settings'),
+                    const Text('Cài đặt'),
                   ],
                 ),
               ),
@@ -343,7 +329,7 @@ class _AdminHeaderState extends State<AdminHeader> {
                   children: [
                     const Icon(Icons.logout_rounded, size: 18, color: Colors.red),
                     const SizedBox(width: 10),
-                    Text('Logout', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red)),
+                    Text('Đăng xuất', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red)),
                   ],
                 ),
               ),
@@ -386,7 +372,7 @@ class _AdminHeaderState extends State<AdminHeader> {
                   if (!isMobile) ...[
                     const SizedBox(width: 12),
                     Text(
-                      'Profile',
+                      'Hồ sơ',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,

@@ -122,9 +122,9 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(data),
+          _buildHeader(),
           const SizedBox(height: 32),
-          _buildToolbar(),
+          _buildToolbar(data),
           const SizedBox(height: 24),
           Expanded(child: _buildTable(data)),
         ],
@@ -132,110 +132,112 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
     );
   }
 
-  Widget _buildHeader(List<SystemLogModel> data) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Nhật ký hệ thống',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Theo dõi và quản lý các hoạt động trên hệ thống.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
-            ),
-          ],
+        Text(
+          'Nhật ký hệ thống',
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
         ),
+        const SizedBox(height: 8),
+        Text(
+          'Theo dõi và quản lý các hoạt động trên hệ thống.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToolbar(List<SystemLogModel> data) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    InputDecoration pillDecoration({IconData? icon}) => InputDecoration(
+      prefixIcon: icon != null ? Icon(icon, size: 16, color: Theme.of(context).textTheme.bodySmall?.color) : null,
+      filled: true,
+      fillColor: isDark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+    );
+
+    return CustomAdminToolbar(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+      children: [
+        Expanded(
+          flex: 5,
+          child: TextField(
+            onChanged: (val) {
+              _searchQuery.value = val;
+              _currentPage.value = 1;
+            },
+            decoration: pillDecoration(icon: Icons.search).copyWith(
+              hintText: 'Tìm kiếm người thực hiện hoặc chi tiết...',
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          flex: 2,
+          child: ValueListenableBuilder<String>(
+            valueListenable: _selectedAction,
+            builder: (context, current, _) {
+              return DropdownButtonFormField<String>(
+                initialValue: current,
+                decoration: pillDecoration(icon: Icons.touch_app),
+                items: ['Tất cả', 'Thêm', 'Sửa', 'Xóa']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s, style: Theme.of(context).textTheme.bodySmall)))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    _selectedAction.value = val;
+                    _currentPage.value = 1;
+                  }
+                },
+              );
+            },
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          flex: 2,
+          child: ValueListenableBuilder<String>(
+            valueListenable: _selectedStatus,
+            builder: (context, current, _) {
+              return DropdownButtonFormField<String>(
+                initialValue: current,
+                decoration: pillDecoration(icon: Icons.check_circle_outline),
+                items: ['Tất cả', 'Thành công', 'Thất bại']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s, style: Theme.of(context).textTheme.bodySmall)))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    _selectedStatus.value = val;
+                    _currentPage.value = 1;
+                  }
+                },
+              );
+            },
+          ),
+        ),
+        const SizedBox(width: 16),
         ElevatedButton.icon(
           onPressed: () => _exportToCsv(data),
-          icon: const Icon(Icons.download_rounded, size: 20),
-          label: const Text('Xuất dữ liệu'),
+          icon: const Icon(Icons.download_rounded, size: 18),
+          label: const Text('Xuất CSV', style: TextStyle(fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).primaryColor,
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+            minimumSize: const Size(0, 44),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             elevation: 0,
           ),
         ),
       ],
     );
   }
-
-  Widget _buildToolbar() {
-    return CustomAdminToolbar(
-      searchField: TextField(
-        onChanged: (val) {
-          _searchQuery.value = val;
-          _currentPage.value = 1;
-        },
-        decoration: InputDecoration(
-          hintText: 'Tìm kiếm người thực hiện hoặc chi tiết...',
-          prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color),
-          filled: true,
-          fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFF3F4F6),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
-        ),
-      ),
-      centerFilters: [
-        ValueListenableBuilder<String>(
-          valueListenable: _selectedAction,
-          builder: (context, current, _) {
-            return DropdownButtonFormField<String>(
-              value: current,
-              decoration: _inputDecoration('Hành động'),
-              items: ['Tất cả', 'Thêm', 'Sửa', 'Xóa']
-                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  _selectedAction.value = val;
-                  _currentPage.value = 1;
-                }
-              },
-            );
-          },
-        ),
-        ValueListenableBuilder<String>(
-          valueListenable: _selectedStatus,
-          builder: (context, current, _) {
-            return DropdownButtonFormField<String>(
-              value: current,
-              decoration: _inputDecoration('Trạng thái'),
-              items: ['Tất cả', 'Thành công', 'Thất bại']
-                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  _selectedStatus.value = val;
-                  _currentPage.value = 1;
-                }
-              },
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  InputDecoration _inputDecoration(String label) => InputDecoration(
-    labelText: label,
-    filled: true,
-    fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFF3F4F6),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide.none,
-    ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-  );
 
   Widget _buildTable(List<SystemLogModel> data) {
     return ValueListenableBuilder<int>(
@@ -267,9 +269,9 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
                       children: [
                         CircleAvatar(
                           radius: 14,
-                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                          backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.primary.withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.1),
                           child: Text(item.actorName.isNotEmpty ? item.actorName[0].toUpperCase() : 'H', 
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).primaryColor)),
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.primary)),
                         ),
                         const SizedBox(width: 12),
                         Flexible(
@@ -286,7 +288,7 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
                     Tooltip(
                       message: item.details,
                       decoration: BoxDecoration(
-                        color: AppColors.textHeading.withOpacity(0.9),
+                        color: AppColors.textHeading.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       padding: const EdgeInsets.all(12),
