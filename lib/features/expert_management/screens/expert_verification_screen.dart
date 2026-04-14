@@ -92,7 +92,7 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: StreamBuilder<List<ExpertVerificationRequestModel>>(
         stream: _service.getAllRequests(),
         builder: (context, snapshot) {
@@ -128,7 +128,7 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
 
   Widget _buildMainContent(List<ExpertVerificationRequestModel> data) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      padding: const EdgeInsets.all(32.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -146,17 +146,20 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Duyệt chuyên gia',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textHeading),
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Xem và quản lý các yêu cầu xác minh từ các chuyên gia.',
-              style: TextStyle(fontSize: 15, color: AppColors.textMuted),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
             ),
           ],
         ),
@@ -185,9 +188,9 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
         },
         decoration: InputDecoration(
           hintText: 'Tìm kiếm chuyên gia...',
-          prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
+          prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color),
           filled: true,
-          fillColor: AppColors.background,
+          fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : AppColors.background,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -203,7 +206,7 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
               value: current,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : AppColors.background,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -231,7 +234,7 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            side: const BorderSide(color: AppColors.border),
+            side: BorderSide(color: Theme.of(context).dividerColor),
           ),
         ),
       ],
@@ -265,7 +268,7 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                         CircleAvatar(
                           backgroundColor: AppColors.primary.withOpacity(0.1),
                           child: Text(item.fullName.isNotEmpty ? item.fullName[0].toUpperCase() : '?', 
-                              style: const TextStyle(color: AppColors.primary)),
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary)),
                         ),
                         const SizedBox(width: 16),
                         Flexible(
@@ -273,8 +276,8 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                              Text(item.phone, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                              Text(item.fullName, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                              Text(item.phone, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
                             ],
                           ),
                         ),
@@ -284,8 +287,8 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Chip(
-                        label: Text(item.expertise, style: const TextStyle(fontSize: 12)),
-                        backgroundColor: AppColors.background,
+                        label: Text(item.expertise, style: Theme.of(context).textTheme.labelSmall),
+                        backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : AppColors.background,
                         side: BorderSide.none,
                       ),
                     ),
@@ -298,7 +301,7 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                       ),
                     ),
                     // Date
-                    Text(DateFormat('dd/MM/yyyy').format(item.createdAt), style: const TextStyle(fontSize: 14)),
+                    Text(DateFormat('dd/MM/yyyy').format(item.createdAt), style: Theme.of(context).textTheme.bodyMedium),
                     // Actions
                     Align(
                       alignment: Alignment.centerRight,
@@ -331,9 +334,9 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[300]),
+          Icon(Icons.inbox_outlined, size: 64, color: Theme.of(context).dividerColor),
           const SizedBox(height: 16),
-          const Text('Không tìm thấy yêu cầu nào', style: TextStyle(color: AppColors.textMuted)),
+          Text('Không tìm thấy yêu cầu nào', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
         ],
       ),
     );
@@ -346,7 +349,7 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
         children: [
           const Icon(Icons.error_outline, color: Colors.red, size: 48),
           const SizedBox(height: 16),
-          Text('Lỗi: $error', style: const TextStyle(color: Colors.red)),
+          Text('Lỗi: $error', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red)),
         ],
       ),
     );

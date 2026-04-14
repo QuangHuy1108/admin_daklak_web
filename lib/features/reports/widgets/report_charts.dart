@@ -1,6 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
 
 class TrendLineChart extends StatelessWidget {
@@ -17,13 +17,17 @@ class TrendLineChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
+
     return Container(
       height: 300,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: bgColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        border: Border.all(color: AppColors.border.withValues(alpha: isDark ? 0.1 : 0.5)),
+        boxShadow: isDark ? [] : [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
@@ -35,11 +39,10 @@ class TrendLineChart extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Revenue Performance (Last 7 Days)",
-            style: GoogleFonts.inter(
-              fontSize: 16,
+            "Hiệu suất doanh thu (7 ngày qua)",
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textHeading,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 32),
@@ -50,7 +53,7 @@ class TrendLineChart extends StatelessWidget {
                   show: true,
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (value) => FlLine(
-                    color: AppColors.border.withOpacity(0.5),
+                    color: AppColors.border.withValues(alpha: 0.3),
                     strokeWidth: 1,
                   ),
                 ),
@@ -65,11 +68,15 @@ class TrendLineChart extends StatelessWidget {
                       interval: 1,
                       getTitlesWidget: (value, meta) {
                         if (value.toInt() >= 0 && value.toInt() < labels.length) {
-                          return Text(
-                            labels[value.toInt()],
-                            style: GoogleFonts.inter(
-                              color: AppColors.textMuted,
-                              fontSize: 12,
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              labels[value.toInt()],
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: Theme.of(context).textTheme.bodySmall?.color,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           );
                         }
@@ -84,9 +91,9 @@ class TrendLineChart extends StatelessWidget {
                       getTitlesWidget: (value, meta) {
                         return Text(
                           _formatValue(value),
-                          style: GoogleFonts.inter(
-                            color: AppColors.textMuted,
-                            fontSize: 12,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).textTheme.bodySmall?.color,
+                            fontSize: 11,
                           ),
                         );
                       },
@@ -110,25 +117,25 @@ class TrendLineChart extends StatelessWidget {
                       getDotPainter: (spot, percent, barData, index) =>
                           FlDotCirclePainter(
                         radius: 4,
-                        color: Colors.white,
+                        color: isDark ? const Color(0xFF1E2538) : Colors.white,
                         strokeWidth: 2,
                         strokeColor: AppColors.primary,
                       ),
                     ),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                     ),
                   ),
                 ],
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (_) => AppColors.textHeading,
+                    getTooltipColor: (_) => isDark ? const Color(0xFF2C344A) : AppColors.textHeading,
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
                         return LineTooltipItem(
                           "${spot.y.toInt().toString()} đ",
-                          GoogleFonts.inter(
+                          Theme.of(context).textTheme.labelLarge!.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
@@ -157,13 +164,17 @@ class AgriPriceChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
+
     return Container(
       height: 300,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: bgColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        border: Border.all(color: AppColors.border.withValues(alpha: isDark ? 0.1 : 0.5)),
+        boxShadow: isDark ? [] : [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
@@ -175,11 +186,10 @@ class AgriPriceChart extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Price Fluctuation (Major Dak Lak Crops)",
-            style: GoogleFonts.inter(
-              fontSize: 16,
+            "Biến động giá sản phẩm nông sản",
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textHeading,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 32),
@@ -194,7 +204,7 @@ class AgriPriceChart extends StatelessWidget {
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
                         "${rod.toY.toInt()}k / kg",
-                        GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+                        Theme.of(context).textTheme.labelSmall!.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                       );
                     },
                   ),
@@ -205,12 +215,16 @@ class AgriPriceChart extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        const style = TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12);
+                        final style = Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).textTheme.bodySmall?.color, 
+                          fontWeight: FontWeight.bold, 
+                          fontSize: 11
+                        );
                         switch (value.toInt()) {
-                          case 0: return const Text('Coffee', style: style);
-                          case 1: return const Text('Pepper', style: style);
-                          case 2: return const Text('Durian', style: style);
-                          case 3: return const Text('Rubber', style: style);
+                          case 0: return Padding(padding: const EdgeInsets.only(top: 8), child: Text('Cà phê', style: style));
+                          case 1: return Padding(padding: const EdgeInsets.only(top: 8), child: Text('Hồ tiêu', style: style));
+                          case 2: return Padding(padding: const EdgeInsets.only(top: 8), child: Text('Sầu riêng', style: style));
+                          case 3: return Padding(padding: const EdgeInsets.only(top: 8), child: Text('Cao su', style: style));
                           default: return const Text('');
                         }
                       },
@@ -220,7 +234,13 @@ class AgriPriceChart extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 30,
-                      getTitlesWidget: (value, meta) => Text("${value.toInt()}k", style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                      getTitlesWidget: (value, meta) => Text(
+                        "${value.toInt()}k", 
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).textTheme.bodySmall?.color, 
+                          fontSize: 10
+                        )
+                      ),
                     ),
                   ),
                   topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),

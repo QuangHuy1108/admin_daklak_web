@@ -43,8 +43,7 @@ class SummaryActionCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     label.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 11,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: AppColors.textMuted,
                       letterSpacing: 1.2,
@@ -55,8 +54,7 @@ class SummaryActionCard extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 value,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppColors.textHeading,
                 ),

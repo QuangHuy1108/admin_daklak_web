@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'dart:math';
 import 'dart:async';
+import '../../../core/widgets/common/glass_container.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -15,7 +16,7 @@ class UserManagementScreen extends StatefulWidget {
 class _UserManagementScreenState extends State<UserManagementScreen> {
   final Color _primaryGreen = const Color(0xFF1B3D2F);
   final Color _accentBrown = const Color(0xFF8E4A1D);
-  final Color _bgColor = const Color(0xFFF7F8F3);
+  final Color _bgColor = Colors.transparent;
 
   // --- Biến trạng thái ---
   String _searchQuery = '';
@@ -268,7 +269,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Thêm người dùng mới', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        title: Text('Thêm người dùng mới', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
         content: SizedBox(
           width: 450,
           child: Form(
@@ -385,8 +386,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               }
             },
             child: _isLoading 
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Text('Lưu thông tin', style: TextStyle(color: Colors.white)),
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : Text('Lưu thông tin', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -420,7 +421,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: Colors.transparent,
       body: LayoutBuilder(
         builder: (context, constraints) {
           bool isDesktop = constraints.maxWidth >= 800;
@@ -432,7 +433,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               children: [
                 Row(
                   children: [
-                    Text('Quản lý người dùng', style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: _primaryGreen)),
+                    Text('Quản lý người dùng', style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                     const Spacer(),
                     _buildSearchBar(),
                     const SizedBox(width: 20),
@@ -455,7 +456,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     ElevatedButton.icon(
                       onPressed: _showAddUserDialog,
                       icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
-                      label: const Text('Thêm người dùng mới', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      label: Text('Thêm người dùng mới', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _accentBrown,
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
@@ -505,7 +506,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   Widget _buildSearchBar() {
     return Container(
       width: 300,
-      decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(30)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? AppColors.darkSurfaceVariant 
+            : Colors.grey[200], 
+        borderRadius: BorderRadius.circular(30)
+      ),
       child: TextField(
         onChanged: (val) {
           if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -538,7 +544,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         decoration: BoxDecoration(color: isSelected ? _primaryGreen : Colors.transparent, borderRadius: BorderRadius.circular(20)),
-        child: Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.grey[600], fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+        child: Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: isSelected ? Colors.white : (Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextMuted : Colors.grey[600]), fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
       ),
     );
   }
@@ -566,16 +572,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
   Widget _buildStatCard(String label, String value, IconData icon, Color bg, Color iconColor) {
     return Expanded(
-      child: Container(
+      child: GlassContainer(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
         child: Row(
           children: [
             Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)), child: Icon(icon, color: iconColor, size: 30)),
             const SizedBox(width: 20),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-              Text(value, style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: _primaryGreen)),
+              Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6))),
+              Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : _primaryGreen)),
             ])
           ],
         ),
@@ -584,8 +589,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   Widget _buildUserTable() {
-    return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+    return GlassContainer(
       child: Column(
         children: [
           if (_userDocs.isEmpty && _isLoading)
@@ -607,7 +611,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     );
   }
 
-  Widget _headerCell(String label, {int flex = 1}) => Expanded(flex: flex, child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12)));
+  Widget _headerCell(String label, {int flex = 1}) => Expanded(flex: flex, child: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextMuted : Colors.grey)));
 
   Widget _buildUserRow(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -627,7 +631,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
           color: isSelected ? Colors.green.withOpacity(0.05) : Colors.transparent,
-          border: Border(bottom: BorderSide(color: Colors.grey[50]!)),
+          border: Border(bottom: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBorder : Colors.grey[50]!)),
         ),
         child: Row(
           children: [
@@ -671,7 +675,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                   Flexible(
                                     child: Text(
                                       data['displayName'] ?? 'Không tên',
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
@@ -686,7 +690,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         ),
                         Text(
                           'ID: ${doc.id}',
-                          style: const TextStyle(color: Colors.grey, fontSize: 11),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextMuted : Colors.grey, fontSize: 11),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
@@ -703,11 +707,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 children: [
                   Text(
                     data['email'] ?? '',
+                    style: Theme.of(context).textTheme.bodyMedium,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     data['phone'] ?? '',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextMuted : Colors.grey),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -763,12 +768,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
   Widget _buildStatusCell(bool isOnline, bool isBanned) {
     if (isBanned) {
-      return const Text('---', style: TextStyle(color: Colors.grey, fontSize: 13));
+      return Text('---', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextMuted : Colors.grey));
     }
     return Row(children: [
-      Icon(Icons.circle, size: 8, color: isOnline ? Colors.green : Colors.grey),
+      Icon(Icons.circle, size: 8, color: isOnline ? Colors.green : (Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextMuted : Colors.grey)),
       const SizedBox(width: 8),
-      Text(isOnline ? 'Đang hoạt động' : 'Ngoại tuyến', style: TextStyle(color: isOnline ? Colors.green[700] : Colors.grey, fontSize: 13)),
+      Text(isOnline ? 'Đang hoạt động' : 'Ngoại tuyến', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: isOnline ? Colors.green[700] : (Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextMuted : Colors.grey))),
     ]);
   }
 
@@ -780,19 +785,24 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       },
       itemBuilder: (ctx) => [
         PopupMenuItem(value: 'block', child: Text(isBanned ? 'Mở khóa' : 'Khóa')),
-        const PopupMenuItem(value: 'delete', child: Text('Xóa', style: TextStyle(color: Colors.red))),
+        PopupMenuItem(value: 'delete', child: Text('Xóa', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red))),
       ],
     );
   }
 
   Widget _buildRoleBadge(String role) {
-    Color bg = role == 'admin' ? Colors.purple[50]! : (role == 'expert' ? Colors.green[50]! : Colors.orange[50]!);
-    Color txt = role == 'admin' ? Colors.purple[700]! : (role == 'expert' ? Colors.green[700]! : Colors.orange[700]!);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    Color bg = role == 'admin' 
+        ? (isDark ? Colors.purple[900]!.withOpacity(0.3) : Colors.purple[50]!) 
+        : (role == 'expert' ? (isDark ? Colors.green[900]!.withOpacity(0.3) : Colors.green[50]!) : (isDark ? Colors.orange[900]!.withOpacity(0.3) : Colors.orange[50]!));
+    Color txt = role == 'admin' 
+        ? (isDark ? Colors.purple[200]! : Colors.purple[700]!) 
+        : (role == 'expert' ? (isDark ? Colors.green[200]! : Colors.green[700]!) : (isDark ? Colors.orange[200]! : Colors.orange[700]!));
     String label = role == 'admin' ? 'QUẢN TRỊ VIÊN' : (role == 'expert' ? 'CHUYÊN GIA' : 'NÔNG DÂN');
     return UnconstrainedBox(alignment: Alignment.centerLeft, child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: txt)),
+      child: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: txt)),
     ));
   }
 
@@ -808,18 +818,18 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             onChanged: (val) => setState(() => _selectedUserIds.clear()),
           ),
           const SizedBox(width: 8),
-          Text('Đã chọn ${_selectedUserIds.length} người dùng', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+          Text('Đã chọn ${_selectedUserIds.length} người dùng', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87)),
           const Spacer(),
           TextButton.icon(
             onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tính năng khóa hàng loạt đang phát triển'))),
             icon: const Icon(Icons.block, size: 18, color: Colors.red),
-            label: const Text('Khóa tài khoản', style: TextStyle(color: Colors.red)),
+            label: Text('Khóa tài khoản', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.red)),
           ),
           const SizedBox(width: 16),
           ElevatedButton.icon(
             onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tính năng thông báo hàng loạt đang phát triển'))),
             icon: const Icon(Icons.send_rounded, size: 18, color: Colors.white),
-            label: const Text('Gửi thông báo', style: TextStyle(color: Colors.white)),
+            label: Text('Gửi thông báo', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white)),
             style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
           ),
         ],
@@ -840,9 +850,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Text('Chưa có lịch sử hoạt động.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Text('Chưa có lịch sử hoạt động.', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
           );
         }
 
@@ -875,18 +885,18 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       children: [
                         Text(
                           log['action'] == 'CREATE_USER' ? 'Tạo tài khoản' : 'Xóa tài khoản',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           log['details'] ?? '',
-                          style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.grey),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-                  Text(timeStr, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                  Text(timeStr, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.grey)),
                 ],
               ),
             );
@@ -907,7 +917,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              Text('Chi tiết người dùng', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Chi tiết người dùng', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
               const Spacer(),
               IconButton(onPressed: () => setState(() => _selectedUserForDrawer = null), icon: const Icon(Icons.close)),
             ],
@@ -926,8 +936,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   child: (imageUrl == null || imageUrl.isEmpty) ? const Icon(Icons.person, size: 50) : null,
                 ),
                 const SizedBox(height: 16),
-                Text(data['displayName'] ?? 'Không tên', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                Text('ID: ${data['id']}', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(data['displayName'] ?? 'Không tên', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                Text('ID: ${data['id']}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
                 const SizedBox(height: 12),
                 _buildRoleBadge(role),
                 const SizedBox(height: 32),
@@ -967,8 +977,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+              Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.grey)),
+              Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
             ],
           )
         ],
@@ -981,7 +991,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       padding: const EdgeInsets.only(bottom: 16),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[400], letterSpacing: 1.1)),
+        child: Text(title, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[400], letterSpacing: 1.1)),
       ),
     );
   }
@@ -999,8 +1009,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(title, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold)),
+                Text(subtitle, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
               ],
             ),
           ),
@@ -1014,7 +1024,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     showDialog(context: context, builder: (context) => AlertDialog(
       title: Text(title), content: Text(content),
       actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
-        ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen), onPressed: () { onConfirm(); Navigator.pop(context); }, child: const Text('Xác nhận', style: TextStyle(color: Colors.white)))],
+        ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen), onPressed: () { onConfirm(); Navigator.pop(context); }, child: Text('Xác nhận', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)))],
     ));
   }
 
@@ -1030,7 +1040,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       padding: const EdgeInsets.all(24),
       child: Row(
         children: [
-          Text('Hiển thị $currentCount người dùng', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Text('Hiển thị $currentCount người dùng', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
           const Spacer(),
           if (_isLoading)
             const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
@@ -1042,10 +1052,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
-              child: const Text('Tải thêm', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text('Tải thêm', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
             )
           else
-            const Text('Đã tải hết danh sách.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            Text('Đã tải hết danh sách.', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
         ],
       ),
     );
@@ -1065,7 +1075,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         child: Center(
           child: content is IconData
               ? Icon(content, size: 18, color: enabled ? (active ? Colors.white : Colors.black) : Colors.grey)
-              : Text(content.toString(), style: TextStyle(color: active ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+              : Text(content.toString(), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: active ? Colors.white : Colors.black, fontWeight: FontWeight.bold)),
         ),
       ),
     );

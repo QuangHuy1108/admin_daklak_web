@@ -28,9 +28,8 @@ class SettingsFormHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                     color: AppColors.textHeading,
                     letterSpacing: -1,
                   ),
@@ -38,7 +37,7 @@ class SettingsFormHeader extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
                 ),
               ],
             ),

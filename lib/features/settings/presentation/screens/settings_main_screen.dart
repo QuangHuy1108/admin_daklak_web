@@ -51,7 +51,7 @@ class _SettingsMainScreenState extends State<SettingsMainScreen> {
       builder: (context) => const NotificationSettingsForm(),
     ),
     SettingsGroup(
-      title: 'Feature Flags',
+      title: 'Tính năng thử nghiệm',
       icon: Icons.flag_rounded,
       builder: (context) => const FeatureFlagsForm(),
     ),
@@ -61,7 +61,7 @@ class _SettingsMainScreenState extends State<SettingsMainScreen> {
       builder: (context) => const LocalizationSettingsForm(),
     ),
     SettingsGroup(
-      title: 'Monitoring & Health',
+      title: 'Giám sát & Sức khỏe',
       icon: Icons.insights_rounded,
       builder: (context) => const MonitoringSettingsForm(),
     ),
@@ -83,7 +83,7 @@ class _SettingsMainScreenState extends State<SettingsMainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: Colors.transparent,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -97,12 +97,12 @@ class _SettingsMainScreenState extends State<SettingsMainScreen> {
           // ── Right Content Area (Detail) ─────────────────────────────
           Expanded(
             child: Container(
-              color: AppColors.scaffoldBg,
+              color: Colors.transparent,
               child: Consumer<SettingsProvider>(
                 builder: (context, provider, child) {
                   if (provider.isLoading && provider.global == null) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: AppColors.primary),
+                    return Center(
+                      child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
                     );
                   }
 
@@ -110,18 +110,38 @@ class _SettingsMainScreenState extends State<SettingsMainScreen> {
                     return Center(
                       child: Text(
                         provider.errorMessage!,
-                        style: const TextStyle(color: Colors.redAccent),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.redAccent),
                       ),
                     );
                   }
 
                   return SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.all(40.0),
+                    padding: const EdgeInsets.all(32.0),
                     child: Center(
                       child: Container(
                         constraints: const BoxConstraints(maxWidth: 1000),
-                        child: _groups[_selectedIndex].builder(context),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Cài đặt hệ thống',
+                              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Quản lý cấu hình toàn cục và các thông số kỹ thuật của hệ thống.',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).textTheme.bodySmall?.color,
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            _groups[_selectedIndex].builder(context),
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -148,12 +168,13 @@ class _SettingsSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 280,
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
         border: Border(
-          right: BorderSide(color: AppColors.border, width: 1),
+          right: BorderSide(color: Colors.white.withValues(alpha: isDark ? 0.06 : 0.3), width: 1),
         ),
       ),
       child: Column(
@@ -163,11 +184,10 @@ class _SettingsSidebar extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
             child: Text(
               'CÀI ĐẶT HỆ THỐNG',
-              style: AppTextStyles.subtitle.copyWith(
-                fontSize: 12,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.2,
-                color: AppColors.textMuted,
+                color: Theme.of(context).textTheme.bodySmall?.color,
               ),
             ),
           ),
@@ -216,7 +236,7 @@ class _SidebarItemState extends State<_SidebarItem> {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = AppColors.primary;
+    final activeColor = Theme.of(context).primaryColor;
     
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -233,7 +253,7 @@ class _SidebarItemState extends State<_SidebarItem> {
               color: widget.isSelected
                   ? activeColor.withOpacity(0.1)
                   : _isHovered
-                      ? AppColors.background.withOpacity(0.5)
+                      ? (Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.black.withOpacity(0.05))
                       : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
@@ -242,16 +262,15 @@ class _SidebarItemState extends State<_SidebarItem> {
                 Icon(
                   widget.icon,
                   size: 20,
-                  color: widget.isSelected ? activeColor : AppColors.textMuted,
+                  color: widget.isSelected ? activeColor : Theme.of(context).textTheme.bodySmall?.color,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     widget.title,
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.w500,
-                      color: widget.isSelected ? activeColor : AppColors.textBody,
+                      color: widget.isSelected ? activeColor : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -259,8 +278,8 @@ class _SidebarItemState extends State<_SidebarItem> {
                   Container(
                     width: 4,
                     height: 4,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
                       shape: BoxShape.circle,
                     ),
                   ),

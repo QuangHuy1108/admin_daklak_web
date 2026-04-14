@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/menu_provider.dart';
+import '../providers/theme_provider.dart';
 import '../constants/app_colors.dart';
+import 'common/glass_container.dart';
 
 class _MenuItem {
   final IconData icon;
@@ -11,19 +13,33 @@ class _MenuItem {
   const _MenuItem(this.icon, this.label, this.route);
 }
 
-const _mainMenu = [
-  _MenuItem(Icons.dashboard_rounded, 'Dashboard', '/dashboard'),
-  _MenuItem(Icons.shopping_cart_outlined, 'Quản lý Đơn hàng', '/sales'),
-  _MenuItem(Icons.image_outlined, 'Banner', '/banners'),
-  _MenuItem(Icons.people_outlined, 'Tài khoản', '/users'),
-  _MenuItem(Icons.verified_user_outlined, 'Duyệt chuyên gia', '/expert-verifications'),
-  _MenuItem(Icons.calendar_today_outlined, 'Lịch hẹn chuyên gia', '/appointments'),
-  _MenuItem(Icons.chat_bubble_outline_rounded, 'AI Chat Logs', '/ai-logs'),
-  _MenuItem(Icons.bug_report_outlined, 'Sâu bệnh', '/diseases'),
-  _MenuItem(Icons.attach_money_outlined, 'Giá nông sản', '/prices'),
-  _MenuItem(Icons.bar_chart_outlined, 'Báo cáo & Thống kê', '/reports'),
-  _MenuItem(Icons.security_outlined, 'Nhật ký hệ thống', '/system-logs'),
-  _MenuItem(Icons.settings_outlined, 'Cài đặt hệ thống', '/settings'),
+class _MenuGroup {
+  final String title;
+  final List<_MenuItem> items;
+  const _MenuGroup(this.title, this.items);
+}
+
+const _menuGroups = [
+  _MenuGroup('Tổng quan', [
+    _MenuItem(Icons.dashboard_rounded, 'Dashboard', '/dashboard'),
+    _MenuItem(Icons.bar_chart_outlined, 'Báo cáo & Thống kê', '/reports'),
+  ]),
+  _MenuGroup('Chuyên gia', [
+    _MenuItem(Icons.verified_user_outlined, 'Duyệt chuyên gia', '/expert-verifications'),
+    _MenuItem(Icons.calendar_today_outlined, 'Lịch hẹn', '/appointments'),
+  ]),
+  _MenuGroup('Vận hành', [
+    _MenuItem(Icons.shopping_cart_outlined, 'Đơn hàng', '/sales'),
+    _MenuItem(Icons.attach_money_outlined, 'Giá nông sản', '/prices'),
+    _MenuItem(Icons.bug_report_outlined, 'Sâu bệnh', '/diseases'),
+  ]),
+  _MenuGroup('Hệ thống', [
+    _MenuItem(Icons.image_outlined, 'Banner', '/banners'),
+    _MenuItem(Icons.people_outlined, 'Tài khoản', '/users'),
+    _MenuItem(Icons.chat_bubble_outline_rounded, 'AI Chat Logs', '/ai-logs'),
+    _MenuItem(Icons.security_outlined, 'Nhật ký hệ thống', '/system-logs'),
+    _MenuItem(Icons.settings_outlined, 'Cài đặt', '/settings'),
+  ]),
 ];
 
 class AdminSidebar extends StatelessWidget {
@@ -35,45 +51,57 @@ class AdminSidebar extends StatelessWidget {
     bool isDrawer = screenWidth <= 768;
     bool showIconsOnly = screenWidth > 768 && screenWidth <= 1024;
 
-    bool _providerExpanded = context.watch<MenuProvider>().isExpanded;
-    bool isExpanded = isDrawer ? true : (showIconsOnly ? false : _providerExpanded);
+    bool providerExpanded = context.watch<MenuProvider>().isExpanded;
+    bool isExpanded = isDrawer ? true : (showIconsOnly ? false : providerExpanded);
 
     final currentRoute = GoRouterState.of(context).matchedLocation;
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-      width: isExpanded ? 240 : 80,
-      clipBehavior: Clip.antiAlias,
+      curve: Curves.easeInOutCubic,
+      width: isExpanded ? 260 : 88,
       height: MediaQuery.of(context).size.height,
-      decoration: const BoxDecoration(
-        color: AppColors.sidebarBg,
-        border: Border(right: BorderSide(color: AppColors.border, width: 1)),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(32), // Liquid glass rounded
+        border: Border.all(
+           color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6),
+           width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 24,
+            spreadRadius: 0,
+            offset: const Offset(4, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          // ── Logo ─────────────────────────────────────────────
+            // ── Logo ─────────────────────────────────────────────
           InkWell(
             onTap: () {
-              if (Scaffold.of(context).isDrawerOpen) {
-                Navigator.pop(context);
-              }
+              if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
               context.go('/dashboard');
             },
             child: Container(
-              height: 64, 
+              height: 72,
               padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
               child: Row(
                 mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
                 children: [
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(8),
+                      color: isDark ? const Color(0xFFE8F5E9) : const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.eco_rounded, color: Colors.white, size: 24),
+                    child: Icon(Icons.eco_rounded, color: const Color(0xFF2E7D32), size: 26),
                   ),
                   if (isExpanded)
                     Expanded(
@@ -83,14 +111,28 @@ class AdminSidebar extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const SizedBox(width: 12),
-                            const Text(
-                              'FarmVista',
-                              style: TextStyle(
-                                color: AppColors.textHeading,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            const SizedBox(width: 14),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Dak Lak Estate',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark ? Colors.white : const Color(0xFF1E1E1E),
+                                  ),
+                                ),
+                                const Text(
+                                  'ACTIVE HARVEST',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF13B26F),
+                                    fontSize: 10,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -100,27 +142,110 @@ class AdminSidebar extends StatelessWidget {
               ),
             ),
           ),
-
-          const SizedBox(height: 8),
-
-          // ── Menu items ────────────────────────────────────────
+          
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.only(top: 8),
-              children: _mainMenu.map((item) => _SidebarTile(
-                item: item,
-                isExpanded: isExpanded,
-                isActive: currentRoute.startsWith(item.route),
-              )).toList(),
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: _menuGroups.length,
+              itemBuilder: (context, index) {
+                return _SidebarGroupWidget(
+                  group: _menuGroups[index],
+                  isExpanded: isExpanded,
+                  currentRoute: currentRoute,
+                );
+              },
             ),
           ),
 
-          // ── Collapse Toggle (Replacing Logout) ────────────────
+          // ── Footer ──────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.all(12),
-            child: _CollapseToggle(isExpanded: isExpanded),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Column(
+              children: [
+                _ThemeToggleBtn(isExpanded: isExpanded),
+                const SizedBox(height: 12),
+                _CollapseToggle(isExpanded: isExpanded),
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+}
+
+class _SidebarGroupWidget extends StatelessWidget {
+  final _MenuGroup group;
+  final bool isExpanded;
+  final String currentRoute;
+  const _SidebarGroupWidget({required this.group, required this.isExpanded, required this.currentRoute});
+
+  @override
+  Widget build(BuildContext context) {
+    int activeIndex = group.items.indexWhere((item) => currentRoute.startsWith(item.route));
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+    final groupBgColor = Colors.transparent;
+
+    const itemHeight = 44.0;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: isExpanded ? 12 : 8, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (isExpanded) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 12, bottom: 8, right: 8),
+              child: Text(
+                group.title.toUpperCase(),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.8,
+                  color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                ),
+              ),
+            ),
+          ],
+          
+          Stack(
+            children: [
+              if (activeIndex >= 0)
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeInOutCubic,
+                  top: activeIndex * itemHeight,
+                  left: 0,
+                  right: 0,
+                  height: itemHeight,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? Theme.of(context).primaryColor.withOpacity(0.15) : Theme.of(context).primaryColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+                ),
+              
+              Column(
+                children: List.generate(group.items.length, (index) {
+                  return SizedBox(
+                    height: itemHeight,
+                    child: _SidebarTile(
+                      item: group.items[index],
+                      isExpanded: isExpanded,
+                      isActive: activeIndex == index,
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -143,48 +268,35 @@ class _SidebarTileState extends State<_SidebarTile> {
   @override
   Widget build(BuildContext context) {
     final active = widget.isActive;
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+    
+    final inactiveColor = Theme.of(context).textTheme.bodySmall?.color ?? (isDark ? Colors.grey.shade400 : Colors.grey.shade600);
+    final activeColor = Theme.of(context).primaryColor;
+    final fgColor = active ? activeColor : inactiveColor;
+    
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: InkWell(
         onTap: () {
-          if (Scaffold.of(context).isDrawerOpen) {
-            Navigator.pop(context);
-          }
+          if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
           context.go(widget.item.route);
         },
+        borderRadius: BorderRadius.circular(100),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.only(bottom: 8, right: 16),
-          padding: EdgeInsets.symmetric(
-            horizontal: widget.isExpanded ? 16 : 0,
-            vertical: 14,
-          ),
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: active
-                ? AppColors.primary.withOpacity(0.08)
-                : _hovered
-                ? AppColors.background
+            color: _hovered && !active
+                ? (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04))
                 : Colors.transparent,
-            borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(8),
-              bottomRight: Radius.circular(8),
-            ),
-            border: Border(
-              left: BorderSide(
-                color: active ? AppColors.primary : Colors.transparent,
-                width: 4,
-              ),
-            ),
+            borderRadius: BorderRadius.circular(100),
           ),
           child: Row(
             mainAxisAlignment: widget.isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
             children: [
-              Icon(
-                widget.item.icon,
-                size: 22,
-                color: active ? AppColors.primary : AppColors.textMuted,
-              ),
+              if (widget.isExpanded) const SizedBox(width: 16),
+              Icon(widget.item.icon, size: 22, color: fgColor),
               if (widget.isExpanded)
                 Expanded(
                   child: SingleChildScrollView(
@@ -193,13 +305,12 @@ class _SidebarTileState extends State<_SidebarTile> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 14),
                         Text(
                           widget.item.label,
-                          style: TextStyle(
-                            color: active ? AppColors.primary : AppColors.textMuted,
-                            fontSize: 14,
-                            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: fgColor,
+                            fontWeight: active ? FontWeight.bold : FontWeight.w500,
                           ),
                         ),
                       ],
@@ -214,48 +325,97 @@ class _SidebarTileState extends State<_SidebarTile> {
   }
 }
 
-class _CollapseToggle extends StatelessWidget {
+class _ThemeToggleBtn extends StatelessWidget {
   final bool isExpanded;
-  const _CollapseToggle({required this.isExpanded});
+  const _ThemeToggleBtn({required this.isExpanded});
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
+
+    final bgColor = isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03);
+    final fgColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+
     return InkWell(
-      onTap: () => context.read<MenuProvider>().toggleMenu(),
-      borderRadius: BorderRadius.circular(8),
+      onTap: () => themeProvider.toggleTheme(),
+      borderRadius: BorderRadius.circular(100),
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isExpanded ? 16 : 0,
-          vertical: 14,
-        ),
+        height: 48,
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: isExpanded ? 16 : 0),
         decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(8),
+          color: bgColor,
+          borderRadius: BorderRadius.circular(100),
         ),
         child: Row(
           mainAxisAlignment: isExpanded ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
           children: [
-            if (isExpanded) ...[
+            if (isExpanded)
               Expanded(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   physics: const NeverScrollableScrollPhysics(),
-                  child: const Text(
-                    'Thu gọn',
-                    style: TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Text(
+                    isDark ? 'Chế độ tối' : 'Chế độ sáng', 
+                    style: TextStyle(fontWeight: FontWeight.w600, color: fgColor)
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_left_rounded, size: 22, color: AppColors.textMuted),
-            ] else
-              const Icon(Icons.chevron_right_rounded, size: 22, color: AppColors.textMuted),
+            Icon(
+              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, 
+              size: 20, 
+              color: fgColor
+            ),
           ],
         ),
       ),
     );
   }
 }
+
+class _CollapseToggle extends StatelessWidget {
+  final bool isExpanded;
+  const _CollapseToggle({required this.isExpanded});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
+    final bgColor = isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03);
+    final fgColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+
+    return InkWell(
+      onTap: () => context.read<MenuProvider>().toggleMenu(),
+      borderRadius: BorderRadius.circular(100),
+      child: Container(
+        height: 48,
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: isExpanded ? 16 : 0),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Row(
+          mainAxisAlignment: isExpanded ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isExpanded)
+              Expanded(
+                child: Text(
+                  'Thu gọn', 
+                  style: TextStyle(fontWeight: FontWeight.w600, color: fgColor),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            Icon(
+              isExpanded ? Icons.keyboard_arrow_left_rounded : Icons.keyboard_arrow_right_rounded,
+              size: 20,
+              color: fgColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

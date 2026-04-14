@@ -53,14 +53,14 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
     html.Url.revokeObjectUrl(url);
     
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đang tải tệp CSV...'), backgroundColor: AppColors.primary),
+      SnackBar(content: const Text('Đang tải tệp CSV...'), backgroundColor: Theme.of(context).primaryColor),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: StreamBuilder<List<SystemLogModel>>(
         stream: _service.getAllLogs(),
         builder: (context, snapshot) {
@@ -118,7 +118,7 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
 
   Widget _buildMainContent(List<SystemLogModel> data) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      padding: const EdgeInsets.all(32.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -136,17 +136,17 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Nhật ký hệ thống',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textHeading),
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Theo dõi và quản lý các hoạt động trên hệ thống.',
-              style: TextStyle(fontSize: 15, color: AppColors.textMuted),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
             ),
           ],
         ),
@@ -155,7 +155,7 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
           icon: const Icon(Icons.download_rounded, size: 20),
           label: const Text('Xuất dữ liệu'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
+            backgroundColor: Theme.of(context).primaryColor,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -175,9 +175,9 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
         },
         decoration: InputDecoration(
           hintText: 'Tìm kiếm người thực hiện hoặc chi tiết...',
-          prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
+          prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color),
           filled: true,
-          fillColor: AppColors.background,
+          fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFF3F4F6),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -229,7 +229,7 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
   InputDecoration _inputDecoration(String label) => InputDecoration(
     labelText: label,
     filled: true,
-    fillColor: AppColors.background,
+    fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFF3F4F6),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
       borderSide: BorderSide.none,
@@ -260,16 +260,16 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
                     // Time
                     Text(
                       DateFormat('dd/MM/yyyy HH:mm').format(item.createdAt),
-                      style: const TextStyle(fontSize: 14),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     // Actor
                     Row(
                       children: [
                         CircleAvatar(
                           radius: 14,
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
                           child: Text(item.actorName.isNotEmpty ? item.actorName[0].toUpperCase() : 'H', 
-                              style: const TextStyle(color: AppColors.primary, fontSize: 11)),
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).primaryColor)),
                         ),
                         const SizedBox(width: 12),
                         Flexible(
@@ -281,7 +281,7 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
                       ],
                     ),
                     // Action
-                    Text(item.action, style: const TextStyle(fontSize: 14)),
+                    Text(item.action, style: Theme.of(context).textTheme.bodyMedium),
                     // Details
                     Tooltip(
                       message: item.details,
@@ -295,7 +295,7 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
                       showDuration: const Duration(seconds: 5),
                       child: Text(
                         item.details,
-                        style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -330,7 +330,7 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
         children: [
           Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[300]),
           const SizedBox(height: 16),
-          const Text('Không có dữ liệu hiển thị', style: TextStyle(color: AppColors.textMuted)),
+          Text('Không có dữ liệu hiển thị', style: Theme.of(context).textTheme.bodyMedium), // color: AppColors.textMuted will be handled by bodyMedium or copyWith
         ],
       ),
     );

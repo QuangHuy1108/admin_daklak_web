@@ -66,6 +66,7 @@ class _ExpertRequestDetailDialogState extends State<ExpertRequestDetailDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      backgroundColor: Theme.of(context).dialogBackgroundColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         width: 650,
@@ -132,11 +133,11 @@ class _ExpertRequestDetailDialogState extends State<ExpertRequestDetailDialog> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.bold,
         letterSpacing: 1.2,
-        color: AppColors.textMuted,
+        color: Theme.of(context).textTheme.bodySmall?.color,
       ),
     );
   }
@@ -162,7 +163,7 @@ class _ExpertRequestDetailDialogState extends State<ExpertRequestDetailDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          Text(label, style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 13)),
           const SizedBox(height: 4),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
         ],
@@ -175,9 +176,9 @@ class _ExpertRequestDetailDialogState extends State<ExpertRequestDetailDialog> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Text(
         widget.request.bio.isEmpty ? 'Không có thông tin giới thiệu.' : widget.request.bio,
@@ -209,8 +210,8 @@ class _ExpertRequestDetailDialogState extends State<ExpertRequestDetailDialog> {
         height: 100,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: Colors.grey[100],
-          border: Border.all(color: Colors.grey[300]!),
+          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.grey[100],
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: isImage
             ? ClipRRect(

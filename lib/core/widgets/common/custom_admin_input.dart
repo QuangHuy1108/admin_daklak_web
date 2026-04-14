@@ -36,9 +36,8 @@ class CustomAdminInput extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontSize: 13, // Giữ kích thước nhỏ gọn cho nhãn input
             color: AppColors.textHeading,
           ),
         ),
@@ -48,10 +47,12 @@ class CustomAdminInput extends StatelessWidget {
           maxLines: maxLines,
           keyboardType: keyboardType,
           onChanged: onChanged,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          style: Theme.of(context).textTheme.bodyMedium,
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+            hintStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: AppColors.textMuted,
+            ),
             helperText: helperText,
             prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: AppColors.textMuted) : null,
             suffixIcon: suffixIcon,

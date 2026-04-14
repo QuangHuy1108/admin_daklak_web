@@ -1,8 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/widgets/common/glass_container.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -11,13 +12,13 @@ import '../models/expense_model.dart';
 import '../../logs/services/audit_service.dart';
 import '../../logs/models/audit_log_model.dart';
 
-const Color _bgGray = Color(0xFFF5F7FA);
-const Color _primaryGreen = Color(0xFF2E7D32);
-const Color _textPrimary = Color(0xFF1C2826);
-const Color _textSecondary = Color(0xFF6B7280);
-const Color _borderColor = Color(0xFFE5E7EB);
-const Color _warningRed = Color(0xFFD32F2F);
-const Color _infoBlue = Color(0xFF1976D2);
+  Color _getBgGray(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant.withValues(alpha: 0.5) : const Color(0xFFF5F7FA);
+  Color _getTextPrimary(BuildContext context) => Theme.of(context).colorScheme.onSurface;
+  Color _getTextSecondary(BuildContext context) => Theme.of(context).textTheme.bodySmall?.color ?? const Color(0xFF6B7280);
+  Color _getBorderColor(BuildContext context) => Theme.of(context).dividerColor;
+  Color _getPrimaryGreen(BuildContext context) => Theme.of(context).primaryColor;
+  Color _getWarningRed(BuildContext context) => Theme.of(context).colorScheme.error;
+  Color _getInfoBlue(BuildContext context) => Colors.blue;
 
 class FinanceScreen extends StatelessWidget {
   const FinanceScreen({super.key});
@@ -28,14 +29,14 @@ class FinanceScreen extends StatelessWidget {
     final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
     if (financeProvider.isLoading) {
-      return const Scaffold(
-        backgroundColor: _bgGray,
-        body: Center(child: CircularProgressIndicator(color: _primaryGreen)),
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor)),
       );
     }
 
     return Scaffold(
-      backgroundColor: _bgGray,
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(32.0),
         child: Column(
@@ -48,7 +49,7 @@ class FinanceScreen extends StatelessWidget {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: _textPrimary),
+                      icon: Icon(Icons.arrow_back, color: _getTextPrimary(context)),
                       onPressed: () => context.pop(),
                       tooltip: 'Quay lại',
                     ),
@@ -58,12 +59,12 @@ class FinanceScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Sổ Cái Tài Chính & Đối Soát',
-                          style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: _textPrimary),
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context)),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Tổng quan về dòng tiền, chi phí vận hành và lợi nhuận thực tế.',
-                          style: GoogleFonts.inter(fontSize: 14, color: _textSecondary),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _getTextSecondary(context)),
                         ),
                       ],
                     ),
@@ -72,9 +73,9 @@ class FinanceScreen extends StatelessWidget {
                 ElevatedButton.icon(
                   onPressed: () => _showAddExpenseDialog(context),
                   icon: const Icon(Icons.add, color: Colors.white),
-                  label: Text('Ghi nhận chi phí', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
+                  label: Text('Ghi nhận chi phí', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryGreen,
+                    backgroundColor: _getPrimaryGreen(context),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -86,11 +87,11 @@ class FinanceScreen extends StatelessWidget {
             // KPI Row
             Row(
               children: [
-                Expanded(child: _buildKPICard('Tổng Doanh Thu', financeProvider.totalGrossRevenue, _primaryGreen, Icons.account_balance_wallet, currencyFormat)),
+                Expanded(child: _buildKPICard(context, 'Tổng Doanh Thu', financeProvider.totalGrossRevenue, _getPrimaryGreen(context), Icons.account_balance_wallet, currencyFormat)),
                 const SizedBox(width: 24),
-                Expanded(child: _buildKPICard('Tổng Chi Phí Thực Tế', financeProvider.totalExpenses, _warningRed, Icons.payments, currencyFormat)),
+                Expanded(child: _buildKPICard(context, 'Tổng Chi Phí Thực Tế', financeProvider.totalExpenses, _getWarningRed(context), Icons.payments, currencyFormat)),
                 const SizedBox(width: 24),
-                Expanded(child: _buildKPICard('Lợi Nhuận Ròng', financeProvider.netProfit, _infoBlue, Icons.trending_up, currencyFormat, isNet: true)),
+                Expanded(child: _buildKPICard(context, 'Lợi Nhuận Ròng', financeProvider.netProfit, _getInfoBlue(context), Icons.trending_up, currencyFormat, isNet: true)),
               ],
             ),
             const SizedBox(height: 32),
@@ -101,17 +102,16 @@ class FinanceScreen extends StatelessWidget {
               children: [
                 Expanded(
                   flex: 2,
-                  child: Container(
+                  child: GlassContainer(
                     padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Color(0x05000000), blurRadius: 10)]),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Phân Tích Dòng Tiền Thật', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary)),
+                        Text('Phân Tích Dòng Tiền Thật', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context))),
                         const SizedBox(height: 24),
                         SizedBox(
                           height: 350,
-                          child: _buildRevenueChart(financeProvider),
+                          child: _buildRevenueChart(context, financeProvider),
                         )
                       ],
                     ),
@@ -120,17 +120,16 @@ class FinanceScreen extends StatelessWidget {
                 const SizedBox(width: 32),
                 Expanded(
                   flex: 1,
-                  child: Container(
+                  child: GlassContainer(
                     padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Color(0x05000000), blurRadius: 10)]),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Cơ Cấu Chi Phí', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary)),
+                        Text('Biểu đồ Doanh thu (7 ngày)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context))),
                         const SizedBox(height: 24),
                         SizedBox(
                           height: 350,
-                          child: _buildExpensePieChart(financeProvider),
+                          child: _buildExpensePieChart(context, financeProvider),
                         )
                       ],
                     ),
@@ -148,14 +147,10 @@ class FinanceScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildKPICard(String title, double value, Color iconColor, IconData icon, NumberFormat formatter, {bool isNet = false}) {
-    return Container(
+  Widget _buildKPICard(BuildContext context, String title, double value, Color iconColor, IconData icon, NumberFormat formatter, {bool isNet = false}) {
+    return GlassContainer(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-         color: isNet ? _textPrimary : Colors.white,
-         borderRadius: BorderRadius.circular(16),
-         boxShadow: const [BoxShadow(color: Color(0x05000000), blurRadius: 10, offset: Offset(0, 4))],
-      ),
+      color: isNet ? (Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : _getTextPrimary(context)) : null,
       child: Column(
          crossAxisAlignment: CrossAxisAlignment.start,
          children: [
@@ -167,26 +162,24 @@ class FinanceScreen extends StatelessWidget {
                      child: Icon(icon, color: isNet ? Colors.white : iconColor, size: 24),
                   ),
                   const SizedBox(width: 12),
-                  Text(title, style: GoogleFonts.inter(color: isNet ? Colors.white70 : _textSecondary, fontWeight: FontWeight.w500)),
+                  Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: isNet ? Colors.white70 : _getTextSecondary(context), fontWeight: FontWeight.w500)),
                ]
             ),
             const SizedBox(height: 16),
-            Text(formatter.format(value), style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: isNet ? Colors.white : _textPrimary)),
+            Text(formatter.format(value), style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: isNet ? Colors.white : _getTextPrimary(context))),
          ]
       )
     );
   }
 
-  Widget _buildRevenueChart(FinanceProvider provider) {
+  Widget _buildRevenueChart(BuildContext context, FinanceProvider provider) {
     if (provider.totalGrossRevenue == 0 && provider.totalExpenses == 0) {
-      return const Center(child: Text('Chưa có dữ liệu giao dịch.'));
+      return Center(child: Text('Chưa có dữ liệu giao dịch.', style: Theme.of(context).textTheme.bodyMedium));
     }
 
-    // Dynamic scaling for both positive and negative values
     final double maxVal = math.max(provider.totalGrossRevenue, provider.totalExpenses);
     final double minVal = math.min(0.0, provider.netProfit);
 
-    // Calculate a balanced range to keep 0 reasonably centered if there are negative values
     final double padding = 1.4;
     final double chartMaxY = maxVal == 0 ? 1000 : maxVal * padding;
     final double chartMinY = minVal == 0 ? 0 : minVal * padding;
@@ -204,8 +197,8 @@ class FinanceScreen extends StatelessWidget {
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               return BarTooltipItem(
                 NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0).format(rod.toY),
-                GoogleFonts.inter(
-                  color: _textPrimary,
+                Theme.of(context).textTheme.labelLarge!.copyWith(
+                  color: _getTextPrimary(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -218,13 +211,13 @@ class FinanceScreen extends StatelessWidget {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 42, // Ensure enough space for labels + padding
+              reservedSize: 42,
               getTitlesWidget: (double value, TitleMeta meta) {
-                const style = TextStyle(color: _textSecondary, fontWeight: FontWeight.bold, fontSize: 13);
+                final style = TextStyle(color: _getTextSecondary(context), fontWeight: FontWeight.bold, fontSize: 13);
                 switch (value.toInt()) {
-                  case 0: return SideTitleWidget(meta: meta, space: 12, child: const Text('Doanh Thu', style: style));
-                  case 1: return SideTitleWidget(meta: meta, space: 12, child: const Text('Chi Phí', style: style));
-                  case 2: return SideTitleWidget(meta: meta, space: 12, child: const Text('Lợi Nhuận', style: style));
+                  case 0: return SideTitleWidget(meta: meta, space: 12, child: Text('Doanh Thu', style: style));
+                  case 1: return SideTitleWidget(meta: meta, space: 12, child: Text('Chi Phí', style: style));
+                  case 2: return SideTitleWidget(meta: meta, space: 12, child: Text('Lợi Nhuận', style: style));
                   default: return const Text('');
                 }
               },
@@ -240,9 +233,9 @@ class FinanceScreen extends StatelessWidget {
           horizontalInterval: maxVal > 0 ? maxVal / 5 : 1000,
           getDrawingHorizontalLine: (value) {
             if (value == 0) {
-              return const FlLine(color: _textSecondary, strokeWidth: 1); // Baseline at 0
+              return FlLine(color: _getTextSecondary(context), strokeWidth: 1);
             }
-            return const FlLine(color: _borderColor, strokeWidth: 0.5, dashArray: [5, 5]);
+            return FlLine(color: _getBorderColor(context), strokeWidth: 0.5, dashArray: [5, 5]);
           },
         ),
         borderData: FlBorderData(show: false),
@@ -251,7 +244,7 @@ class FinanceScreen extends StatelessWidget {
             BarChartRodData(
               fromY: 0,
               toY: provider.totalGrossRevenue, 
-              color: _primaryGreen, 
+              color: _getPrimaryGreen(context), 
               width: 60, 
               borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
             )
@@ -260,7 +253,7 @@ class FinanceScreen extends StatelessWidget {
             BarChartRodData(
               fromY: 0,
               toY: provider.totalExpenses, 
-              color: _warningRed, 
+              color: _getWarningRed(context), 
               width: 60, 
               borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
             )
@@ -269,7 +262,7 @@ class FinanceScreen extends StatelessWidget {
             BarChartRodData(
               fromY: 0,
               toY: provider.netProfit, 
-              color: _infoBlue, 
+              color: _getInfoBlue(context), 
               width: 60, 
               borderRadius: provider.netProfit >= 0 
                   ? const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8))
@@ -281,13 +274,13 @@ class FinanceScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildExpensePieChart(FinanceProvider provider) {
+  Widget _buildExpensePieChart(BuildContext context, FinanceProvider provider) {
     final Map<String, double> categories = {};
     for (var exp in provider.expenses) {
       categories[exp.category] = (categories[exp.category] ?? 0) + exp.amount;
     }
 
-    if (categories.isEmpty) return const Center(child: Text('Chưa có chi phí ghi nhận.'));
+    if (categories.isEmpty) return Center(child: Text('Chưa có chi phí ghi nhận.', style: Theme.of(context).textTheme.bodyMedium));
 
     final colors = [Colors.blue, Colors.orange, Colors.purple, Colors.teal, Colors.red];
 
@@ -300,7 +293,7 @@ class FinanceScreen extends StatelessWidget {
             title: e.key,
             color: colors[index],
             radius: 100,
-            titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+            titleStyle: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
           );
         }).toList(),
       ),
@@ -308,8 +301,7 @@ class FinanceScreen extends StatelessWidget {
   }
 
   Widget _buildExpenseTable(BuildContext context, FinanceProvider provider, NumberFormat formatter) {
-    return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Color(0x05000000), blurRadius: 10)]),
+    return GlassContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -318,8 +310,8 @@ class FinanceScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Nhật Ký Chi Phí Thực Tế', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
-                Text('${provider.expenses.length} bản ghi', style: GoogleFonts.inter(color: _textSecondary)),
+                Text('Nhật Ký Chi Phí Thực Tế', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context))),
+                Text('${provider.expenses.length} bản ghi', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _getTextSecondary(context))),
               ],
             ),
           ),
@@ -328,7 +320,7 @@ class FinanceScreen extends StatelessWidget {
             const Padding(padding: EdgeInsets.all(48), child: Center(child: Text('Chưa có ghi nhận chi phí nào.')))
           else
             DataTable(
-              headingRowColor: WidgetStateProperty.all(_bgGray),
+              headingRowColor: WidgetStateProperty.all(_getBgGray(context)),
               columns: const [
                 DataColumn(label: Text('Ngày')),
                 DataColumn(label: Text('Danh mục')),
@@ -341,13 +333,13 @@ class FinanceScreen extends StatelessWidget {
                   DataCell(Text(DateFormat('dd/MM/yyyy').format(expense.date))),
                   DataCell(Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: _infoBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                    child: Text(expense.category, style: const TextStyle(color: _infoBlue, fontWeight: FontWeight.bold, fontSize: 12)),
+                    decoration: BoxDecoration(color: _getInfoBlue(context).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                    child: Text(expense.category, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _getInfoBlue(context), fontWeight: FontWeight.bold, fontSize: 12)),
                   )),
                   DataCell(Text(expense.description)),
-                  DataCell(Text(formatter.format(expense.amount), style: const TextStyle(fontWeight: FontWeight.bold, color: _warningRed))),
+                  DataCell(Text(formatter.format(expense.amount), style: TextStyle(fontWeight: FontWeight.bold, color: _getWarningRed(context)))),
                   DataCell(IconButton(
-                    icon: const Icon(Icons.delete_outline, color: _warningRed),
+                    icon: Icon(Icons.delete_outline, color: _getWarningRed(context)),
                     onPressed: () => provider.deleteExpense(expense.id),
                   )),
                 ]);
@@ -386,7 +378,7 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
     
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập số tiền hợp lệ (> 0 đ)'), backgroundColor: _warningRed),
+        SnackBar(content: const Text('Vui lòng nhập số tiền hợp lệ (> 0 đ)'), backgroundColor: Theme.of(context).colorScheme.error),
       );
       return;
     }
@@ -420,7 +412,7 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã lưu ghi nhận chi phí thành công'), backgroundColor: _primaryGreen),
+          SnackBar(content: const Text('Đã lưu ghi nhận chi phí thành công'), backgroundColor: Theme.of(context).primaryColor),
         );
       }
     } catch (e) {
@@ -452,7 +444,7 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
     final categories = ['Vận chuyển', 'Chuyên gia', 'Kho bãi', 'Marketing', 'Khác'];
 
     return AlertDialog(
-      title: Text('Ghi nhận chi phí mới', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+      title: Text('Ghi nhận chi phí mới', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
       content: SizedBox(
         width: 400,
         child: Column(
@@ -491,7 +483,7 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
-                    const Icon(Icons.calendar_today, size: 18, color: _textSecondary),
+                    Icon(Icons.calendar_today, size: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.grey[600]),
                   ],
                 ),
               ),
@@ -509,17 +501,17 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
       actions: [
         TextButton(
           onPressed: _isSaving ? null : () => Navigator.pop(context), 
-          child: const Text('Hủy', style: TextStyle(color: _textSecondary)),
+          child: Text('Hủy', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.grey[600])),
         ),
         ElevatedButton(
           onPressed: _isSaving ? null : _handleSave,
           style: ElevatedButton.styleFrom(
-            backgroundColor: _primaryGreen,
+            backgroundColor: Theme.of(context).primaryColor,
             minimumSize: const Size(120, 45),
           ),
           child: _isSaving 
             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : const Text('Lưu ghi nhận', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            : Text('Lưu ghi nhận', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
       ],
     );

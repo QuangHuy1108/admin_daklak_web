@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/widgets/common/glass_container.dart';
 import '../models/voucher_model.dart';
 import '../services/voucher_service.dart';
 
@@ -51,9 +52,7 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF7F8F3,
-      ), // Consistent with User List background
+      backgroundColor: Colors.transparent, // Consistent with User List background
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(32.0),
         child: Column(
@@ -65,14 +64,9 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
             const SizedBox(height: 32),
 
             // Filter & Table Card
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
+            GlassContainer(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(32.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -89,8 +83,7 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
                       child: PaginatedDataTable(
                         header: Text(
                           'Automation Vouchers',
-                          style: GoogleFonts.inter(
-                            fontSize: 18,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF1B3D2F),
                           ),
@@ -127,26 +120,24 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
         IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1B3D2F)),
           onPressed: () => Navigator.of(context).pop(),
-          tooltip: 'Back to Dashboard',
+          tooltip: 'Quay lại Dashboard',
         ),
         const SizedBox(width: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Voucher Management System',
-              style: GoogleFonts.inter(
-                fontSize: 28,
+              'Hệ thống Quản lý Mã giảm giá',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF1B3D2F),
+                color: AppColors.textHeading,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Manage and monitor AI-generated automated vouchers for agriculture sellers.',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF6B7280),
+              'Quản lý và giám sát các mã giảm giá tự động từ AI cho người bán nông sản.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.textMuted,
               ),
             ),
           ],
@@ -181,7 +172,7 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
                 borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
               ),
             ),
-            style: GoogleFonts.inter(fontSize: 14),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14),
           ),
         ),
         const Spacer(),
@@ -276,7 +267,7 @@ class VoucherDataSource extends DataTableSource {
         DataCell(
           Text(
             voucher.code.toUpperCase(),
-            style: GoogleFonts.inter(
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: const Color(0xFF2E7D32),
             ),
@@ -290,11 +281,11 @@ class VoucherDataSource extends DataTableSource {
               Text(
                 voucher
                     .sellerName, // Denormalized field used here (No extra reads)
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               Text(
                 'ID: ${voucher.sellerId}',
-                style: GoogleFonts.inter(fontSize: 10, color: Colors.grey),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, color: Colors.grey),
               ),
             ],
           ),
@@ -305,7 +296,7 @@ class VoucherDataSource extends DataTableSource {
             voucher.discountType == 'Percentage'
                 ? '${voucher.value.toStringAsFixed(0)}%'
                 : '${voucher.value.toStringAsFixed(0)} đ',
-            style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
         DataCell(Text('${voucher.usageCount} / ${voucher.usageLimit}')),
@@ -371,7 +362,7 @@ class VoucherDataSource extends DataTableSource {
       ),
       child: Text(
         label,
-        style: GoogleFonts.inter(
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: color,
           fontSize: 11,
           fontWeight: FontWeight.bold,

@@ -10,6 +10,8 @@ import '../../features/notifications/models/notification_model.dart';
 import '../../features/notifications/widgets/notification_dropdown.dart';
 import '../services/search_service.dart';
 import 'search_overlay.dart';
+import 'common/glass_container.dart';
+import '../providers/theme_provider.dart';
 
 class AdminHeader extends StatefulWidget implements PreferredSizeWidget {
   const AdminHeader({super.key});
@@ -122,18 +124,31 @@ class _AdminHeaderState extends State<AdminHeader> {
   Widget build(BuildContext context) {
     bool isMobile = MediaQuery.of(context).size.width <= 768;
     final userProvider = Provider.of<UserProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
 
     // Get real user data
     final displayName = userProvider.displayName ?? 'Admin';
     final email = userProvider.email ?? 'admin@farmvista.com';
     final photoURL = userProvider.photoURL;
 
+    final masterBg = isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.85);
+    final borderCol = Colors.white.withValues(alpha: isDark ? 0.08 : 0.8);
+    final glassShadow = BoxShadow(
+      color: Colors.black.withValues(alpha: 0.04),
+      blurRadius: 24,
+      spreadRadius: 0,
+      offset: const Offset(4, 4),
+    );
+
     return Container(
-      height: 64, 
+      height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
-        color: AppColors.cardBg,
-        border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+      decoration: BoxDecoration(
+        color: masterBg,
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: borderCol, width: 1.5),
+        boxShadow: [glassShadow],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -146,19 +161,18 @@ class _AdminHeaderState extends State<AdminHeader> {
               child: CompositedTransformTarget(
                 link: _layerLink,
                 child: Container(
-                  height: 40,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
+                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03), 
+                    borderRadius: BorderRadius.circular(100),
                   ),
                   child: Row(
                     children: [
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 20),
                       Icon(
                         Icons.search_rounded,
                         size: 20,
-                        color: Colors.grey.shade500,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -166,18 +180,23 @@ class _AdminHeaderState extends State<AdminHeader> {
                           controller: _searchController,
                           focusNode: _searchFocus,
                           decoration: InputDecoration(
-                            hintText: 'Search orders, users, or experts...',
-                            hintStyle: TextStyle(
-                              color: Colors.grey.shade400,
-                              fontSize: 14,
+                            hintText: 'Search crop status, sensor IDs, or harvest forecasts...',
+                            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                              fontWeight: FontWeight.w500,
                             ),
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hoverColor: Colors.transparent,
+                            fillColor: Colors.transparent,
+                            filled: false,
                             isDense: true,
                             contentPadding: EdgeInsets.zero,
                           ),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textBody,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: isDark ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
@@ -202,7 +221,7 @@ class _AdminHeaderState extends State<AdminHeader> {
               return Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.bug_report_outlined, color: Colors.grey.shade400, size: 18),
+                    icon: Icon(Icons.bug_report_outlined, color: isDark ? Colors.grey.shade500 : Colors.grey.shade400, size: 20),
                     onPressed: () async {
                       try {
                         await NotificationService.sendTestNotification();
@@ -221,18 +240,18 @@ class _AdminHeaderState extends State<AdminHeader> {
                     },
                     tooltip: 'Gửi Test Notification',
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
 
                   Stack(
                     clipBehavior: Clip.none,
                     alignment: Alignment.center,
                     children: [
                       Container(
-                        width: 42,
-                        height: 42,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: PopupMenuButton<void>(
                           padding: EdgeInsets.zero,
@@ -240,7 +259,7 @@ class _AdminHeaderState extends State<AdminHeader> {
                           offset: const Offset(0, 50),
                           icon: Icon(
                             unreadCount > 0 ? Icons.notifications_active_rounded : Icons.notifications_none_rounded,
-                            color: unreadCount > 0 ? AppColors.primary : AppColors.textHeading,
+                            color: unreadCount > 0 ? Theme.of(context).primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                             size: 20,
                           ),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -270,7 +289,11 @@ class _AdminHeaderState extends State<AdminHeader> {
                             constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                             child: Text(
                               unreadCount > 9 ? '9+' : '$unreadCount',
-                              style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -282,9 +305,9 @@ class _AdminHeaderState extends State<AdminHeader> {
             },
           ),
 
-          const SizedBox(width: 20),
-          Container(height: 24, width: 1, color: Colors.grey.shade300),
-          const SizedBox(width: 20),
+          const SizedBox(width: 24),
+          Container(height: 24, width: 1, color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1)),
+          const SizedBox(width: 24),
 
           // Profile item
           PopupMenuButton<String>(
@@ -293,34 +316,34 @@ class _AdminHeaderState extends State<AdminHeader> {
               borderRadius: BorderRadius.circular(12),
             ),
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'profile',
                 child: Row(
                   children: [
-                    Icon(Icons.person_outline_rounded, size: 18),
-                    SizedBox(width: 10),
-                    Text('My Account'),
+                    const Icon(Icons.person_outline_rounded, size: 18),
+                    const SizedBox(width: 10),
+                    const Text('My Account'),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'settings',
                 child: Row(
                   children: [
-                    Icon(Icons.settings_outlined, size: 18),
-                    SizedBox(width: 10),
-                    Text('Settings'),
+                    const Icon(Icons.settings_outlined, size: 18),
+                    const SizedBox(width: 10),
+                    const Text('Settings'),
                   ],
                 ),
               ),
               const PopupMenuDivider(),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout_rounded, size: 18, color: Colors.red),
-                    SizedBox(width: 10),
-                    Text('Logout', style: TextStyle(color: Colors.red)),
+                    const Icon(Icons.logout_rounded, size: 18, color: Colors.red),
+                    const SizedBox(width: 10),
+                    Text('Logout', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red)),
                   ],
                 ),
               ),
@@ -335,47 +358,44 @@ class _AdminHeaderState extends State<AdminHeader> {
                 context.go('/profile');
               }
             },
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: AppColors.surfaceVariant,
-                  backgroundImage: photoURL != null ? NetworkImage(photoURL) : null,
-                  child: photoURL == null
-                      ? const Icon(Icons.person, size: 16, color: AppColors.textMuted)
-                      : null,
-                ),
-                if (!isMobile) ...[
-                  const SizedBox(width: 12),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textHeading,
-                        ),
-                      ),
-                      Text(
-                        email.length > 20 ? '${email.substring(0, 17)}...' : email,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                    ],
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.only(left: 6, right: 20, top: 6, bottom: 6),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Theme.of(context).primaryColor, width: 1.5),
+                    ),
+                    child: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: Colors.white,
+                      backgroundImage: photoURL != null ? NetworkImage(photoURL) : null,
+                      child: photoURL == null
+                          ? const Icon(Icons.person, size: 18, color: Color(0xFFF2994A))
+                          : null,
+                    ),
                   ),
-                  const SizedBox(width: 12),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 20,
-                    color: Colors.grey.shade600,
-                  ),
+                  if (!isMobile) ...[
+                    const SizedBox(width: 12),
+                    Text(
+                      'Profile',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ],

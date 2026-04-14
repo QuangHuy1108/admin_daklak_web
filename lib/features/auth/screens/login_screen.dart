@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth; 
 import '../../../core/constants/app_colors.dart';
@@ -61,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
+        content: Text(message, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
         backgroundColor: Colors.red.shade700,
         behavior: SnackBarBehavior.floating,
       ),
@@ -72,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
+        content: Text(message, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
         backgroundColor: Colors.green.shade700,
         behavior: SnackBarBehavior.floating,
       ),
@@ -230,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(width: AppSpacing.sm),
                   Text(
                     'Editorial Agronomy',
-                    style: GoogleFonts.inter(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -293,8 +292,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   Text(
                     'Smart Farming',
-                    style: GoogleFonts.inter(
-                      fontSize: 32,
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      // fontSize: 32, // displaySmall mặc định đã là 36, phù hợp cho tiêu đề lớn
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       letterSpacing: -0.5,
@@ -303,8 +302,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Hệ thống quản lý admin_daklakweb',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white.withValues(alpha: 0.8),
                     ),
                   ),
@@ -330,7 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Text(
                           'ĐĂNG NHẬP HỆ THỐNG',
-                          style: GoogleFonts.inter(
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textHeading,
@@ -398,9 +396,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     const SizedBox(width: AppSpacing.sm),
                                     Text(
                                       'Ghi nhớ',
-                                      style: GoogleFonts.inter(
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                         color: AppColors.textHeading,
-                                        fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -416,10 +413,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               child: Text(
                                 'Quên mật khẩu?',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF156b2e),
+                                  ),
                               ),
                             ),
                           ],
@@ -453,9 +450,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(width: AppSpacing.sm),
                   Text(
                     'v2.4.0 Editorial Agronomy © 2024',
-                    style: GoogleFonts.inter(
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: Colors.white,
-                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -480,9 +476,8 @@ class _LoginScreenState extends State<LoginScreen> {
       onTap: () {}, // Future routing
       child: Text(
         title,
-        style: GoogleFonts.inter(
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: Colors.white.withValues(alpha: 0.7),
-          fontSize: 12,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
         ),

@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:admin_daklak_web/features/auth/services/admin_service.dart';
 import 'package:admin_daklak_web/features/reports/services/export_service.dart';
+import '../../../core/widgets/common/glass_container.dart';
 
-const Color primaryDarkGreen = Color(0xFF1B3D2F);
-const Color bgLightGreen = Color(0xFFF7F8F3);
-const Color cardWhite = Colors.white;
-const Color textGrey = Color(0xFF6B7280);
+  Color _getPrimaryDarkGreen(BuildContext context) => Theme.of(context).primaryColor;
+  Color _getTextGrey(BuildContext context) => Theme.of(context).textTheme.bodySmall?.color ?? const Color(0xFF6B7280);
+  Color _getCardBg(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white;
 
 class AiLogsScreen extends StatefulWidget {
   const AiLogsScreen({super.key});
@@ -69,7 +70,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: primaryDarkGreen, onPrimary: Colors.white),
+            colorScheme: ColorScheme.light(primary: _getPrimaryDarkGreen(context), onPrimary: Colors.white),
           ),
           child: child!,
         );
@@ -146,7 +147,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Chi tiết Chat", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryDarkGreen)),
+        title: Text("Chi tiết Chat", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _getPrimaryDarkGreen(context))),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,14 +156,14 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(8)),
-                child: Text("Hỏi:\n${data['prompt'] ?? '--'}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Text("Hỏi:\n${data['prompt'] ?? '--'}", style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey[100], borderRadius: BorderRadius.circular(8)),
                 child: Text("AI Trả lời:\n${data['response'] ?? '--'}"),
               ),
             ],
@@ -171,7 +172,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Đóng", style: TextStyle(color: primaryDarkGreen))
+              child: Text("Đóng", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: _getPrimaryDarkGreen(context)))
           )
         ],
       ),
@@ -194,7 +195,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgLightGreen,
+      backgroundColor: Colors.transparent,
       body: Padding(
         padding: const EdgeInsets.all(32.0),
         child: Column(
@@ -203,7 +204,13 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Lịch sử & Theo dõi Hệ thống', style: TextStyle(color: primaryDarkGreen, fontSize: 28, fontWeight: FontWeight.bold)),
+                Text(
+                  'Lịch sử & Theo dõi Hệ thống',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
                 Row(
                   children: [
                     if (_selectedDateRange != null)
@@ -215,7 +222,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
                         }),
                       ),
                     IconButton(
-                      icon: Icon(Icons.calendar_month, color: _selectedDateRange == null ? textGrey : primaryDarkGreen),
+                      icon: Icon(Icons.calendar_month, color: _selectedDateRange == null ? _getTextGrey(context) : _getPrimaryDarkGreen(context)),
                       onPressed: _pickDateRange,
                     ),
                     const SizedBox(width: 8),
@@ -245,9 +252,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
             const SizedBox(height: 24),
 
             Expanded(
-              child: Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(color: cardWhite, borderRadius: BorderRadius.circular(24)),
+              child: GlassContainer(
                 child: _buildChatTable(),
               ),
             )
@@ -260,7 +265,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
   Widget _buildSearchBar() {
     return Container(
       width: 300,
-      decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(30)),
+      decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey[200], borderRadius: BorderRadius.circular(30)),
       child: TextField(
         onChanged: (val) {
           setState(() {
@@ -288,13 +293,13 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? primaryDarkGreen : Colors.transparent,
+          color: isSelected ? _getPrimaryDarkGreen(context) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           title,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[600],
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: isSelected ? Colors.white : _getTextGrey(context),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -315,7 +320,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
         : const Icon(Icons.download_rounded, color: Colors.white, size: 18),
       label: Text(
           _isExporting ? "Đang xử lý..." : label,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)
       ),
       style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF8E4A1D),
@@ -350,27 +355,26 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
 
     return Row(
       children: [
-        _buildStatCard('Tổng số Log', NumberFormat('#,###').format(totalLogs), Icons.bar_chart, Colors.green[50]!, Colors.green[800]!),
+        _buildStatCard(context, 'Tổng số Log', NumberFormat('#,###').format(totalLogs), Icons.bar_chart, Colors.green.withOpacity(0.1), Colors.green),
         const SizedBox(width: 24),
-        _buildStatCard('Cần huấn luyện AI', NumberFormat('#,###').format(failedCount), Icons.psychology, Colors.orange[50]!, Colors.orange[800]!),
+        _buildStatCard(context, 'Cần huấn luyện AI', NumberFormat('#,###').format(failedCount), Icons.psychology, Colors.orange.withOpacity(0.1), Colors.orange),
         const SizedBox(width: 24),
-        _buildStatCard('Log thành công', NumberFormat('#,###').format(successCount), Icons.check_circle, Colors.teal[50]!, Colors.teal[800]!),
+        _buildStatCard(context, 'Log thành công', NumberFormat('#,###').format(successCount), Icons.check_circle, Colors.teal.withOpacity(0.1), Colors.teal),
       ],
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color bg, Color iconColor) {
+  Widget _buildStatCard(BuildContext context, String label, String value, IconData icon, Color bg, Color iconColor) {
     return Expanded(
-      child: Container(
+      child: GlassContainer(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
         child: Row(
           children: [
             Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)), child: Icon(icon, color: iconColor, size: 30)),
             const SizedBox(width: 20),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-              Text(value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: primaryDarkGreen)),
+              Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _getTextGrey(context))),
+              Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: _getPrimaryDarkGreen(context))),
             ])
           ],
         ),
@@ -437,7 +441,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
         const Divider(height: 1),
         Expanded(
           child: pagedDocs.isEmpty
-              ? const Center(child: Text("Không có dữ liệu phù hợp.", style: TextStyle(color: textGrey)))
+              ? Center(child: Text("Không có dữ liệu phù hợp.", style: TextStyle(color: _getTextGrey(context))))
               : ListView.builder(
             itemCount: pagedDocs.length,
             itemBuilder: (context, index) {
@@ -463,7 +467,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
                 child: Row(
                   children: [
                     Expanded(flex: 2, child: Text(timeStr, style: const TextStyle(fontSize: 13, height: 1.4))),
-                    Expanded(flex: 2, child: Text("#$chatId", style: const TextStyle(fontSize: 13, color: primaryDarkGreen, fontWeight: FontWeight.bold))),
+                    Expanded(flex: 2, child: Text("#$chatId", style: TextStyle(fontSize: 13, color: _getPrimaryDarkGreen(context), fontWeight: FontWeight.bold))),
                     Expanded(
                         flex: 3,
                         child: Row(
@@ -475,7 +479,7 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis),
-                                  Text('ID: $userIdDisplay', style: const TextStyle(color: textGrey, fontSize: 12), overflow: TextOverflow.ellipsis),
+                                  Text('ID: $userIdDisplay', style: TextStyle(color: _getTextGrey(context), fontSize: 12), overflow: TextOverflow.ellipsis),
                                 ],
                               ),
                             ),
@@ -493,14 +497,14 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
                           ),
                         )
                     ),
-                    Expanded(flex: 4, child: Text(displayPrompt, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontStyle: FontStyle.italic, color: textGrey, fontSize: 13))),
+                    Expanded(flex: 4, child: Text(displayPrompt, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontStyle: FontStyle.italic, color: _getTextGrey(context), fontSize: 13))),
                     Expanded(
                       flex: 1,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          IconButton(icon: const Icon(Icons.remove_red_eye, color: textGrey, size: 20), onPressed: () => _showDetailDialog(data), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
-                          IconButton(icon: Icon(isFlagged ? Icons.flag : Icons.flag_outlined, color: isFlagged ? Colors.red : textGrey, size: 20), onPressed: () => _toggleFlag(doc.id, data['isFlagged'] == true, userIdDisplay, data['prompt'] ?? ''), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
+                          IconButton(icon: Icon(Icons.remove_red_eye, color: _getTextGrey(context), size: 20), onPressed: () => _showDetailDialog(data), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
+                          IconButton(icon: Icon(isFlagged ? Icons.flag : Icons.flag_outlined, color: isFlagged ? Colors.red : _getTextGrey(context), size: 20), onPressed: () => _toggleFlag(doc.id, data['isFlagged'] == true, userIdDisplay, data['prompt'] ?? ''), padding: const EdgeInsets.all(4), constraints: const BoxConstraints()),
                         ],
                       ),
                     ),
@@ -527,21 +531,21 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
             const SizedBox(height: 16),
             Text(msg, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            const Text("Vui lòng kiểm tra index Firestore hoặc quyền truy cập.", style: TextStyle(fontSize: 12, color: textGrey)),
+            Text("Vui lòng kiểm tra index Firestore hoặc quyền truy cập.", style: TextStyle(fontSize: 12, color: _getTextGrey(context))),
           ],
         ),
       ),
     );
   }
 
-  Widget _headerCell(String label, {int flex = 1}) => Expanded(flex: flex, child: Text(label, textAlign: flex == 1 ? TextAlign.center : TextAlign.left, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12)));
+  Widget _headerCell(String label, {int flex = 1}) => Expanded(flex: flex, child: Text(label, textAlign: flex == 1 ? TextAlign.center : TextAlign.left, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: _getTextGrey(context))));
 
   Widget _buildTableFooter(int total, int totalPages) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Row(
         children: [
-          Text('Hiển thị ${total == 0 ? 0 : _currentPage * _rowsPerPage + 1} - ${min((_currentPage + 1) * _rowsPerPage, total)} trong $total kết quả', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Text('Hiển thị ${total == 0 ? 0 : _currentPage * _rowsPerPage + 1} - ${min((_currentPage + 1) * _rowsPerPage, total)} trong $total kết quả', style: TextStyle(color: _getTextGrey(context), fontSize: 13)),
           const Spacer(),
           _pageBox(Icons.chevron_left, enabled: _currentPage > 0, onTap: () => setState(() => _currentPage--)),
           ...List.generate(totalPages, (index) {
@@ -564,9 +568,9 @@ class _AiLogsScreenState extends State<AiLogsScreen> {
         margin: const EdgeInsets.only(left: 8),
         width: 34, height: 34,
         decoration: BoxDecoration(
-          color: active ? primaryDarkGreen : Colors.white,
+          color: active ? _getPrimaryDarkGreen(context) : Colors.transparent,
           borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: active ? primaryDarkGreen : Colors.grey[200]!),
+          border: Border.all(color: active ? _getPrimaryDarkGreen(context) : Theme.of(context).dividerColor),
         ),
         child: Center(
           child: content is IconData

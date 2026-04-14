@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/product_dialog.dart';
 import 'package:admin_daklak_web/features/logs/services/bulk_service.dart';
 import 'package:admin_daklak_web/features/logs/widgets/bulk_action_bar.dart';
 import 'package:admin_daklak_web/features/logs/models/audit_log_model.dart';
+import '../../../core/widgets/common/glass_container.dart';
 
-const Color _bgGray = Color(0xFFF5F7FA);
-const Color _primaryGreen = Color(0xFF2E7D32);
-const Color _textPrimary = Color(0xFF1C2826);
-const Color _textSecondary = Color(0xFF6B7280);
-const Color _borderColor = Color(0xFFE5E7EB);
-const Color _warningRed = Color(0xFFD32F2F);
-const Color _infoBlue = Color(0xFF1976D2);
+
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -27,6 +22,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
   String _selectedCategory = 'All Categories';
   final Set<String> _selectedIds = {};
   bool _isProcessing = false;
+  
+  Color get _bgGray => Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : const Color(0xFFF5F7FA);
+  Color get _textPrimary => Theme.of(context).colorScheme.onSurface;
+  Color get _textSecondary => Theme.of(context).textTheme.bodySmall?.color ?? const Color(0xFF6B7280);
+  Color get _borderColor => Theme.of(context).dividerColor;
+  Color get _primaryGreen => const Color(0xFF2E7D32); // Keep as brand green, but could be Theme.of(context).primaryColor
+  Color get _warningRed => Theme.of(context).colorScheme.error;
+  Color get _infoBlue => Colors.blue;
 
   final List<String> _filterCategories = [
     'All Categories',
@@ -50,12 +53,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete Product', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: _textPrimary)),
-        content: Text('Are you sure you want to delete "$productName"?'),
+        title: Text('Delete Product', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _textPrimary)),
+        content: Text('Are you sure you want to delete "$productName"?', style: Theme.of(context).textTheme.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.inter(color: _textSecondary)),
+            child: Text('Cancel', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: _textSecondary)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -66,7 +69,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text('Delete', style: GoogleFonts.inter(color: Colors.white)),
+            child: Text('Delete', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
           )
         ]
       )
@@ -76,7 +79,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bgGray,
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(32.0),
         child: Column(
@@ -89,22 +92,22 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: _textPrimary),
+                      icon: Icon(Icons.arrow_back, color: _textPrimary),
                       onPressed: () => context.pop(),
-                      tooltip: 'Back to Dashboard',
+                      tooltip: 'Quay lại Dashboard',
                     ),
                     const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Agricultural Products',
-                          style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: _textPrimary),
+                          'Quản lý Sản phẩm Nông sản',
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Manage warehouse inventory, variant pricing, and stock levels.',
-                          style: GoogleFonts.inter(fontSize: 14, color: _textSecondary),
+                          'Quản lý kho hàng, giá biến thể và mức tồn kho.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
                         ),
                       ],
                     ),
@@ -113,7 +116,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 ElevatedButton.icon(
                   onPressed: () => _showProductDialog(),
                   icon: const Icon(Icons.add, color: Colors.white, size: 20),
-                  label: Text('Add New Product', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+                  label: Text('Thêm Sản phẩm mới', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primaryGreen,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -125,12 +128,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
             ),
             const SizedBox(height: 32),
             // Main Content Table
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [BoxShadow(color: Color(0x05000000), blurRadius: 10, offset: Offset(0, 4))],
-              ),
+            GlassContainer(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -153,7 +151,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                      : Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Active Inventory', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
+                          Text('Active Inventory', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _textPrimary)),
                           Row(
                              children: [
                                SizedBox(
@@ -161,12 +159,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                  height: 40,
                                  child: TextField(
                                     decoration: InputDecoration(
-                                       hintText: 'Search product name...',
-                                       hintStyle: GoogleFonts.inter(color: _textSecondary, fontSize: 13),
-                                       prefixIcon: const Icon(Icons.search, size: 20, color: _textSecondary),
+                                        hintText: 'Search product name...',
+                                        hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _textSecondary, fontSize: 13),
+                                       prefixIcon: Icon(Icons.search, size: 20, color: _textSecondary),
                                        contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _borderColor)),
-                                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _borderColor)),
+                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: _borderColor)),
+                                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: _borderColor)),
                                     ),
                                     onChanged: (val) {
                                        setState(() {
@@ -183,8 +181,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                  child: DropdownButtonHideUnderline(
                                     child: DropdownButton<String>(
                                       value: _selectedCategory,
-                                      icon: const Icon(Icons.category, color: _textSecondary, size: 18),
-                                      style: GoogleFonts.inter(color: _textPrimary, fontSize: 14),
+                                      icon: Icon(Icons.category, color: _textSecondary, size: 18),
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _textPrimary),
                                       items: _filterCategories.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
                                       onChanged: (newValue) {
                                         if (newValue != null) {
@@ -199,7 +197,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                        ]
                      )
                    ),
-                   const Divider(height: 1, color: _borderColor),
+                   Divider(height: 1, color: _borderColor),
                    // Data Stream
                    StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance.collection('products').snapshots(),
@@ -298,32 +296,32 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                             ),
                                          )
                                       ),
-                                      DataCell(Text(doc.id.length > 6 ? doc.id.substring(0, 6).toUpperCase() : doc.id.toUpperCase(), style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: _textSecondary))),
+                                      DataCell(Text(doc.id.length > 6 ? doc.id.substring(0, 6).toUpperCase() : doc.id.toUpperCase(), style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold, color: _textSecondary))),
                                       DataCell(
                                          SizedBox(
-                                            width: 200,
-                                            child: Text(name, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                             width: 200,
+                                             child: Text(name, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: _textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
                                          )
                                       ),
                                       DataCell(
                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                            decoration: BoxDecoration(color: _infoBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                                            child: Text(category, style: GoogleFonts.inter(color: _infoBlue, fontWeight: FontWeight.w600, fontSize: 12)),
+                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                             decoration: BoxDecoration(color: (Theme.of(context).brightness == Brightness.dark ? Colors.blue : _infoBlue).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                             child: Text(category, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.blue : _infoBlue, fontWeight: FontWeight.w600)),
                                          )
                                       ),
-                                      DataCell(Text('${priceNum.toStringAsFixed(0)} đ', style: GoogleFonts.inter(fontWeight: FontWeight.w500))),
+                                       DataCell(Text('${priceNum.toStringAsFixed(0)} đ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500))),
                                       DataCell(
                                          Row(
                                             mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                               Text(stock.toString(), style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: isLowStock ? _warningRed : _primaryGreen, fontSize: 16)),
+                                             children: [
+                                                Text(stock.toString(), style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: isLowStock ? _warningRed : _primaryGreen)),
                                                if (isLowStock) ...[
                                                   const SizedBox(width: 8),
-                                                  const Tooltip(
-                                                     message: 'Low Stock Level',
-                                                     child: Icon(Icons.warning_amber_rounded, color: _warningRed, size: 20),
-                                                  )
+                                                   Tooltip(
+                                                      message: 'Low Stock Level',
+                                                      child: Icon(Icons.warning_amber_rounded, color: _warningRed, size: 20),
+                                                   )
                                                ]
                                             ]
                                          )
@@ -333,7 +331,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                                IconButton(
-                                                  icon: const Icon(Icons.edit_outlined, color: _textSecondary),
+                                                  icon: Icon(Icons.edit_outlined, color: _textSecondary),
                                                   tooltip: 'Edit',
                                                   onPressed: () => _showProductDialog(productId: doc.id, data: data),
                                                ),
@@ -362,7 +360,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   DataColumn _buildDataColumn(String label) {
     return DataColumn(
-      label: Text(label, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textSecondary, fontSize: 13)),
+      label: Text(label, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: _textSecondary)),
     );
   }
 
@@ -370,8 +368,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Xác nhận xóa hàng loạt', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-        content: Text('Bạn có chắc chắn muốn xóa ${_selectedIds.length} sản phẩm đã chọn không? Hành động này không thể hoàn tác.'),
+        title: Text('Xác nhận xóa hàng loạt', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        content: Text('Bạn có chắc chắn muốn xóa ${_selectedIds.length} sản phẩm đã chọn không? Hành động này không thể hoàn tác.', style: Theme.of(context).textTheme.bodyMedium),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
           ElevatedButton(

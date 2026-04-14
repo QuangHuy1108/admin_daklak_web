@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 
 class BannerManagerScreen extends StatefulWidget {
   const BannerManagerScreen({super.key});
@@ -50,7 +51,7 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
       builder: (context) => StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: Text(isEditing ? 'Chỉnh sửa Banner' : 'Thêm Banner Mới', style: const TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(isEditing ? 'Chỉnh sửa Banner' : 'Thêm Banner Mới', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
                 child: SizedBox(
                   width: 500,
@@ -69,7 +70,10 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
                         child: Container(
                           height: 180,
                           width: double.infinity,
-                          decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           clipBehavior: Clip.antiAlias,
                           child: newImageBytes != null
                               ? Image.memory(newImageBytes!, fit: BoxFit.cover)
@@ -141,7 +145,7 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
+                TextButton(onPressed: () => Navigator.pop(context), child: Text('Hủy', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color))),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3D7E50)),
                   onPressed: _isLoading ? null : () async {
@@ -198,7 +202,7 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
                   },
                   child: _isLoading
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(isEditing ? 'Cập nhật' : 'Tạo mới', style: const TextStyle(color: Colors.white)),
+                      : Text(isEditing ? 'Cập nhật' : 'Tạo mới', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
                 ),
               ],
             );
@@ -215,7 +219,7 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
         content: const Text('Bạn có chắc chắn muốn xóa banner này vĩnh viễn?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('Xóa', style: TextStyle(color: Colors.white))),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: Text('Xóa', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white))),
         ],
       ),
     );
@@ -235,29 +239,38 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
     if (isExpired) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: const Color(0xFFE6E6E6), borderRadius: BorderRadius.circular(12)),
-        child: const Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.circle, size: 8, color: Color(0xFFD15F5F)), SizedBox(width: 4),
-          Text('Hết hạn', style: TextStyle(fontSize: 12, color: Color(0xFFD15F5F)))
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : const Color(0xFFE6E6E6),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.circle, size: 8, color: const Color(0xFFD15F5F)), const SizedBox(width: 4),
+          Text('Hết hạn', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: const Color(0xFFD15F5F)))
         ]),
       );
     }
     if (isActive) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: const Color(0xFFE6E6E6), borderRadius: BorderRadius.circular(12)),
-        child: const Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.circle, size: 8, color: Color(0xFF3D7E50)), SizedBox(width: 4),
-          Text('Đang chạy', style: TextStyle(fontSize: 12, color: Color(0xFF3D7E50)))
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : const Color(0xFFE6E6E6),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.circle, size: 8, color: const Color(0xFF3D7E50)), const SizedBox(width: 4),
+          Text('Đang chạy', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: const Color(0xFF3D7E50)))
         ]),
       );
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: const Color(0xFFE6E6E6), borderRadius: BorderRadius.circular(12)),
-      child: const Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(Icons.circle, size: 8, color: Color(0xFFE27C37)), SizedBox(width: 4),
-        Text('Tạm dừng', style: TextStyle(fontSize: 12, color: Color(0xFFE27C37)))
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : const Color(0xFFE6E6E6),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.circle, size: 8, color: const Color(0xFFE27C37)), const SizedBox(width: 4),
+        Text('Tạm dừng', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: const Color(0xFFE27C37)))
       ]),
     );
   }
@@ -267,11 +280,22 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         height: 100,
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFDCDCDC))),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
         child: Row(children: [
-          Container(width: 60, height: 60, decoration: const BoxDecoration(color: Color(0xFFE6E6E6), shape: BoxShape.circle), child: Icon(icon, color: color, size: 30)),
+          Container(width: 60, height: 60, decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFE6E6E6), shape: BoxShape.circle), child: Icon(icon, color: color, size: 30)),
           const SizedBox(width: 16),
-          Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(color: Colors.grey.shade700, fontSize: 14)), Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24))])
+          Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
+                Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+              ]
+          )
         ]),
       ),
     );
@@ -281,8 +305,8 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? const Color(0xFF3D7E50) : const Color(0xFFE6E6E6),
-        foregroundColor: isSelected ? Colors.white : Colors.black87,
+        backgroundColor: isSelected ? const Color(0xFF3D7E50) : (Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFE6E6E6)),
+        foregroundColor: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -300,14 +324,14 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF1E4B2E) : Colors.white,
+          color: isActive ? (Theme.of(context).brightness == Brightness.dark ? Theme.of(context).primaryColor : const Color(0xFF1E4B2E)) : (Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white),
           shape: BoxShape.circle,
-          border: Border.all(color: isActive ? const Color(0xFF1E4B2E) : Colors.grey.shade300),
+          border: Border.all(color: isActive ? Theme.of(context).primaryColor : Theme.of(context).dividerColor),
         ),
         child: Center(
           child: isIcon
-              ? Icon(content as IconData, size: 18, color: onTap == null ? Colors.grey.shade300 : Colors.black87)
-              : Text(content as String, style: TextStyle(color: isActive ? Colors.white : Colors.black87, fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
+              ? Icon(content as IconData, size: 18, color: onTap == null ? Theme.of(context).disabledColor : Theme.of(context).colorScheme.onSurface)
+              : Text(content as String, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurface, fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
         ),
       ),
     );
@@ -325,7 +349,7 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
         children: [
           Text(
             'Hiển thị $start - $end trong $totalItems banner',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
           ),
           Row(
             children: [
@@ -350,7 +374,7 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
+      backgroundColor: Colors.transparent,
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore.collection('home_banners').snapshots(),
         builder: (context, snapshot) {
@@ -433,10 +457,16 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
               // HEADER ROW
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                  padding: const EdgeInsets.all(32.0),
                   child: Row(
                     children: [
-                      const Text('Quản lý Banner', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                      Text(
+                        'Quản lý Banner',
+                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                       const Spacer(),
                       SizedBox(
                         width: 300,
@@ -450,7 +480,8 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
                             isDense: true,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-                            filled: true, fillColor: Colors.white,
+                            filled: true,
+                            fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white,
                           ),
                         ),
                       ),
@@ -490,7 +521,11 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
                     const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFDCDCDC))),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Theme.of(context).dividerColor),
+                      ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _sortBy,
@@ -523,9 +558,9 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
                         child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.inbox_outlined, size: 80, color: Colors.grey.shade400),
+                              Icon(Icons.inbox_outlined, size: 80, color: Theme.of(context).dividerColor),
                               const SizedBox(height: 16),
-                              Text('Chưa có banner nào', style: TextStyle(fontSize: 18, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+                              Text('Chưa có banner nào', style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodySmall?.color, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 16),
                               OutlinedButton.icon(
                                 onPressed: () => _showBannerFormDialog(),
@@ -556,36 +591,40 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFEBEBEB))),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Theme.of(context).dividerColor),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Row(children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.network(data['imageUrl'] ?? '', width: 140, height: 80, fit: BoxFit.cover, errorBuilder: (c, e, s) => Container(width: 140, height: 80, color: Colors.grey[200], child: const Icon(Icons.broken_image, color: Colors.grey))),
+                              child: Image.network(data['imageUrl'] ?? '', width: 140, height: 80, fit: BoxFit.cover, errorBuilder: (c, e, s) => Container(width: 140, height: 80, color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey[200], child: const Icon(Icons.broken_image, color: Colors.grey))),
                             ),
                             const SizedBox(width: 20),
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Row(children: [
-                                Text(data['title'] ?? '(Không tiêu đề)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF2C3E50))),
+                                Text(data['title'] ?? '(Không tiêu đề)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                                 const SizedBox(width: 12),
-                                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFE6F2E9), borderRadius: BorderRadius.circular(6)), child: Text((data['type'] ?? 'ADS').toString().toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF3D7E50)))),
+                                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFE6F2E9), borderRadius: BorderRadius.circular(6)), child: Text((data['type'] ?? 'ADS').toString().toUpperCase(), style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF3D7E50), fontSize: 10))),
                               ]),
                               const SizedBox(height: 6),
-                              Text(data['description'] ?? '', style: TextStyle(color: Colors.grey.shade600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              Text(data['description'] ?? '', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                               const SizedBox(height: 12),
                               Row(children: [
                                 const Icon(Icons.priority_high, size: 14, color: Colors.grey), const SizedBox(width: 4),
-                                Text('Độ ưu tiên: $prioLabel', style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+                                Text('Độ ưu tiên: $prioLabel', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade700)),
                                 const SizedBox(width: 20),
                                 const Icon(Icons.remove_red_eye, size: 14, color: Colors.grey), const SizedBox(width: 4),
-                                Text('Lượt xem: $views', style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+                                Text('Lượt xem: $views', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
                                 const SizedBox(width: 20),
                                 const Icon(Icons.touch_app, size: 14, color: Colors.grey), const SizedBox(width: 4),
-                                Text('Lượt click: $clicks', style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+                                Text('Lượt click: $clicks', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
                                 const SizedBox(width: 20),
                                 const Icon(Icons.trending_up, size: 14, color: Colors.green), const SizedBox(width: 4),
-                                Text('CTR: ${ctr.toStringAsFixed(1)}%', style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold)),
+                                Text('CTR: ${ctr.toStringAsFixed(1)}%', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.green, fontWeight: FontWeight.bold)),
                               ]),
                             ])),
                             const SizedBox(width: 24),
@@ -609,13 +648,13 @@ class _BannerManagerScreenState extends State<BannerManagerScreen> {
                               const SizedBox(width: 24),
                               Container(
                                 width: 40, height: 40,
-                                decoration: BoxDecoration(color: const Color(0xFFF0F5FF), borderRadius: BorderRadius.circular(8)),
+                                decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFF0F5FF), borderRadius: BorderRadius.circular(8)),
                                 child: IconButton(icon: const Icon(Icons.edit_square, color: Colors.blueAccent, size: 20), onPressed: () => _showBannerFormDialog(existingDoc: doc)),
                               ),
                               const SizedBox(width: 12),
                               Container(
                                 width: 40, height: 40,
-                                decoration: BoxDecoration(color: const Color(0xFFFFF0F0), borderRadius: BorderRadius.circular(8)),
+                                decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.red.withOpacity(0.2) : const Color(0xFFFFF0F0), borderRadius: BorderRadius.circular(8)),
                                 child: IconButton(icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20), onPressed: () => _deleteBanner(doc)),
                               ),
                             ]),

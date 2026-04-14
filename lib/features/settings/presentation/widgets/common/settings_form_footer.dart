@@ -34,13 +34,13 @@ class SettingsFormFooter extends StatelessWidget {
             Expanded(
               child: Text(
                 infoText,
-                style: const TextStyle(fontSize: 12, color: AppColors.textBody, fontWeight: FontWeight.w500),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textBody, fontWeight: FontWeight.w500),
               ),
             ),
             const SizedBox(width: 24),
             TextButton(
               onPressed: onDiscard,
-              child: const Text('Hủy bỏ', style: TextStyle(color: AppColors.textBody)),
+              child: Text('Hủy bỏ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textBody)),
             ),
             const SizedBox(width: 12),
             ElevatedButton(
@@ -58,7 +58,7 @@ class SettingsFormFooter extends StatelessWidget {
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
                     )
-                  : Text(saveButtonLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  : Text(saveButtonLabel, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
             ),
           ],
         ),

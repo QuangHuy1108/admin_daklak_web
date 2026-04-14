@@ -26,14 +26,14 @@ class ConfigCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(20), // More rounded
-        border: Border.all(color: AppColors.border.withOpacity(0.5)),
+        color: Colors.white.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04), // Subtle shadow
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 24,
+            offset: const Offset(4, 4),
           ),
         ],
       ),
@@ -62,8 +62,7 @@ class ConfigCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          fontSize: 20,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: AppColors.textHeading,
                           letterSpacing: -0.5,
@@ -73,8 +72,7 @@ class ConfigCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           subtitle!,
-                          style: const TextStyle(
-                            fontSize: 13,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textMuted,
                           ),
                         ),

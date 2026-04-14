@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/common/glass_container.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/theme_provider.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/providers/dashboard_provider.dart';
 import 'package:intl/intl.dart';
@@ -54,7 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     bool isTablet = screenWidth > 768 && screenWidth <= 1200;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(32.0),
       child: Column(
         key: const ValueKey('dashboard_main_column'),
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,11 +86,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_getGreeting(), style: AppTextStyles.heading1),
+        Text(
+          'Bảng điều khiển',
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         const SizedBox(height: 8),
-        const Text(
-          'Theo dõi và tối ưu hoạt động nông nghiệp với dữ liệu thời gian thực',
-          style: AppTextStyles.subtitle,
+        Text(
+          _getGreeting() + ' Theo dõi và tối ưu hoạt động nông nghiệp với dữ liệu thời gian thực',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).textTheme.bodySmall?.color,
+          ),
         ),
       ],
     );
@@ -383,12 +394,7 @@ class _DashboardStatCardState extends State<DashboardStatCard> {
 
         return AspectRatio(
           aspectRatio: 1,
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.cardBg,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 10, offset: Offset(0, 4))],
-            ),
+          child: GlassContainer(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
@@ -397,10 +403,10 @@ class _DashboardStatCardState extends State<DashboardStatCard> {
                   child: Row(
                     children: [
                       Expanded(child: _buildStatItem(widget.titleTotal, data1.toString(), widget.iconTotal, widget.colorTotal)),
-                      Container(width: 1, color: AppColors.border),
+                      Container(width: 1, color: Theme.of(context).dividerColor),
                       Expanded(child: _buildStatItem(widget.titleNew, data2.toString(), widget.iconNew, widget.colorNew)),
                       if (widget.titleThird != null && widget.iconThird != null && widget.colorThird != null) ...[
-                        Container(width: 1, color: AppColors.border),
+                        Container(width: 1, color: Theme.of(context).dividerColor),
                         Expanded(child: _buildStatItem(widget.titleThird!, data3.toString(), widget.iconThird!, widget.colorThird!)),
                       ]
                     ],
@@ -408,14 +414,14 @@ class _DashboardStatCardState extends State<DashboardStatCard> {
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Container(height: 1, color: AppColors.border),
+                  child: Container(height: 1, color: Theme.of(context).dividerColor),
                 ),
                 Expanded(
                   flex: 1,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.chartTitle, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                      Text(widget.chartTitle, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
                       const SizedBox(height: 8),
                       Expanded(
                         child: widget.isHorizontalBar
@@ -441,9 +447,9 @@ class _DashboardStatCardState extends State<DashboardStatCard> {
       children: [
         Icon(icon, color: color, size: 24),
         const SizedBox(height: 6),
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textHeading)),
+        Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
         const SizedBox(height: 2),
-        Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textMuted), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(title, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
       ],
     );
   }
@@ -451,7 +457,7 @@ class _DashboardStatCardState extends State<DashboardStatCard> {
   Widget _buildPieChart(int total, int online, Color activeColor) {
     int offline = total - online;
     if (offline < 0) offline = 0;
-    if (total == 0) return const Center(child: Text('Chưa có dữ liệu', style: TextStyle(fontSize: 11, color: AppColors.textMuted)));
+    if (total == 0) return Center(child: Text('Chưa có dữ liệu', style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color)));
     double onlinePercent = (online / total) * 100;
     double offlinePercent = (offline / total) * 100;
 
@@ -477,10 +483,10 @@ class _DashboardStatCardState extends State<DashboardStatCard> {
                   ),
                   PieChartSectionData(
                     value: offline.toDouble(),
-                    color: AppColors.border,
+                    color: Theme.of(context).dividerColor,
                     radius: 28,
                     title: '${offlinePercent.toStringAsFixed(1)}%',
-                    titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textHeading),
+                    titleStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                     showTitle: true,
                   ),
                 ],
@@ -496,7 +502,7 @@ class _DashboardStatCardState extends State<DashboardStatCard> {
               children: [
                 _buildLegendItem('Online', activeColor),
                 const SizedBox(height: 8),
-                _buildLegendItem('Offline', AppColors.border),
+                _buildLegendItem('Offline', Theme.of(context).dividerColor),
               ],
             ),
           )
@@ -511,7 +517,7 @@ class _DashboardStatCardState extends State<DashboardStatCard> {
       children: [
         Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: color)),
         const SizedBox(width: 6),
-        Expanded(child: Text(title, style: const TextStyle(fontSize: 10, color: AppColors.textMuted), overflow: TextOverflow.ellipsis)),
+        Expanded(child: Text(title, style: TextStyle(fontSize: 10, color: Theme.of(context).textTheme.bodySmall?.color), overflow: TextOverflow.ellipsis)),
       ],
     );
   }
@@ -553,9 +559,10 @@ class _DashboardStatCardState extends State<DashboardStatCard> {
   Widget _buildLoadingOrErrorContainer(Widget child) {
     return AspectRatio(
       aspectRatio: 1,
-      child: Container(
-        decoration: BoxDecoration(color: AppColors.cardBg, borderRadius: BorderRadius.circular(16)),
-        child: Center(child: child),
+      child: GlassContainer(
+  borderRadius: BorderRadius.circular(16),
+  opacity: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.6,
+  child: Center(child: child),
       ),
     );
   }
@@ -571,29 +578,29 @@ class MiniHorizontalBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     int total = pending + confirmed + cancelled;
-    if (total == 0) return const Center(child: Text('Chưa có lịch hẹn', style: TextStyle(fontSize: 11, color: AppColors.textMuted)));
+    if (total == 0) return Center(child: Text('Chưa có lịch hẹn', style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color)));
     return LayoutBuilder(
       builder: (context, constraints) {
         return Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildBarRow('Chờ', pending, total, constraints.maxWidth, Colors.orange),
-            _buildBarRow('Đã nhận', confirmed, total, constraints.maxWidth, Colors.green),
-            _buildBarRow('Đã hủy', cancelled, total, constraints.maxWidth, Colors.red),
+            _buildBarRow(context, 'Chờ', pending, total, constraints.maxWidth, Colors.orange),
+            _buildBarRow(context, 'Đã nhận', confirmed, total, constraints.maxWidth, Colors.green),
+            _buildBarRow(context, 'Đã hủy', cancelled, total, constraints.maxWidth, Colors.red),
           ],
         );
       },
     );
   }
 
-  Widget _buildBarRow(String label, int value, int total, double maxWidth, Color color) {
+  Widget _buildBarRow(BuildContext context, String label, int value, int total, double maxWidth, Color color) {
     double barMaxWidth = maxWidth - 50 - 30 - 16;
     double barWidth = total > 0 ? (value / total) * barMaxWidth : 0;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
-          SizedBox(width: 50, child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted), overflow: TextOverflow.ellipsis)),
+          SizedBox(width: 50, child: Text(label, style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color), overflow: TextOverflow.ellipsis)),
           const SizedBox(width: 8),
           Container(
             width: barMaxWidth,
@@ -603,7 +610,7 @@ class MiniHorizontalBarChart extends StatelessWidget {
             child: Container(width: barWidth, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4))),
           ),
           const SizedBox(width: 8),
-          Container(width: 30, alignment: Alignment.centerRight, child: Text(value.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textHeading))),
+          Container(width: 30, alignment: Alignment.centerRight, child: Text(value.toString(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface))),
         ],
       ),
     );
@@ -635,15 +642,10 @@ class _WeatherCardState extends State<_WeatherCard> {
     weatherData = fetchWeather();
   }
 
-  @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 10, offset: Offset(0, 4))],
-      ),
+      color: AppColors.primary,
       child: FutureBuilder<Map<String, dynamic>>(
         future: weatherData,
         builder: (context, snapshot) {
@@ -716,8 +718,7 @@ class _ExpertOverviewCardState extends State<ExpertOverviewCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(color: AppColors.cardBg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 10, offset: Offset(0, 4))]),
+    return GlassContainer(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
@@ -731,14 +732,14 @@ class _ExpertOverviewCardState extends State<ExpertOverviewCard> {
                 return Row(
                   children: [
                     Expanded(child: _buildTopStatItem('Chuyên gia', data['total'].toString(), Icons.engineering_rounded, Colors.blue)),
-                    Container(width: 1, color: AppColors.border),
+                    Container(width: 1, color: Theme.of(context).dividerColor),
                     Expanded(child: _buildTopStatItem('Đang online', data['online'].toString(), Icons.wifi_rounded, Colors.lightBlue)),
                   ],
                 );
               },
             ),
           ),
-          Padding(padding: const EdgeInsets.symmetric(vertical: 12.0), child: Container(height: 1, color: AppColors.border)),
+          Padding(padding: const EdgeInsets.symmetric(vertical: 12.0), child: Container(height: 1, color: Theme.of(context).dividerColor)),
           Expanded(
             flex: 5,
             child: Row(
@@ -748,7 +749,7 @@ class _ExpertOverviewCardState extends State<ExpertOverviewCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Top Đánh Giá', style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                      Text('Top Đánh Giá', style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Expanded(
                         child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -756,7 +757,7 @@ class _ExpertOverviewCardState extends State<ExpertOverviewCard> {
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
                             final experts = snapshot.data ?? [];
-                            if (experts.isEmpty) return const Center(child: Text('Trống', style: TextStyle(fontSize: 10, color: AppColors.textMuted)));
+                            if (experts.isEmpty) return Center(child: Text('Trống', style: TextStyle(fontSize: 10, color: Theme.of(context).textTheme.bodySmall?.color)));
                             return ListView.builder(
                               itemCount: experts.length,
                               itemBuilder: (context, index) {
@@ -768,7 +769,7 @@ class _ExpertOverviewCardState extends State<ExpertOverviewCard> {
                                     children: [
                                       CircleAvatar(radius: 12, backgroundColor: AppColors.primary.withOpacity(0.1), child: const Icon(Icons.person, size: 14, color: AppColors.primary)),
                                       const SizedBox(width: 6),
-                                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(e['displayName'] ?? 'Ẩn danh', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textHeading), maxLines: 1), Text(e['specialty'] ?? 'Chuyên gia', style: const TextStyle(fontSize: 9, color: AppColors.textMuted))])),
+                                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(e['displayName'] ?? 'Ẩn danh', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface), maxLines: 1), Text(e['specialty'] ?? 'Chuyên gia', style: TextStyle(fontSize: 9, color: Theme.of(context).textTheme.bodySmall?.color))])),
                                       const Icon(Icons.star, color: Colors.amber, size: 12),
                                       Text(r.toStringAsFixed(1), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                                     ],
@@ -782,13 +783,13 @@ class _ExpertOverviewCardState extends State<ExpertOverviewCard> {
                     ],
                   ),
                 ),
-                Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0), child: Container(width: 1, color: AppColors.border)),
+                Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0), child: Container(width: 1, color: Theme.of(context).dividerColor)),
                 Expanded(
                   flex: 5,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Tỷ lệ trạng thái', style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                      Text('Tỷ lệ trạng thái', style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Expanded(
                         child: FutureBuilder<Map<String, int>>(
@@ -798,13 +799,13 @@ class _ExpertOverviewCardState extends State<ExpertOverviewCard> {
                             final stats = snapshot.data ?? {'total': 0, 'online': 0};
                             int total = stats['total'] ?? 0;
                             int online = stats['online'] ?? 0;
-                            if (total == 0) return const Center(child: Text('Trống', style: TextStyle(fontSize: 10, color: AppColors.textMuted)));
+                            if (total == 0) return Center(child: Text('Trống', style: TextStyle(fontSize: 10, color: Theme.of(context).textTheme.bodySmall?.color)));
                             return AspectRatio(
                               aspectRatio: 1.0,
                               child: PieChart(
                                 PieChartData(sectionsSpace: 2, centerSpaceRadius: 12, sections: [
                                   PieChartSectionData(value: online.toDouble(), color: Colors.lightBlue, radius: 20, title: '${((online/total)*100).toStringAsFixed(0)}%', titleStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
-                                  PieChartSectionData(value: (total - online).toDouble(), color: AppColors.border, radius: 16, title: '${(((total-online)/total)*100).toStringAsFixed(0)}%', titleStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textHeading)),
+                                  PieChartSectionData(value: (total - online).toDouble(), color: Theme.of(context).dividerColor, radius: 16, title: '${(((total-online)/total)*100).toStringAsFixed(0)}%', titleStyle: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                                 ]),
                               ),
                             );
@@ -823,7 +824,7 @@ class _ExpertOverviewCardState extends State<ExpertOverviewCard> {
   }
 
   Widget _buildTopStatItem(String title, String value, IconData icon, Color color) {
-    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: color, size: 24), const SizedBox(height: 6), Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textHeading)), Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textMuted))]);
+    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: color, size: 24), const SizedBox(height: 6), Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)), Text(title, style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color))]);
   }
 }
 
@@ -860,13 +861,12 @@ class _ProductionOverviewCardState extends State<_ProductionOverviewCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: AppColors.cardBg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 10, offset: Offset(0, 4))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Production Overview', style: AppTextStyles.heading3),
+          Text('Production Overview', style: AppTextStyles.heading3),
           const SizedBox(height: 24),
           Expanded(
             child: FutureBuilder<Map<String, double>>(
@@ -888,12 +888,12 @@ class _ProductionOverviewCardState extends State<_ProductionOverviewCard> {
                             Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text('Total', style: AppTextStyles.label),
+                                Text('Total', style: AppTextStyles.label),
                                 Text(
                                   data.values.fold(0.0, (sum, item) => sum + item).toStringAsFixed(1),
                                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                                 ),
-                                const Text('Tons', style: AppTextStyles.label),
+                                Text('Tons', style: AppTextStyles.label),
                               ],
                             ),
                           ],
@@ -946,9 +946,8 @@ class _SmallStatCardState extends State<_SmallStatCard> {
   void didUpdateWidget(covariant _SmallStatCard oldWidget) { super.didUpdateWidget(oldWidget); if (oldWidget.valueFuture != widget.valueFuture) _cachedValueFuture = widget.valueFuture; }
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: AppColors.cardBg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 10, offset: Offset(0, 4))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1040,19 +1039,17 @@ class _SalesPriceTrendCardState extends State<_SalesPriceTrendCard> {
     return double.tryParse(str) ?? 0.0;
   }
 
-  @override
   Widget build(BuildContext context) {
     final crop = context.read<DashboardProvider>().selectedCrop;
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: AppColors.cardBg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 10, offset: Offset(0, 4))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(child: Text('Biến động Giá Nông Sản', style: AppTextStyles.heading3, overflow: TextOverflow.ellipsis)),
+                Expanded(child: Text('Biến động Giá Nông Sản', style: AppTextStyles.heading3, overflow: TextOverflow.ellipsis)),
               DropdownButton<String>(
                 value: crop,
                 underline: const SizedBox(),
@@ -1101,7 +1098,7 @@ class _SalesPriceTrendCardState extends State<_SalesPriceTrendCard> {
                           show: true,
                           drawVerticalLine: false,
                           horizontalInterval: 5000,
-                          getDrawingHorizontalLine: (v) => FlLine(color: AppColors.border.withOpacity(0.5), strokeWidth: 1, dashArray: [5, 5]),
+                          getDrawingHorizontalLine: (v) => FlLine(color: Theme.of(context).dividerColor.withOpacity(0.5), strokeWidth: 1, dashArray: [5, 5]),
                         ),
                         titlesData: FlTitlesData(
                           topTitles: const AxisTitles(),
@@ -1115,7 +1112,7 @@ class _SalesPriceTrendCardState extends State<_SalesPriceTrendCard> {
                                 if (index < 0 || index >= labels.length) return const SizedBox();
                                 return Padding(
                                   padding: const EdgeInsets.only(top: 8),
-                                  child: Text(labels[index], style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                                  child: Text(labels[index], style: TextStyle(fontSize: 10, color: Theme.of(context).textTheme.bodySmall?.color)),
                                 );
                               },
                             ),
@@ -1182,13 +1179,12 @@ class _PopularDiseaseMentionCardState extends State<_PopularDiseaseMentionCard> 
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: AppColors.cardBg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 10, offset: Offset(0, 4))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Tần Suất Đề Cập Sâu Bệnh', style: AppTextStyles.heading3),
+          Text('Tần Suất Đề Cập Sâu Bệnh', style: AppTextStyles.heading3),
           const SizedBox(height: 24),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -1209,7 +1205,7 @@ class _PopularDiseaseMentionCardState extends State<_PopularDiseaseMentionCard> 
                         children: [
                           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(item['name'], style: AppTextStyles.bodyText), Text(item['mentions'].toString(), style: const TextStyle(fontWeight: FontWeight.bold))]),
                           const SizedBox(height: 8),
-                          LinearProgressIndicator(value: item['mentions'] / maxV, backgroundColor: AppColors.border, color: AppColors.primary, minHeight: 8, borderRadius: BorderRadius.circular(4)),
+                          LinearProgressIndicator(value: item['mentions'] / maxV, backgroundColor: Theme.of(context).dividerColor, color: Theme.of(context).colorScheme.primary, minHeight: 8, borderRadius: BorderRadius.circular(4)),
                         ],
                       ),
                     );
@@ -1242,17 +1238,17 @@ class _FieldImageCardState extends State<_FieldImageCard> {
   @override
   Widget build(BuildContext context) {
     final id = context.read<DashboardProvider>().selectedFieldId;
-    return Container(
-      decoration: BoxDecoration(color: AppColors.cardBg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 10, offset: Offset(0, 4))]),
-      clipBehavior: Clip.antiAlias,
-      child: FutureBuilder<Map<String, dynamic>?>(
+    return GlassContainer(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24.0),
+        child: FutureBuilder<Map<String, dynamic>?>(
         future: _fieldDataFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox(height: 300, child: Center(child: CircularProgressIndicator()));
           final data = snapshot.data;
           return Column(
             children: [
-              Padding(padding: const EdgeInsets.all(20), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Khu Vực', style: AppTextStyles.heading3), DropdownButton<String>(value: id, underline: const SizedBox(), items: const [DropdownMenuItem(value: 'primary_field', child: Text('Khu Vực Chính')), DropdownMenuItem(value: 'field_2', child: Text('Khu Vực 2'))], onChanged: (v) { if (v != null) context.read<DashboardProvider>().setSelectedField(v); })])),
+              Padding(padding: const EdgeInsets.all(20), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Khu Vực', style: AppTextStyles.heading3), DropdownButton<String>(value: id, underline: const SizedBox(), items: const [DropdownMenuItem(value: 'primary_field', child: Text('Khu Vực Chính')), DropdownMenuItem(value: 'field_2', child: Text('Khu Vực 2'))], onChanged: (v) { if (v != null) context.read<DashboardProvider>().setSelectedField(v); })])),
               if (data == null) const SizedBox(height: 200, child: Center(child: Text('No data')))
               else ...[
                 Image.network(data['imageUrl'] ?? 'https://images.unsplash.com/photo-1595974482597-4b8da8879cee', height: 180, width: double.infinity, fit: BoxFit.cover),
@@ -1275,6 +1271,7 @@ class _FieldImageCardState extends State<_FieldImageCard> {
           );
         },
       ),
+    ),
     );
   }
   Widget _infoRow(String label, String val, bool isStatus) {
@@ -1305,11 +1302,9 @@ class _PlatformStatCardState extends State<_PlatformStatCard> {
   late Future<int> _cachedValueFuture;
   @override
   void initState() { super.initState(); _cachedValueFuture = widget.valueFuture; }
-  @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: AppColors.cardBg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 10, offset: Offset(0, 4))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1320,11 +1315,11 @@ class _PlatformStatCardState extends State<_PlatformStatCard> {
             future: _cachedValueFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox(height: 30, child: CircularProgressIndicator(strokeWidth: 2));
-              return Text(snapshot.data?.toString() ?? '0', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.textHeading));
+              return Text(snapshot.data?.toString() ?? '0', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface));
             },
           ),
           const SizedBox(height: 8),
-          const Text('Cập nhật realtime', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text('Cập nhật realtime', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 12)),
         ],
       ),
     );

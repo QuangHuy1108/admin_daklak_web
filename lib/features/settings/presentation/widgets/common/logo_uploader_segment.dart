@@ -116,7 +116,7 @@ class _LogoUploaderSegmentState extends State<LogoUploaderSegment> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: const Text('Thay đổi', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          child: Text('Thay đổi', style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
                         ),
                         const SizedBox(width: 12),
                         TextButton(

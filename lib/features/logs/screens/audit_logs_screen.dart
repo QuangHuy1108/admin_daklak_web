@@ -83,7 +83,7 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Chi tiết thao tác", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+        title: Text("Chi tiết thao tác", style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
         content: SizedBox(
           width: 600,
           child: SingleChildScrollView(
@@ -101,18 +101,18 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
                 _detailRow("Hành động", log.actionType.label),
                 _detailRow("Mô tả", log.description),
                 const SizedBox(height: 16),
-                const Text("Dữ liệu chi tiết (JSON):", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text("Dữ liệu chi tiết (JSON):", style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 13)),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey[100],
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
+                    border: Border.all(color: Theme.of(context).dividerColor),
                   ),
                   child: SelectableText(
                     log.details != null ? JsonEncoder.withIndent('  ').convert(log.details) : "Không có dữ liệu chi tiết.",
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.blueGrey[800]),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontSize: 12, color: Colors.blueGrey[800]),
                   ),
                 ),
               ],
@@ -132,8 +132,8 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 120, child: Text("$label:", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
+          SizedBox(width: 120, child: Text("$label:", style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, fontSize: 13))),
+          Expanded(child: Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 13))),
         ],
       ),
     );
@@ -141,32 +141,32 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
 
   Color _getActionColor(AuditActionType type) {
     switch (type) {
-      case AuditActionType.create: return const Color(0xFF2E7D32); // Green
-      case AuditActionType.update: return const Color(0xFF1976D2); // Blue
-      case AuditActionType.delete: return const Color(0xFFD32F2F); // Red
-      case AuditActionType.login: return const Color(0xFF006064);  // Teal (Avoid Purple)
-      case AuditActionType.export: return const Color(0xFFF57C00); // Orange
-      case AuditActionType.security: return const Color(0xFF455A64); // Grey
+      case AuditActionType.create: return Colors.green;
+      case AuditActionType.update: return Colors.blue;
+      case AuditActionType.delete: return Theme.of(context).colorScheme.error;
+      case AuditActionType.login: return Colors.teal;
+      case AuditActionType.export: return Colors.orange;
+      case AuditActionType.security: return Colors.blueGrey;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Nhật ký hệ thống", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textHeading)),
-                    Text("Theo dõi hoạt động bảo mật và thay đổi dữ liệu", style: TextStyle(color: AppColors.textMuted)),
+                    Text("Nhật ký hệ thống", style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    Text("Theo dõi hoạt động bảo mật và thay đổi dữ liệu", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
                   ],
                 ),
                 ElevatedButton.icon(
@@ -174,7 +174,7 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
                   icon: const Icon(Icons.refresh_rounded),
                   label: const Text("Làm mới"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   ),
@@ -189,7 +189,7 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
@@ -209,7 +209,7 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
   Widget _buildFilterBar() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white, borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
           // Module Filter
@@ -282,25 +282,25 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
       borderRadius: BorderRadius.circular(12),
       child: SingleChildScrollView(
         child: DataTable(
-          headingRowColor: WidgetStateProperty.all(Colors.grey[50]),
-          columns: const [
-            DataColumn(label: Text("Thời gian", style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text("Quản trị viên", style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text("Hành động", style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text("Tính năng", style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text("Mô tả", style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text("IP", style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text("", style: TextStyle(fontWeight: FontWeight.bold))),
+          headingRowColor: WidgetStateProperty.all(Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey[50]),
+          columns: [
+            DataColumn(label: Text("Thời gian", style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text("Quản trị viên", style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text("Hành động", style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text("Tính năng", style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text("Mô tả", style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text("IP", style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text("", style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
           ],
           rows: _logs.map((log) => DataRow(
             cells: [
-              DataCell(Text(DateFormat('dd/MM/yyyy\nHH:mm').format(log.timestamp), style: const TextStyle(fontSize: 12))),
+              DataCell(Text(DateFormat('dd/MM/yyyy\nHH:mm').format(log.timestamp), style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 12))),
               DataCell(Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(log.adminEmail, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary)),
-                  Text("ID: ${log.adminId.substring(0, 6)}...", style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  Text(log.adminEmail, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).primaryColor)),
+                  Text("ID: ${log.adminId.substring(0, 6)}...", style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color)),
                 ],
               )),
               DataCell(Container(
@@ -310,11 +310,11 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (log.module == AuditModule.users) 
-                      const Padding(
-                        padding: EdgeInsets.only(right: 4),
-                        child: Icon(Icons.admin_panel_settings, size: 10, color: AppColors.primary),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Icon(Icons.admin_panel_settings, size: 10, color: Theme.of(context).primaryColor),
                       ),
-                    Text(log.actionType.label, style: TextStyle(color: _getActionColor(log.actionType), fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text(log.actionType.label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _getActionColor(log.actionType), fontSize: 11, fontWeight: FontWeight.bold)),
                   ],
                 ),
               )),
@@ -326,15 +326,15 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
                 ),
                 child: Text(
                   log.module.label, 
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontSize: 13, 
                     fontWeight: log.module == AuditModule.users ? FontWeight.bold : FontWeight.normal,
-                    color: log.module == AuditModule.users ? AppColors.primary : Colors.black87,
+                    color: log.module == AuditModule.users ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface,
                   )
                 ),
               )),
-              DataCell(SizedBox(width: 250, child: Text(log.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)))),
-              DataCell(Text(log.ipAddress, style: const TextStyle(fontSize: 11, color: AppColors.textMuted))),
+              DataCell(SizedBox(width: 250, child: Text(log.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 13)))),
+              DataCell(Text(log.ipAddress, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color))),
               DataCell(IconButton(icon: const Icon(Icons.info_outline, size: 20), onPressed: () => _showDetailDialog(log))),
             ],
           )).toList(),

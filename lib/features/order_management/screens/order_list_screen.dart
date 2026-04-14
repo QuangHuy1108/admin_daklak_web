@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:admin_daklak_web/features/order_management/widgets/orders_table_widget.dart';
 
-const Color _bgGray = Color(0xFFF5F7FA);
-const Color _primaryGreen = Color(0xFF2E7D32);
-const Color _textPrimary = Color(0xFF1C2826);
-const Color _textSecondary = Color(0xFF6B7280);
+
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({Key? key}) : super(key: key);
@@ -28,11 +25,10 @@ class _OrderListScreenState extends State<OrderListScreen> {
       lastDate: now,
       builder: (context, child) {
         return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: _primaryGreen,
-              onPrimary: Colors.white,
-              onSurface: _textPrimary,
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: Theme.of(context).primaryColor,
+              onPrimary: Theme.of(context).colorScheme.onPrimary,
             ),
           ),
           child: child!,
@@ -58,7 +54,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String dateRangeLabel = 'Filter by DateRange';
+    String dateRangeLabel = 'Lọc theo ngày';
     if (_selectedDateRange != null) {
       final s = _selectedDateRange!.start;
       final e = _selectedDateRange!.end;
@@ -66,7 +62,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
     }
 
     return Scaffold(
-      backgroundColor: _bgGray,
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(32.0),
         child: Column(
@@ -79,23 +75,26 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: _textPrimary),
+                      icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
                       onPressed: () => context.pop(),
-                      tooltip: 'Back to Dashboard',
+                      tooltip: 'Quay lại Dashboard',
                     ),
                     const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Order Management',
-                      style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: _textPrimary),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Monitor all orders, view details, and export data to CSV.',
-                      style: GoogleFonts.inter(fontSize: 14, color: _textSecondary),
-                    ),
+                          'Quản lý Đơn hàng',
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.bold, 
+                            color: Theme.of(context).colorScheme.onSurface
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Theo dõi tất cả đơn hàng, xem chi tiết và xuất dữ liệu CSV.',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
+                        ),
                       ],
                     ),
                   ],
@@ -106,13 +105,13 @@ class _OrderListScreenState extends State<OrderListScreen> {
                       TextButton.icon(
                          onPressed: _clearDateRange,
                          icon: const Icon(Icons.clear, color: Colors.red, size: 18),
-                         label: Text('Clear Date', style: GoogleFonts.inter(color: Colors.red)),
+                         label: Text('Xóa ngày', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.red)),
                       ),
                     const SizedBox(width: 8),
                     OutlinedButton.icon(
                       onPressed: _pickDateRange,
-                      icon: const Icon(Icons.date_range, color: _textPrimary, size: 20),
-                      label: Text(dateRangeLabel, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textPrimary)),
+                      icon: Icon(Icons.date_range, color: Theme.of(context).colorScheme.onSurface, size: 20),
+                      label: Text(dateRangeLabel, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -122,9 +121,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
                     ElevatedButton.icon(
                       onPressed: () => _tableKey.currentState?.exportToCSV(),
                       icon: const Icon(Icons.file_download, color: Colors.white, size: 20),
-                      label: Text('Export CSV', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+                      label: Text('Xuất CSV', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: Colors.white)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _primaryGreen,
+                        backgroundColor: Theme.of(context).primaryColor,
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,

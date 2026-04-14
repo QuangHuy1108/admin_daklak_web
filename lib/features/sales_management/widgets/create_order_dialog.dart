@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 const Color _primaryGreen = Color(0xFF2E7D32);
@@ -29,7 +28,7 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
   void _showToast(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
+      content: Text(message, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
       backgroundColor: _textPrimary,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -101,7 +100,7 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Create Manual Order', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: _textPrimary)),
+      title: Text('Create Manual Order', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _textPrimary)),
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       content: SizedBox(
@@ -139,7 +138,7 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
                       return const CircularProgressIndicator();
                     }
                     if (snapshot.hasError || !snapshot.hasData) {
-                      return Text("Could not load products", style: GoogleFonts.inter(color: Colors.red));
+                      return Text("Could not load products", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red));
                     }
                     final products = snapshot.data!.docs;
                     return DropdownButtonFormField<String>(
@@ -187,14 +186,14 @@ class _CreateOrderDialogState extends State<CreateOrderDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: Text('Cancel', style: GoogleFonts.inter(color: _textSecondary)),
+          child: Text('Cancel', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: _textSecondary)),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submitOrder,
           style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen),
           child: _isLoading 
             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : Text('Create', style: GoogleFonts.inter(color: Colors.white)),
+            : Text('Create', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
         ),
       ],
     );

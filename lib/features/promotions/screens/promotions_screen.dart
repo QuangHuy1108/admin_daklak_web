@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/voucher_dialog.dart';
+import '../../../core/widgets/common/glass_container.dart';
 
-const Color _bgGray = Color(0xFFF5F7FA);
-const Color _primaryGreen = Color(0xFF2E7D32);
-const Color _textPrimary = Color(0xFF1C2826);
-const Color _textSecondary = Color(0xFF6B7280);
-const Color _borderColor = Color(0xFFE5E7EB);
-const Color _warningRed = Color(0xFFD32F2F);
+// Theme-aware color constants are resolved inside the build method or as getters
 
 class PromotionsScreen extends StatefulWidget {
   const PromotionsScreen({super.key});
@@ -32,12 +28,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Deactivate Voucher', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: _textPrimary)),
+        title: Text('Deactivate Voucher', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
         content: Text('Are you sure you want to deactivate voucher "$code"?\nThis will prevent future uses but keep historical data intact.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.inter(color: _textSecondary)),
+            child: Text('Cancel', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -47,8 +43,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Voucher "$code" deactivated safely.')));
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: _warningRed),
-            child: Text('Deactivate', style: GoogleFonts.inter(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            child: Text('Deactivate', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
           )
         ]
       )
@@ -58,7 +54,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bgGray,
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(32.0),
         child: Column(
@@ -71,22 +67,22 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: _textPrimary),
+                      icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
                       onPressed: () => context.pop(),
-                      tooltip: 'Back to Dashboard',
+                      tooltip: 'Quay lại Dashboard',
                     ),
                     const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Promotions & Vouchers',
-                          style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: _textPrimary),
+                          'Khuyến mãi & Mã giảm giá',
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textHeading),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Create and manage discount codes for customer campaigns.',
-                          style: GoogleFonts.inter(fontSize: 14, color: _textSecondary),
+                          'Tạo và quản lý mã giảm giá cho các chiến dịch khách hàng.',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
                         ),
                       ],
                     ),
@@ -95,9 +91,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                 ElevatedButton.icon(
                   onPressed: () => _showVoucherDialog(),
                   icon: const Icon(Icons.add, color: Colors.white, size: 20),
-                  label: Text('Create Voucher', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+                  label: Text('Tạo Mã giảm giá', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: Colors.white)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryGreen,
+                    backgroundColor: Theme.of(context).primaryColor,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
@@ -107,12 +103,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             ),
             const SizedBox(height: 32),
             // Data Container
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [BoxShadow(color: Color(0x05000000), blurRadius: 10, offset: Offset(0, 4))],
-              ),
+            GlassContainer(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -122,18 +113,18 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                      child: Row(
                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                        children: [
-                         Text('Active Campaigns', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
+                         Text('Active Campaigns', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                          SizedBox(
                            width: 250,
                            height: 40,
                            child: TextField(
                               decoration: InputDecoration(
                                  hintText: 'Search code...',
-                                 hintStyle: GoogleFonts.inter(color: _textSecondary, fontSize: 13),
-                                 prefixIcon: const Icon(Icons.search, size: 20, color: _textSecondary),
+                                 hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 13),
+                                 prefixIcon: Icon(Icons.search, size: 20, color: Theme.of(context).textTheme.bodySmall?.color),
                                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _borderColor)),
-                                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _borderColor)),
+                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+                                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
                               ),
                               onChanged: (val) {
                                  setState(() {
@@ -145,7 +136,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                        ]
                      )
                    ),
-                   const Divider(height: 1, color: _borderColor),
+                   Divider(height: 1, color: Theme.of(context).dividerColor),
                    // StreamBuilder
                    StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance.collection('vouchers').orderBy('createdAt', descending: true).snapshots(),
@@ -175,7 +166,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                          }
 
                          return DataTable(
-                            headingRowColor: WidgetStateProperty.all(_bgGray),
+                            headingRowColor: WidgetStateProperty.all(Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFF5F7FA)),
                             dataRowMinHeight: 70,
                             dataRowMaxHeight: 70,
                             columns: [
@@ -210,24 +201,24 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
                                return DataRow(
                                   cells: [
-                                     DataCell(Text(code.toUpperCase(), style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: _primaryGreen))),
-                                     DataCell(Text(type == 'Percentage' ? '${value.toStringAsFixed(0)}%' : '${value.toStringAsFixed(0)} đ', style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
-                                     DataCell(Text(minOrder > 0 ? '${minOrder.toStringAsFixed(0)} đ' : 'None', style: GoogleFonts.inter(color: _textSecondary))),
-                                     DataCell(Text('$usageCount / $limit', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: (usageCount >= limit) ? _warningRed : _textPrimary))),
-                                     DataCell(Text(expiryString, style: GoogleFonts.inter(color: isSystemExpired ? _warningRed : _textSecondary))),
+                                     DataCell(Text(code.toUpperCase(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor))),
+                                     DataCell(Text(type == 'Percentage' ? '${value.toStringAsFixed(0)}%' : '${value.toStringAsFixed(0)} đ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600))),
+                                     DataCell(Text(minOrder > 0 ? '${minOrder.toStringAsFixed(0)} đ' : 'None', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color))),
+                                     DataCell(Text('$usageCount / $limit', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: (usageCount >= limit) ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurface))),
+                                     DataCell(Text(expiryString, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: isSystemExpired ? Theme.of(context).colorScheme.error : Theme.of(context).textTheme.bodySmall?.color))),
                                      DataCell(_buildStatusBadge(isActive, isSystemExpired)),
                                      DataCell(
                                         Row(
                                            mainAxisSize: MainAxisSize.min,
                                            children: [
                                               IconButton(
-                                                 icon: const Icon(Icons.edit_outlined, color: _textSecondary),
+                                                 icon: Icon(Icons.edit_outlined, color: Theme.of(context).textTheme.bodySmall?.color),
                                                  tooltip: 'Edit',
                                                  onPressed: () => _showVoucherDialog(voucherId: doc.id, data: data),
                                               ),
                                               if (isActive)
                                                 IconButton(
-                                                   icon: const Icon(Icons.block, color: _warningRed),
+                                                   icon: Icon(Icons.block, color: Theme.of(context).colorScheme.error),
                                                    tooltip: 'Deactivate',
                                                    onPressed: () => _confirmSoftDelete(doc.id, code),
                                                 ),
@@ -251,25 +242,25 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
   DataColumn _buildDataColumn(String label) {
     return DataColumn(
-      label: Text(label, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textSecondary, fontSize: 13)),
+      label: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 13)),
     );
   }
 
   Widget _buildStatusBadge(bool isActive, bool isSystemExpired) {
     if (!isActive) {
-      return _badge('Inactive', _textSecondary, _bgGray);
+      return _badge('Inactive', Theme.of(context).textTheme.bodySmall!.color!, Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFF5F7FA));
     }
     if (isSystemExpired) {
-      return _badge('Expired', _warningRed, _warningRed.withOpacity(0.1));
+      return _badge('Expired', Theme.of(context).colorScheme.error, Theme.of(context).colorScheme.error.withOpacity(0.1));
     }
-    return _badge('Active', _primaryGreen, _primaryGreen.withOpacity(0.1));
+    return _badge('Active', Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.1));
   }
 
   Widget _badge(String text, Color color, Color bg) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
-      child: Text(text, style: GoogleFonts.inter(color: color, fontWeight: FontWeight.w600, fontSize: 12)),
+      child: Text(text, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w600, fontSize: 12)),
     );
   }
 }

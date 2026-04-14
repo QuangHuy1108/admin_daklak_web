@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 
@@ -62,7 +61,7 @@ class AuthDialog extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textHeading,
@@ -71,8 +70,7 @@ class AuthDialog extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   description,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textMuted,
                   ),
                 ),
@@ -91,7 +89,7 @@ class AuthDialog extends StatelessWidget {
                         ),
                         child: Text(
                           'HỦY',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                     const SizedBox(width: AppSpacing.sm),
@@ -125,7 +123,7 @@ class AuthDialog extends StatelessWidget {
                             )
                           : Text(
                               primaryButtonText.toUpperCase(),
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
                             ),
                     ),
                   ],

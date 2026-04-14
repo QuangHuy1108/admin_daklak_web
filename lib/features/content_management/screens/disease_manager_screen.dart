@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:admin_daklak_web/features/logs/services/bulk_service.dart';
 import 'package:admin_daklak_web/features/logs/widgets/bulk_action_bar.dart';
 import 'package:admin_daklak_web/features/logs/models/audit_log_model.dart';
+import '../../../core/widgets/common/glass_container.dart';
 
 class DiseaseManagerScreen extends StatefulWidget {
   const DiseaseManagerScreen({super.key});
@@ -84,7 +85,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) => AlertDialog(
-          title: Text(isEditing ? 'Chỉnh sửa: ${data['name']}' : 'Thêm Sâu bệnh Mới'),
+          title: Text(isEditing ? 'Chỉnh sửa: ${data['name']}' : 'Thêm Sâu bệnh Mới', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
           content: SizedBox(
             width: 700,
             child: SingleChildScrollView(
@@ -100,10 +101,13 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                     },
                     child: Container(
                       height: 180, width: double.infinity,
-                      decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       child: newImageBytes != null
                           ? Image.memory(newImageBytes!, fit: BoxFit.contain)
-                          : (existingImageUrl != null ? Image.network(existingImageUrl) : const Icon(Icons.add_a_photo, size: 50)),
+                          : (existingImageUrl != null ? Image.network(existingImageUrl) : Icon(Icons.add_a_photo, size: 50, color: Theme.of(context).textTheme.bodySmall?.color)),
                     ),
                   ),
                   const SizedBox(height: 15),
@@ -114,9 +118,9 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                       Switch(
                         value: isActive,
                         onChanged: (val) => setStateDialog(() => isActive = val),
-                        activeColor: const Color(0xFF1B4332),
+                        activeColor: Theme.of(context).primaryColor,
                       ),
-                      Text(isActive ? "Đã duyệt (Đang hiển thị)" : "Chờ xử lý (Đang ẩn)", style: TextStyle(color: isActive ? Colors.green : Colors.red, fontWeight: FontWeight.bold)),
+                      Text(isActive ? "Đã duyệt (Đang hiển thị)" : "Chờ xử lý (Đang ẩn)", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: isActive ? Colors.green : Colors.red, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -153,7 +157,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
+            TextButton(onPressed: () => Navigator.pop(context), child: Text('Hủy', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color))),
             ElevatedButton(
               onPressed: _isLoading ? null : () async {
                 setStateDialog(() => _isLoading = true);
@@ -192,8 +196,8 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                   setStateDialog(() => _isLoading = false);
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B4332)),
-              child: const Text('Lưu dữ liệu', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
+              child: Text('Lưu dữ liệu', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
             ),
           ],
         ),
@@ -215,7 +219,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Xóa vĩnh viễn', style: TextStyle(color: Colors.white)),
+            child: Text('Xóa vĩnh viễn', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
           ),
         ],
       ),
@@ -256,7 +260,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
     const Color bgSlate = Color(0xFFF8F9FA);
 
     return Scaffold(
-      backgroundColor: bgSlate,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
             stream: _firestore.collection('pest_diseases').snapshots(),
@@ -265,7 +269,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                   stream: _firestore.collection('ai_chat_logs').snapshots(),
                   builder: (context, aiSnapshot) {
                     if (!pestSnapshot.hasData || !aiSnapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator(color: primaryGreen));
+                      return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
                     }
 
                     final pestDocs = pestSnapshot.data!.docs;
@@ -391,7 +395,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                     // 2. VẼ GIAO DIỆN
                     // ====================================================================
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0),
+                      padding: const EdgeInsets.all(32.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -399,19 +403,34 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (_isViewingPending)
-                                    IconButton(
-                                      icon: const Icon(Icons.arrow_back, color: primaryGreen, size: 28),
-                                      onPressed: () => setState(() {
-                                        _isViewingPending = false;
-                                        _currentPage = 1;
-                                      }),
-                                    ),
+                                  Row(
+                                    children: [
+                                      if (_isViewingPending)
+                                        IconButton(
+                                          icon: Icon(Icons.arrow_back, color: AppColors.textHeading, size: 28),
+                                          onPressed: () => setState(() {
+                                            _isViewingPending = false;
+                                            _currentPage = 1;
+                                          }),
+                                        ),
+                                      Text(
+                                          _isViewingPending ? "Danh sách Chờ Duyệt" : "Thư viện Sâu Bệnh",
+                                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                          )
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
                                   Text(
-                                      _isViewingPending ? "Danh sách Chờ Duyệt" : "Quản lý Thư viện Sâu Bệnh",
-                                      style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: primaryGreen)
+                                    "Quản lý danh lục sâu bệnh, triệu chứng và giải pháp điều trị.",
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Theme.of(context).textTheme.bodySmall?.color,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -421,8 +440,9 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                   onChanged: _onSearchChanged,
                                   decoration: InputDecoration(
                                     hintText: 'Tìm kiếm sâu bệnh...',
-                                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                                    filled: true, fillColor: Colors.grey.shade200,
+                                    prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color),
+                                    filled: true,
+                                    fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
                                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                                   ),
@@ -439,7 +459,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                 ElevatedButton.icon(
                                   onPressed: _handleBulkDeleteDiseases,
                                   icon: const Icon(Icons.delete_sweep, color: Colors.white, size: 20),
-                                  label: const Text("Xóa hàng loạt", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  label: Text("Xóa hàng loạt", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                                 ),
                               ],
@@ -451,13 +471,13 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                             // (A) HÀNG KPI CHÍNH
                             Row(
                               children: [
-                                Expanded(child: _buildKPICardUI("Total Diseases", "$totalPests", "Total", Colors.orange)),
+                                Expanded(child: _buildKPICardUI("Tổng sâu bệnh", "$totalPests", "Tổng cộng", Colors.orange)),
                                 const SizedBox(width: 16),
-                                Expanded(child: _buildKPICardUI("Added in 7 days", "+$newIn7Days", "New Entries", Colors.green)),
+                                Expanded(child: _buildKPICardUI("Thêm mới (7 ngày)", "+$newIn7Days", "Mục mới", Colors.green)),
                                 const SizedBox(width: 16),
-                                Expanded(child: _buildKPICardUI("Success Cure Rate", "${treatableRate.toStringAsFixed(1)}%", null, Colors.green, iconTail: Icons.trending_up)),
+                                Expanded(child: _buildKPICardUI("Tỷ lệ có giải pháp", "${treatableRate.toStringAsFixed(1)}%", null, Colors.green, iconTail: Icons.trending_up)),
                                 const SizedBox(width: 16),
-                                Expanded(child: _buildKPICardUI("Uncured Rate", "${untreatableRate.toStringAsFixed(1)}%", "Optimal", Colors.green)),
+                                Expanded(child: _buildKPICardUI("Chưa có giải pháp", "${untreatableRate.toStringAsFixed(1)}%", "Cần cập nhật", Colors.green)),
                               ],
                             ),
                             const SizedBox(height: 24),
@@ -471,9 +491,8 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                   // Thẻ 1: Biểu đồ
                                   Expanded(
                                     flex: 2,
-                                    child: Container(
+                                    child: GlassContainer(
                                       padding: const EdgeInsets.all(32),
-                                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
@@ -483,15 +502,15 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                               Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
-                                                  const Text("Tỷ trọng Phân loại trong Thư viện", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryGreen)),
+                                                  Text("Tỷ trọng Phân loại trong Thư viện", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                                                   const SizedBox(height: 4),
-                                                  Text("Phân bổ dữ liệu theo nhóm sinh học", style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                                                  Text("Phân bổ dữ liệu theo nhóm sinh học", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
                                                 ],
                                               ),
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                                decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(20)),
-                                                child: Text("UPDATE: JAN 2024", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green.shade800)),
+                                                decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                                                child: Text("CẬP NHẬT: TH04/2024", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                                               )
                                             ],
                                           ),
@@ -507,15 +526,15 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                                   mainAxisAlignment: MainAxisAlignment.end,
                                                   children: [
                                                     if ((typeCounts[key] ?? 0) > 0)
-                                                      Text("${typeCounts[key]}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                                                      Text("${typeCounts[key]}", style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color)),
                                                     const SizedBox(height: 8),
                                                     Container(
                                                       width: 35,
                                                       height: heightRatio * 150 + 5,
-                                                      decoration: const BoxDecoration(color: primaryGreen, borderRadius: BorderRadius.vertical(top: Radius.circular(6))),
+                                                      decoration: BoxDecoration(color: Theme.of(context).primaryColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(6))),
                                                     ),
                                                     const SizedBox(height: 12),
-                                                    Text(key.toUpperCase(), style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                                                    Text(key.toUpperCase(), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 10, fontWeight: FontWeight.bold)),
                                                   ],
                                                 );
                                               }).toList(),
@@ -536,13 +555,18 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                         Container(
                                           width: double.infinity,
                                           padding: const EdgeInsets.all(24),
-                                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)]),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.75) : Colors.white.withValues(alpha: 0.75),
+                                            borderRadius: BorderRadius.circular(24),
+                                            border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2), width: 1.5),
+                                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(4, 4))],
+                                          ),
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              const Text("TOP CHỦ ĐỀ HỎI AI", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: primaryGreen, letterSpacing: 1.2)),
+                                              Text("TOP CHỦ ĐỀ HỎI AI", style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
                                               const SizedBox(height: 20),
-                                              if (sortedTop.isEmpty) const Text("Chưa có dữ liệu AI", style: TextStyle(color: Colors.grey)),
+                                              if (sortedTop.isEmpty) Text("Chưa có dữ liệu AI", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
                                               ...List.generate(sortedTop.length > 3 ? 3 : sortedTop.length, (index) {
                                                 double pct = totalAILogs == 0 ? 0 : (sortedTop[index].value / totalAILogs) * 100;
                                                 return Padding(
@@ -552,14 +576,14 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                                       Container(
                                                         width: 32, height: 32,
                                                         alignment: Alignment.center,
-                                                        decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(8)),
-                                                        child: Text("0${index + 1}", style: TextStyle(color: Colors.orange.shade800, fontWeight: FontWeight.bold, fontSize: 12)),
+                                                        decoration: BoxDecoration(color: Theme.of(context).colorScheme.secondaryContainer, borderRadius: BorderRadius.circular(8)),
+                                                        child: Text("0${index + 1}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold, fontSize: 12)),
                                                       ),
                                                       const SizedBox(width: 12),
-                                                      Expanded(child: Text(sortedTop[index].key, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87), overflow: TextOverflow.ellipsis)),
-                                                      Text("${pct.toStringAsFixed(1)}%", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                                                      Expanded(child: Text(sortedTop[index].key, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis)),
+                                                      Text("${pct.toStringAsFixed(1)}%", style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold)),
                                                       const SizedBox(width: 8),
-                                                      const Icon(Icons.trending_up, color: Colors.grey, size: 16)
+                                                      Icon(Icons.trending_up, color: Theme.of(context).colorScheme.outline, size: 16)
                                                     ],
                                                   ),
                                                 );
@@ -573,7 +597,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                           child: Container(
                                             width: double.infinity,
                                             padding: const EdgeInsets.all(24),
-                                            decoration: BoxDecoration(color: primaryGreen, borderRadius: BorderRadius.circular(16)),
+                                            decoration: BoxDecoration(color: Theme.of(context).primaryColor, borderRadius: BorderRadius.circular(16)),
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               mainAxisAlignment: MainAxisAlignment.center,
@@ -582,13 +606,13 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                                   children: [
                                                     Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle)),
                                                     const SizedBox(width: 8),
-                                                    const Text("ACTION REQUIRED", style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                                                    Text("CẦN XỬ LÝ NGAY", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                                                   ],
                                                 ),
                                                 const SizedBox(height: 12),
-                                                const Text("Cần duyệt gấp", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                                                Text("Cần duyệt gấp", style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                                                 const SizedBox(height: 4),
-                                                Text("$pendingCount mục mới đang chờ xử lý", style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                                                Text("$pendingCount mục mới đang chờ xử lý", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70)),
                                                 const Spacer(),
                                                 SizedBox(
                                                   width: 120,
@@ -597,8 +621,8 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                                       _isViewingPending = true;
                                                       _currentPage = 1;
                                                     }),
-                                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
-                                                    child: const Text("Xử lý ngay", style: TextStyle(fontWeight: FontWeight.bold)),
+                                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Theme.of(context).primaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                                                    child: Text("Xử lý ngay", style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                                                   ),
                                                 )
                                               ],
@@ -631,12 +655,12 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                       margin: const EdgeInsets.only(right: 12),
                                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                                       decoration: BoxDecoration(
-                                        color: isSelected ? primaryGreen : Colors.grey.shade200,
+                                        color: isSelected ? Theme.of(context).primaryColor : (Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.grey.shade200),
                                         borderRadius: BorderRadius.circular(30),
                                       ),
                                       child: Text(
                                           type,
-                                          style: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)
+                                          style: TextStyle(color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)
                                       ),
                                     ),
                                   );
@@ -649,13 +673,13 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                                     decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.shade300),
+                                      border: Border.all(color: Theme.of(context).dividerColor),
                                       borderRadius: BorderRadius.circular(30),
                                     ),
                                     child: DropdownButtonHideUnderline(
                                       child: DropdownButton<String>(
                                         value: _sortBy,
-                                        icon: const Icon(Icons.sort, color: Colors.grey),
+                                        icon: Icon(Icons.sort, color: Theme.of(context).textTheme.bodySmall?.color),
                                         items: _sortOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 14)))).toList(),
                                         onChanged: (v) => setState(() {
                                           _sortBy = v!;
@@ -670,7 +694,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                     icon: const Icon(Icons.add, color: Colors.white, size: 18),
                                     label: const Text("Thêm Sâu Bệnh", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: primaryGreen,
+                                      backgroundColor: Theme.of(context).primaryColor,
                                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                     ),
@@ -682,9 +706,8 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                           const SizedBox(height: 24),
 
                           // TABLE KHUNG TRẮNG
-                          Container(
+                          GlassContainer(
                             padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)]),
                             child: Column(
                               children: [
                                 // Header Bảng (Căn chỉnh khoảng cách rộng ra)
@@ -709,25 +732,25 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                           },
                                         ),
                                       ),
-                                      const SizedBox(width: 80, child: Text("IMAGE", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
+                                      SizedBox(width: 80, child: Text("HÌNH ẢNH", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1))),
                                       const SizedBox(width: 32),
-                                      const Expanded(flex: 3, child: Text("DISEASE INFO", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
-                                      const Expanded(flex: 2, child: Text("CLASSIFICATION", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
-                                      const Expanded(flex: 2, child: Text("SEVERITY LEVEL", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
-                                      const Expanded(flex: 2, child: Text("STATUS", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1))),
-                                      const SizedBox(width: 80, child: Text("ACTIONS", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1), textAlign: TextAlign.right)),
+                                      Expanded(flex: 3, child: Text("THÔNG TIN BỆNH", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1))),
+                                      Expanded(flex: 2, child: Text("PHÂN LOẠI", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1))),
+                                      Expanded(flex: 2, child: Text("MỨC ĐỘ NGUY HIỂM", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1))),
+                                      Expanded(flex: 2, child: Text("TRẠNG THÁI", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1))),
+                                      SizedBox(width: 80, child: Text("THAO TÁC", style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color, letterSpacing: 1), textAlign: TextAlign.right)),
                                     ],
                                   ),
                                 ),
                                 const Divider(height: 1),
                                 // Body Bảng
                                 paginatedDocs.isEmpty
-                                    ? const Padding(padding: EdgeInsets.all(40), child: Text("Không có dữ liệu phù hợp", style: TextStyle(color: Colors.grey)))
+                                    ? Padding(padding: const EdgeInsets.all(40), child: Text("Không có dữ liệu phù hợp", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)))
                                     : ListView.separated(
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: paginatedDocs.length,
-                                  separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade100),
+                                  separatorBuilder: (_, __) => Divider(height: 1, color: Theme.of(context).dividerColor.withOpacity(0.1)),
                                   itemBuilder: (context, index) {
                                     var doc = paginatedDocs[index];
                                     var data = doc.data() as Map<String, dynamic>;
@@ -759,7 +782,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                               borderRadius: BorderRadius.circular(8),
                                               child: data['imageUrl'] != null && data['imageUrl'].toString().isNotEmpty
                                                   ? Image.network(data['imageUrl'], width: 80, height: 55, fit: BoxFit.cover)
-                                                  : Container(width: 80, height: 55, color: Colors.black87, child: const Icon(Icons.bug_report, color: Colors.white54)),
+                                                  : Container(width: 80, height: 55, color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.black87, child: Icon(Icons.bug_report, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey : Colors.white54)),
                                             ),
                                           ),
                                           const SizedBox(width: 32), // Khoảng trống giữa Ảnh và Info
@@ -769,9 +792,9 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Text(data['name'] ?? 'Không tên', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B))),
+                                                Text(data['name'] ?? 'Không tên', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                                                 const SizedBox(height: 4),
-                                                Text("MÙA VỤ: ${(data['season'] ?? 'Không rõ').toString().toUpperCase()}", style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                                                Text("MÙA VỤ: ${(data['season'] ?? 'Không rõ').toString().toUpperCase()}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color, fontWeight: FontWeight.w600)),
                                               ],
                                             ),
                                           ),
@@ -799,7 +822,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
                                                     border: Border.all(color: isActive ? Colors.green : Colors.red),
                                                     borderRadius: BorderRadius.circular(30)
                                                 ),
-                                                child: Text(isActive ? "ĐÃ DUYỆT" : "CHỜ DUYỆT", style: TextStyle(color: isActive ? Colors.green : Colors.red, fontSize: 10, fontWeight: FontWeight.bold)),
+                                                child: Text(isActive ? "ĐÃ DUYỆT" : "CHỜ DUYỆT", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: isActive ? Colors.green : Colors.red, fontWeight: FontWeight.bold)),
                                               ),
                                             ),
                                           ),
@@ -889,28 +912,27 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
         ),
         alignment: Alignment.center,
         child: text != null
-            ? Text(text, style: TextStyle(color: isActive ? Colors.white : Colors.grey.shade700, fontWeight: FontWeight.bold))
+            ? Text(text, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: isActive ? Colors.white : Colors.grey.shade700, fontWeight: FontWeight.bold))
             : Icon(icon, color: onPressed == null ? Colors.grey.shade300 : Colors.grey.shade700, size: 20),
       ),
     );
   }
 
   Widget _buildKPICardUI(String title, String value, String? subtitle, Color valueColor, {IconData? iconTail}) {
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(title, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.grey.shade600, fontWeight: FontWeight.w600, fontSize: 13)),
           const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF1B4332))),
+              Text(value, style: Theme.of(context).textTheme.displayMedium?.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF1B4332))),
               const SizedBox(width: 8),
-              if (subtitle != null) Text(subtitle, style: TextStyle(color: valueColor, fontSize: 12, fontWeight: FontWeight.bold)),
+              if (subtitle != null) Text(subtitle, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: valueColor, fontWeight: FontWeight.bold)),
               if (iconTail != null) Icon(iconTail, color: valueColor, size: 18)
             ],
           )
@@ -928,7 +950,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(type.toUpperCase(), style: TextStyle(color: text, fontSize: 10, fontWeight: FontWeight.bold)),
+      child: Text(type.toUpperCase(), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: text, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -942,7 +964,7 @@ class _DiseaseManagerScreenState extends State<DiseaseManagerScreen> {
       children: [
         Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 8),
-        Text(level, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+        Text(level, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: color, fontWeight: FontWeight.bold)),
       ],
     );
   }

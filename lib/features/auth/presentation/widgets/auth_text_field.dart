@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 
@@ -34,7 +33,7 @@ class AuthTextField extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: GoogleFonts.inter(
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
             fontSize: 12,
             fontWeight: FontWeight.w700,
             color: AppColors.textMuted,
@@ -48,14 +47,12 @@ class AuthTextField extends StatelessWidget {
           obscureText: obscureText,
           textInputAction: textInputAction,
           onFieldSubmitted: onFieldSubmitted,
-          style: GoogleFonts.inter(
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: AppColors.textHeading,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: GoogleFonts.inter(
+            hintStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: AppColors.textMuted.withValues(alpha: 0.5),
             ),
             prefixIcon: Icon(prefixIcon, color: AppColors.textMuted, size: 20),

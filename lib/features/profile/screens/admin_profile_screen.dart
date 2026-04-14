@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -69,7 +68,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
+        content: Text(message, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
         backgroundColor: isError ? Colors.red.shade700 : Colors.green.shade700,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -162,24 +161,22 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     final userProvider = context.watch<UserProvider>();
 
     return SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'My Account',
-              style: GoogleFonts.inter(
-                fontSize: 24,
+              'Tài khoản của tôi',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppColors.textHeading,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Manage your profile information and security settings.',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppColors.textMuted,
+              'Quản lý thông tin hồ sơ và cài đặt bảo mật của bạn.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).textTheme.bodySmall?.color,
               ),
             ),
             const SizedBox(height: 24),
@@ -208,7 +205,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                       width: 100,
                                       height: 100,
                                       decoration: BoxDecoration(
-                                        color: AppColors.surfaceVariant,
+                                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey[200],
                                         shape: BoxShape.circle,
                                         image: userProvider.photoURL != null
                                             ? DecorationImage(
@@ -218,12 +215,12 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                             : null,
                                       ),
                                       child: userProvider.photoURL == null
-                                          ? const Icon(Icons.person, size: 40, color: AppColors.textMuted)
+                                          ? Icon(Icons.person, size: 40, color: Theme.of(context).textTheme.bodySmall?.color)
                                           : null,
                                     ),
                                     if (_isUploadingAvatar)
-                                      const Positioned.fill(
-                                        child: CircularProgressIndicator(color: AppColors.primary),
+                                      Positioned.fill(
+                                        child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
                                       ),
                                     Positioned(
                                       bottom: 0,
@@ -233,7 +230,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                         child: Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: AppColors.primary,
+                                            color: Theme.of(context).primaryColor,
                                             shape: BoxShape.circle,
                                             border: Border.all(color: Colors.white, width: 2),
                                           ),
@@ -282,10 +279,13 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                         : const Icon(Icons.save, size: 18),
                                     label: Text(
                                       _isSavingProfile ? 'Saving...' : 'Save Profile',
-                                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
+                                      backgroundColor: Theme.of(context).primaryColor,
                                       foregroundColor: Colors.white,
                                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -348,12 +348,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                       : const Icon(Icons.security, size: 18),
                                   label: Text(
                                     _isChangingPassword ? 'Updating...' : 'Update Password',
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.background,
-                                    foregroundColor: AppColors.textHeading,
-                                    side: const BorderSide(color: AppColors.border),
+                                    backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFF3F4F6),
+                                    foregroundColor: Theme.of(context).colorScheme.onSurface,
+                                    side: BorderSide(color: Theme.of(context).dividerColor),
                                     padding: const EdgeInsets.symmetric(vertical: 16),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   ),

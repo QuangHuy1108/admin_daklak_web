@@ -27,7 +27,10 @@ class CustomAdminPagination extends StatelessWidget {
       children: [
         Text(
           'Hiển thị ${(currentPage - 1) * itemsPerPage + 1}-${currentPage * itemsPerPage > totalItems ? totalItems : currentPage * itemsPerPage} trong $totalItems $label',
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            fontSize: 13, // Đảm bảo tính cân đối cho thanh phân trang
+            color: AppColors.textMuted,
+          ),
         ),
         Row(
           children: [
@@ -62,10 +65,10 @@ class CustomAdminPagination extends StatelessWidget {
                     ),
                     child: Text(
                       '$pageNum',
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: currentPage == pageNum ? Colors.white : AppColors.textHeading,
                         fontWeight: currentPage == pageNum ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 13,
+                        fontSize: 13, // Giữ kích thước số trang đồng nhất
                       ),
                     ),
                   ),

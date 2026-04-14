@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 
@@ -67,7 +66,8 @@ class _AuthButtonState extends State<AuthButton> {
                 children: [
                   Text(
                     widget.label.toUpperCase(),
-                    style: GoogleFonts.inter(
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,

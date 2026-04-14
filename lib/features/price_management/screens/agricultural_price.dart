@@ -11,14 +11,14 @@ class AgriculturalPriceDashboard extends StatefulWidget {
 }
 
 class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard> {
-  // --- MÀU SẮC THEO MOCKUP ---
-  final Color _bgColor = const Color(0xFFF8F9FA);
-  final Color _cardColor = Colors.white;
-  final Color _darkGreen = const Color(0xFF1B4332);
-  final Color _lightGreen = const Color(0xFFE8F5E9);
-  final Color _textMain = const Color(0xFF2D3748);
-  final Color _textMuted = const Color(0xFF718096);
-  final Color _borderColor = const Color(0xFFE2E8F0);
+  // --- THEME ADAPTIVE COLORS ---
+  Color get _bgColor => Theme.of(context).scaffoldBackgroundColor;
+  Color get _cardColor => Theme.of(context).cardColor;
+  Color get _darkGreen => Theme.of(context).primaryColor;
+  Color get _lightGreen => Theme.of(context).primaryColor.withOpacity(0.1);
+  Color get _textMain => Theme.of(context).colorScheme.onSurface;
+  Color get _textMuted => Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey;
+  Color get _borderColor => Theme.of(context).dividerColor;
 
   // --- Filter & Sort State ---
   String _selectedProductFilter = 'Tất cả';
@@ -286,11 +286,11 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
             });
 
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+              padding: const EdgeInsets.all(32.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Quản lý Giá Nông Sản', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1A202C))),
+                  Text('Quản lý Giá Nông Sản', style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                   const SizedBox(height: 24),
                   _buildKPIRow(kpiData),
                   const SizedBox(height: 24),
@@ -351,13 +351,15 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
 
     Color changeColor = isFlat ? _textMuted : (isUp ? _darkGreen : Colors.red);
     IconData? changeIcon = isFlat ? null : (isUp ? Icons.trending_up : Icons.trending_down);
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: 145, // 1. Tăng nhẹ chiều cao để không gian thở thoải mái hơn
+      height: 145, 
       decoration: BoxDecoration(
-        color: _cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), width: 1.5),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(4, 4))],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0), // 2. Tối ưu lại padding
       child: Column(
@@ -368,7 +370,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(title, style: TextStyle(color: _textMuted, fontSize: 13, fontWeight: FontWeight.w500)),
+              Text(title, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _textMuted, fontWeight: FontWeight.w500)),
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
@@ -384,7 +386,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
           Flexible(
             child: Text(
               isEmpty ? '--' : '$value đ/kg',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textMain),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _textMain),
               overflow: TextOverflow.ellipsis, // Tránh tràn nếu số quá dài
             ),
           ),
@@ -399,7 +401,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                 Expanded( // 5. Để text thay đổi tự do xuống dòng hoặc thu nhỏ nếu cần
                   child: Text(
                     isFlat ? '— Không đổi' : change!,
-                    style: TextStyle(color: changeColor, fontWeight: FontWeight.w600, fontSize: 12),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: changeColor, fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -413,12 +415,14 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
 
 // --- (B) BIỂU ĐỒ CHÍNH ---
   Widget _buildMainChart() {
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 400,
       decoration: BoxDecoration(
-          color: _cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.75),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), width: 1.5),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(4, 4))]
       ),
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -431,9 +435,9 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Biểu đồ giá trung bình theo\nthời gian', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textMain, height: 1.3)),
+                  Text('Biểu đồ giá trung bình theo\nthời gian', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _textMain, height: 1.3)),
                   const SizedBox(height: 8),
-                  Text('Dữ liệu thị trường ${_selectedProductChart.toLowerCase()} toàn vùng', style: TextStyle(fontSize: 13, color: _textMuted)),
+                  Text('Dữ liệu thị trường ${_selectedProductChart.toLowerCase()} toàn vùng', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted)),
                 ],
               ),
               Row(
@@ -442,7 +446,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                     height: 40, padding: const EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(20)),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
-                        value: _selectedProductChart, icon: const Icon(Icons.keyboard_arrow_down, size: 18), style: TextStyle(color: _textMain, fontWeight: FontWeight.w600, fontSize: 13),
+                        value: _selectedProductChart, icon: const Icon(Icons.keyboard_arrow_down, size: 18), style: Theme.of(context).textTheme.titleSmall?.copyWith(color: _textMain, fontWeight: FontWeight.w600),
                         items: <String>['Cà Phê', 'Hồ Tiêu', 'Sầu Riêng'].map((String value) => DropdownMenuItem<String>(value: value, child: Text(value))).toList(),
                         onChanged: (newValue) {
                           if (newValue != null && newValue != _selectedProductChart) {
@@ -466,7 +470,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16), alignment: Alignment.center, decoration: BoxDecoration(color: isSelected ? _darkGreen : Colors.transparent, borderRadius: BorderRadius.circular(20)),
-                            child: Text(time, style: TextStyle(color: isSelected ? Colors.white : _textMuted, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, fontSize: 12)),
+                            child: Text(time, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: isSelected ? Colors.white : _textMuted, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
                           ),
                         );
                       }).toList(),
@@ -481,7 +485,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
             child: _isChartLoading
                 ? Center(child: CircularProgressIndicator(color: _darkGreen))
                 : _chartSpots.isEmpty
-                ? Center(child: Text("Chưa đủ dữ liệu lịch sử", style: TextStyle(color: _textMuted)))
+                ? Center(child: Text("Chưa đủ dữ liệu lịch sử", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _textMuted)))
                 : LineChart(
               LineChartData(
                 // 1. HIỂN THỊ LƯỚI NGANG (GRID LÀM NỀN)
@@ -510,7 +514,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                           if (index != 0 && index != _chartDates.length - 1 && index % (_chartDates.length ~/ 4) != 0) return const SizedBox();
                           String text = DateFormat('dd/MM').format(_chartDates[index]);
                           if (index == _chartDates.length - 1) text = 'Hôm\nnay';
-                          return Padding(padding: const EdgeInsets.only(top: 8.0), child: Text(text, textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: _textMuted, fontWeight: index == _chartDates.length -1 ? FontWeight.bold : FontWeight.normal)));
+                          return Padding(padding: const EdgeInsets.only(top: 8.0), child: Text(text, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10, color: _textMuted, fontWeight: index == _chartDates.length -1 ? FontWeight.bold : FontWeight.normal)));
                         },
                       )
                   ),
@@ -564,7 +568,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Row(children: [const Icon(Icons.auto_awesome, color: Colors.white, size: 20), const SizedBox(width: 8), Text('Dự báo Xu hướng: $_selectedProductChart', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))]),
+              Row(children: [const Icon(Icons.auto_awesome, color: Colors.white, size: 20), const SizedBox(width: 8), Text('Dự báo Xu hướng: $_selectedProductChart', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold))]),
               const Spacer(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.end,
@@ -574,7 +578,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                     children: [
                       Text('Dự báo 3 ngày', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
                       const SizedBox(height: 4),
-                      Text(isEmpty ? '--' : '${NumberFormat('#,###').format(_trendForecast['day3'])}đ', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                      Text(isEmpty ? '--' : '${NumberFormat('#,###').format(_trendForecast['day3'])}đ', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Column(
@@ -582,7 +586,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                     children: [
                       Text('Xu hướng', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
                       const SizedBox(height: 4),
-                      Text(isEmpty ? '--' : _trendForecast['trend'].toString().toUpperCase(), style: TextStyle(color: isIncrease ? Colors.greenAccent : Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(isEmpty ? '--' : _trendForecast['trend'].toString().toUpperCase(), style: Theme.of(context).textTheme.titleMedium?.copyWith(color: isIncrease ? Colors.greenAccent : Colors.redAccent, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ],
@@ -595,6 +599,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
   }
 
   Widget _buildTopMovers(List<Map<String, dynamic>> allData) {
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
     var validData = allData.where((e) => !e['change'].toLowerCase().contains('không đổi') && e['change'] != '0.0%' && e['change'] != '0%' && e['change'].toString().isNotEmpty).toList();
     validData.sort((a, b) {
       double valA = double.tryParse(a['change'].replaceAll('%', '').replaceAll('+', '')) ?? 0;
@@ -606,20 +611,25 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
     var topGiam = validData.reversed.where((e) => e['change'].contains('-')).take(1).toList();
 
     return Container(
-      height: 236,
-      decoration: BoxDecoration(color: _cardColor, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]),
-      padding: const EdgeInsets.all(20.0),
+      height: 236, // This height precisely aligns with the chart's 400 height (140 + 24 + 236)
+      decoration: BoxDecoration(
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.75), 
+          borderRadius: BorderRadius.circular(24), 
+          border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), width: 1.5),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(4, 4))]
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [Icon(Icons.arrow_upward, size: 16, color: _textMuted), const SizedBox(width: 8), Text('Top Tăng Giá (24h)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textMain))]),
-          const SizedBox(height: 16),
-          if (topTang.isEmpty) Text('Không có dữ liệu', style: TextStyle(color: _textMuted, fontSize: 13)),
+          Row(children: [Icon(Icons.arrow_upward, size: 16, color: _textMuted), const SizedBox(width: 8), Text('Top Tăng Giá (24h)', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: _textMain))]),
+          const SizedBox(height: 12),
+           if (topTang.isEmpty) Text('Không có dữ liệu', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted)),
           ...topTang.map((e) => _buildMoverItem(e['name'], e['sub_type'], e['change'], true)),
           const Spacer(),
-          Row(children: [Icon(Icons.arrow_downward, size: 16, color: _textMuted), const SizedBox(width: 8), Text('Top Giảm Giá (24h)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textMain))]),
-          const SizedBox(height: 16),
-          if (topGiam.isEmpty) Text('Không có dữ liệu', style: TextStyle(color: _textMuted, fontSize: 13)),
+          Row(children: [Icon(Icons.arrow_downward, size: 16, color: _textMuted), const SizedBox(width: 8), Text('Top Giảm Giá (24h)', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: _textMain))]),
+          const SizedBox(height: 12),
+           if (topGiam.isEmpty) Text('Không có dữ liệu', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted)),
           ...topGiam.map((e) => _buildMoverItem(e['name'], e['sub_type'], e['change'], false)),
         ],
       ),
@@ -633,13 +643,13 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
     String displaySub = subType.isNotEmpty ? ' ($subType)' : '';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         children: [
-          CircleAvatar(radius: 16, backgroundColor: avatarBg, child: Text(initials, style: TextStyle(color: avatarText, fontSize: 10, fontWeight: FontWeight.bold))),
+          CircleAvatar(radius: 14, backgroundColor: avatarBg, child: Text(initials, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: avatarText, fontWeight: FontWeight.bold, fontSize: 10))),
           const SizedBox(width: 12),
-          Expanded(child: Text('$name$displaySub', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: _textMain), maxLines: 1, overflow: TextOverflow.ellipsis)),
-          Text(value, style: TextStyle(color: isUp ? _darkGreen : Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
+          Expanded(child: Text('$name$displaySub', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: _textMain), maxLines: 1, overflow: TextOverflow.ellipsis)),
+          Text(value, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: isUp ? _darkGreen : Colors.red, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -654,7 +664,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
       },
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       offset: const Offset(0, 40),
-      itemBuilder: (context) => options.map((choice) => PopupMenuItem<String>(value: choice, child: Text(choice, style: TextStyle(fontWeight: choice == currentValue ? FontWeight.bold : FontWeight.normal, color: choice == currentValue ? _darkGreen : _textMain)))).toList(),
+      itemBuilder: (context) => options.map((choice) => PopupMenuItem<String>(value: choice, child: Text(choice, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: choice == currentValue ? FontWeight.bold : FontWeight.normal, color: choice == currentValue ? _darkGreen : _textMain)))).toList(),
       child: Container(
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -662,7 +672,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(displayText, style: TextStyle(fontWeight: FontWeight.w600, color: _textMain, fontSize: 12)),
+            Text(displayText, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, color: _textMain)),
             const SizedBox(width: 6),
             Icon(Icons.keyboard_arrow_down, size: 16, color: _textMuted),
           ],
@@ -675,6 +685,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
   // HỆ THỐNG BẢNG CUSTOM VÀ PAGINATION MỚI (GIỐNG MOCKUP)
   // ============================================================================
   Widget _buildCustomTableSection(List<Map<String, dynamic>> processedTableData, List<String> dynamicCrops, String lastUpdated) {
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
     List<String> productFilterOptions = ['Tất cả', ...dynamicCrops];
 
     // Tính toán số liệu phân trang
@@ -691,7 +702,12 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
     List<Map<String, dynamic>> currentPageData = processedTableData.isEmpty ? [] : processedTableData.sublist(startIndex, endIndex);
 
     return Container(
-      decoration: BoxDecoration(color: _cardColor, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]),
+      decoration: BoxDecoration(
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.75), 
+          borderRadius: BorderRadius.circular(24), 
+          border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), width: 1.5),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(4, 4))]
+      ),
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -699,10 +715,10 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Chi Tiết Giá Nông Sản', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textMain)),
+              Text('Chi Tiết Giá Nông Sản', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _textMain)),
               Row(
                 children: [
-                  Text('Cập nhật: $lastUpdated', style: TextStyle(color: _textMuted, fontSize: 12)),
+                  Text('Cập nhật: $lastUpdated', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted)),
                   const SizedBox(width: 8),
                   Icon(Icons.refresh, size: 16, color: _textMain),
                 ],
@@ -727,7 +743,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
             SizedBox(
               width: double.infinity,
               child: DataTable(
-                headingTextStyle: TextStyle(fontWeight: FontWeight.bold, color: _textMuted, fontSize: 11, letterSpacing: 0.5),
+                headingTextStyle: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: _textMuted, letterSpacing: 0.5),
                 dataRowHeight: 60,
                 headingRowHeight: 48,
                 horizontalMargin: 0,
@@ -752,7 +768,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Hiển thị ${startIndex + 1}-$endIndex của $totalItems khu vực', style: TextStyle(color: _textMuted, fontSize: 13)),
+                Text('Hiển thị ${startIndex + 1}-$endIndex của $totalItems khu vực', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted)),
                 Row(
                   children: [
                     IconButton(
@@ -797,24 +813,24 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
 
     return DataRow(
       cells: [
-        DataCell(Text(item['region'].toString(), style: TextStyle(fontWeight: FontWeight.bold, color: _textMain, fontSize: 13))),
+        DataCell(Text(item['region'].toString(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: _textMain))),
         DataCell(Row(
           children: [
             Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor)),
             const SizedBox(width: 8),
-            Text(item['name'].toString(), style: TextStyle(fontWeight: FontWeight.w600, color: _textMain, fontSize: 13)),
+            Text(item['name'].toString(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: _textMain)),
           ],
         )),
-        DataCell(Text(item['sub_type'].toString(), style: TextStyle(color: _textMuted, fontSize: 13))),
-        DataCell(Text('$formattedPrice đ', style: TextStyle(fontWeight: FontWeight.bold, color: _textMain, fontSize: 13))),
-        DataCell(Text(isFlat ? '0 đ' : change, style: TextStyle(color: changeColor, fontWeight: FontWeight.bold, fontSize: 13))),
-        DataCell(Text(item['update'].toString(), style: TextStyle(color: _textMuted, fontSize: 12))),
+        DataCell(Text(item['sub_type'].toString(), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted))),
+        DataCell(Text('$formattedPrice đ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: _textMain))),
+        DataCell(Text(isFlat ? '0 đ' : change, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: changeColor, fontWeight: FontWeight.bold))),
+        DataCell(Text(item['update'].toString(), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _textMuted))),
         DataCell(status.isEmpty
             ? const SizedBox()
             : Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(color: badgeBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: badgeText.withOpacity(0.1))),
-          child: Text(status.toUpperCase(), style: TextStyle(color: badgeText, fontSize: 10, fontWeight: FontWeight.bold)),
+          child: Text(status.toUpperCase(), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: badgeText, fontWeight: FontWeight.bold)),
         )
         ),
       ],
@@ -837,7 +853,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
               color: isActive ? _darkGreen : Colors.transparent,
               shape: BoxShape.circle,
             ),
-            child: Text('$page', style: TextStyle(color: isActive ? Colors.white : _textMuted, fontWeight: FontWeight.bold, fontSize: 13)),
+            child: Text('$page', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: isActive ? Colors.white : _textMuted, fontWeight: FontWeight.bold)),
           )
       ));
     }

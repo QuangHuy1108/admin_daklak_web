@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../constants/app_colors.dart';
 import '../services/search_service.dart';
@@ -36,9 +35,8 @@ class SearchOverlay extends StatelessWidget {
           child: Center(
             child: Text(
               'No results found',
-              style: GoogleFonts.inter(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textMuted,
-                fontSize: 14,
               ),
             ),
           ),
@@ -101,7 +99,7 @@ class SearchOverlay extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 title.toUpperCase(),
-                style: GoogleFonts.inter(
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: AppColors.primary,
@@ -156,7 +154,7 @@ class SearchOverlay extends StatelessWidget {
                 children: [
                   Text(
                     item.title,
-                    style: GoogleFonts.inter(
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textHeading,
@@ -164,8 +162,7 @@ class SearchOverlay extends StatelessWidget {
                   ),
                   Text(
                     item.subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textMuted,
                     ),
                   ),

@@ -12,6 +12,8 @@ import 'features/settings/logic/settings_provider.dart';
 import 'features/settings/data/repositories/firebase_settings_repository.dart';
 import 'features/auth/logic/user_provider.dart';
 import 'features/finance/providers/finance_provider.dart';
+import 'core/theme/app_theme.dart';
+import 'core/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +38,7 @@ void main() async {
           create: (_) => SettingsProvider(FirebaseSettingsRepository()),
         ),
         ChangeNotifierProvider(create: (_) => FinanceProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const AdminApp(),
     ),
@@ -55,16 +58,20 @@ class _AdminAppState extends State<AdminApp> {
   @override
   void initState() {
     super.initState();
-    // Initialize the router once with the UserProvider instance
+    // Khởi tạo router một lần với instance của UserProvider
     _router = AppRouter.createRouter(context.read<UserProvider>());
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
     return MaterialApp.router(
       title: 'Daklak Agent Admin',
       debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeProvider.themeMode,
       routerConfig: _router,
     );
   }
-}
+}

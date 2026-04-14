@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
 import 'package:csv/csv.dart';
@@ -12,21 +11,23 @@ import 'order_detail_dialog.dart';
 import 'package:admin_daklak_web/features/logs/services/bulk_service.dart';
 import 'package:admin_daklak_web/features/logs/widgets/bulk_action_bar.dart';
 import 'package:admin_daklak_web/features/logs/models/audit_log_model.dart';
+import '../../../core/widgets/common/glass_container.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 
-const Color _bgGray = Color(0xFFF5F7FA);
-const Color _primaryGreen = Color(0xFF2E7D32);
-const Color _textPrimary = Color(0xFF1C2826);
-const Color _textSecondary = Color(0xFF6B7280);
-const Color _borderColor = Color(0xFFE5E7EB);
-const Color _successGreen = Color(0xFF388E3C);
-const Color _errorRed = Color(0xFFD32F2F);
-const Color _infoBlue = Color(0xFF1976D2);
+  Color _getBgGray(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant.withValues(alpha: 0.5) : const Color(0xFFF5F7FA);
+  Color _getTextPrimary(BuildContext context) => Theme.of(context).colorScheme.onSurface;
+  Color _getTextSecondary(BuildContext context) => Theme.of(context).textTheme.bodySmall?.color ?? const Color(0xFF6B7280);
+  Color _getBorderColor(BuildContext context) => Theme.of(context).dividerColor;
+  Color _getPrimaryGreen(BuildContext context) => Theme.of(context).primaryColor;
+  Color _getSuccessGreen(BuildContext context) => Colors.green;
+  Color _getErrorRed(BuildContext context) => Theme.of(context).colorScheme.error;
+  Color _getInfoBlue(BuildContext context) => Colors.blue;
 
 void _showToast(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
-      backgroundColor: _textPrimary,
+      content: Text(message, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
+      backgroundColor: _getTextPrimary(context),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       margin: const EdgeInsets.only(bottom: 24, right: 24, left: 24),
@@ -49,7 +50,16 @@ class OrdersTableWidget extends StatefulWidget {
 }
 
 class OrdersTableWidgetState extends State<OrdersTableWidget> {
-  String _selectedStatus = 'All Status';
+  String _selectedStatus = 'Tất cả trạng thái';
+  final Map<String, String> _statusValueMap = {
+    'Tất cả trạng thái': 'All Status',
+    'Đang chờ': 'Pending',
+    'Đang xử lý': 'Processing',
+    'Đang giao': 'In Transit',
+    'Hoàn thành': 'Completed',
+    'Đã hủy': 'Cancelled',
+    'Thất bại': 'Failed',
+  };
   final Set<String> _selectedIds = {};
   
   bool _isSearchMode = false;
@@ -86,8 +96,9 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
     _streamSub?.cancel();
 
     Query q = FirebaseFirestore.instance.collection('orders');
-    if (_selectedStatus != 'All Status') {
-      q = q.where('status', isEqualTo: _selectedStatus);
+    final firestoreStatus = _statusValueMap[_selectedStatus] ?? 'All Status';
+    if (firestoreStatus != 'All Status') {
+      q = q.where('status', isEqualTo: firestoreStatus);
     }
     
     if (widget.dateRange != null) {
@@ -127,7 +138,8 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
     setState(() => _isLoadingMore = true);
 
     Query q = FirebaseFirestore.instance.collection('orders');
-    if (_selectedStatus != 'All Status') q = q.where('status', isEqualTo: _selectedStatus);
+    final firestoreStatus = _statusValueMap[_selectedStatus] ?? 'All Status';
+    if (firestoreStatus != 'All Status') q = q.where('status', isEqualTo: firestoreStatus);
     
     if (widget.dateRange != null) {
        q = q.where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(widget.dateRange!.start))
@@ -217,12 +229,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: widget.isDashboard ? const [BoxShadow(color: Color(0x05000000), blurRadius: 10, offset: Offset(0, 4))] : null,
-      ),
+    return GlassContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -231,7 +238,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Recent Orders', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
+                Text('Đơn hàng gần đây', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context))),
                 _selectedIds.isNotEmpty 
                 ? Expanded(
                     child: BulkActionBar(
@@ -249,12 +256,12 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
                         height: 40,
                         child: TextField(
                           decoration: InputDecoration(
-                            hintText: 'Search exact Order ID...',
-                            hintStyle: GoogleFonts.inter(color: _textSecondary, fontSize: 13),
-                            prefixIcon: const Icon(Icons.search, size: 20, color: _textSecondary),
+                            hintText: 'Tìm mã đơn hàng chính xác...',
+                            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _getTextSecondary(context), fontSize: 13),
+                            prefixIcon: Icon(Icons.search, size: 20, color: _getTextSecondary(context)),
                             contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _borderColor)),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _borderColor)),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: _getBorderColor(context))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: _getBorderColor(context))),
                           ),
                           onChanged: (val) {
                             if (val.isEmpty) _performSearch('');
@@ -266,13 +273,13 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
                       Container(
                         height: 40,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(border: Border.all(color: _borderColor), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(border: Border.all(color: _getBorderColor(context)), borderRadius: BorderRadius.circular(8)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: _selectedStatus,
-                            icon: const Icon(Icons.arrow_drop_down, color: _textSecondary),
-                            style: GoogleFonts.inter(color: _textPrimary, fontSize: 14),
-                            items: <String>['All Status', 'Pending', 'Processing', 'In Transit', 'Completed', 'Cancelled', 'Failed']
+                            icon: Icon(Icons.arrow_drop_down, color: _getTextSecondary(context)),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _getTextPrimary(context)),
+                            items: <String>['Tất cả trạng thái', 'Đang chờ', 'Đang xử lý', 'Đang giao', 'Hoàn thành', 'Đã hủy', 'Thất bại']
                                 .map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
                             onChanged: (newValue) {
                               if (newValue != null) {
@@ -288,7 +295,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
               ],
             ),
           ),
-          const Divider(height: 1, color: _borderColor),
+          Divider(height: 1, color: _getBorderColor(context)),
           
           if (_firebaseIndexErrorUrl != null)
              _buildFirebaseIndexErrorBubble()
@@ -309,8 +316,8 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
                   ? const CircularProgressIndicator() 
                   : TextButton.icon(
                       onPressed: _fetchMoreOrders,
-                      icon: const Icon(Icons.refresh, color: _primaryGreen),
-                      label: Text("Load More Orders", style: GoogleFonts.inter(color: _primaryGreen, fontWeight: FontWeight.w600)),
+                      icon: Icon(Icons.refresh, color: _getPrimaryGreen(context)),
+                      label: Text("Tải thêm đơn hàng", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: _getPrimaryGreen(context), fontWeight: FontWeight.w600)),
                     ),
               ),
             )
@@ -334,15 +341,15 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
              children: [
                 Row(
                    children: [
-                      const Icon(Icons.warning_rounded, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Text("Firebase Index Required", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 16)),
-                   ]
-                ),
-                const SizedBox(height: 8),
-                Text("This specific filter requires a Composite Index in Firestore.", style: GoogleFonts.inter()),
-                const SizedBox(height: 8),
-                SelectableText("Please copy and paste this link in your browser to build the index:\n${_firebaseIndexErrorUrl!}", style: GoogleFonts.inter(color: Colors.blue, decoration: TextDecoration.underline)),
+                       const Icon(Icons.warning_rounded, color: Colors.red),
+                       const SizedBox(width: 8),
+                       Text("Firebase Index Required", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.red)),
+                    ]
+                 ),
+                 const SizedBox(height: 4),
+                 Text("This specific filter requires a Composite Index in Firestore.", style: Theme.of(context).textTheme.bodySmall),
+                 const SizedBox(height: 8),
+                 SelectableText("Please copy and paste this link in your browser to build the index:\n${_firebaseIndexErrorUrl!}", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.blue, decoration: TextDecoration.underline)),
              ]
           )
         )
@@ -371,7 +378,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
       child: ConstrainedBox(
         constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - (widget.isDashboard ? 100 : 64)),
         child: DataTable(
-          headingRowColor: WidgetStateProperty.all(_bgGray),
+          headingRowColor: WidgetStateProperty.all(_getBgGray(context)),
           showCheckboxColumn: true,
           dataRowMaxHeight: 70,
           dataRowMinHeight: 70,
@@ -385,12 +392,12 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
             });
           },
           columns: [
-            _buildDataColumn('Order Code'),
-            _buildDataColumn('Customer Name'),
-            _buildDataColumn('Total Price'),
-            _buildDataColumn('Order Status'),
-            _buildDataColumn('Date'),
-            _buildDataColumn('Action'),
+            _buildDataColumn('Mã đơn hàng'),
+            _buildDataColumn('Khách hàng'),
+            _buildDataColumn('Tổng tiền'),
+            _buildDataColumn('Trạng thái'),
+            _buildDataColumn('Ngày tạo'),
+            _buildDataColumn('Hành động'),
           ],
           rows: displayDocs.map((doc) {
             Map<String, dynamic> data;
@@ -419,20 +426,20 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
                 DataCell(
                   InkWell(
                     onTap: () => _viewOrderDetail(doc.id, data),
-                    child: Text(doc.id.length > 8 ? doc.id.substring(0, 8).toUpperCase() : doc.id.toUpperCase(), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    child: Text(doc.id.length > 8 ? doc.id.substring(0, 8).toUpperCase() : doc.id.toUpperCase(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
                   )
                 ),
-                DataCell(Text(data['customerName'] ?? 'No Name', style: GoogleFonts.inter())),
-                DataCell(Text('${amount.toStringAsFixed(0)} đ', style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
+                DataCell(Text(data['customerName'] ?? 'No Name', style: Theme.of(context).textTheme.bodyMedium)),
+                DataCell(Text('${amount.toStringAsFixed(0)} đ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600))),
                 DataCell(_buildStatusBadge(data['status'] ?? 'Pending')),
-                DataCell(Text(dateString, style: GoogleFonts.inter(color: _textSecondary))),
+                DataCell(Text(dateString, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _getTextSecondary(context)))),
                 DataCell(
                   PopupMenuButton<String>(
                     onSelected: (val) => _updateOrderStatus(doc.id, val),
                     itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'Processing', child: Text('Mark Processing')),
-                      PopupMenuItem(value: 'Completed', child: Text('Mark Completed')),
-                      PopupMenuItem(value: 'Cancelled', child: Text('Cancel Order', style: TextStyle(color: Colors.red))),
+                      PopupMenuItem(value: 'Processing', child: Text('Đang xử lý')),
+                      PopupMenuItem(value: 'Completed', child: Text('Hoàn thành')),
+                      PopupMenuItem(value: 'Cancelled', child: Text('Hủy đơn hàng', style: TextStyle(color: Colors.red))),
                     ]
                   )
                 ),
@@ -447,7 +454,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
 
   DataColumn _buildDataColumn(String label) {
     return DataColumn(
-      label: Text(label, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textSecondary, fontSize: 13)),
+      label: Text(label, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: _getTextSecondary(context))),
     );
   }
 
@@ -457,35 +464,35 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
 
     switch (status) {
       case 'Pending':
-        statusColor = const Color(0xFFF59E0B);
-        statusBg = const Color(0xFFFEF3C7);
+        statusColor = Colors.orange;
+        statusBg = Colors.orange.withOpacity(0.1);
         break;
       case 'Processing':
-        statusColor = _infoBlue;
-        statusBg = _infoBlue.withOpacity(0.1);
+        statusColor = _getInfoBlue(context);
+        statusBg = _getInfoBlue(context).withOpacity(0.1);
         break;
       case 'In Transit':
         statusColor = Colors.purple;
         statusBg = Colors.purple.withOpacity(0.1);
         break;
       case 'Completed':
-        statusColor = _successGreen;
-        statusBg = _successGreen.withOpacity(0.1);
+        statusColor = _getSuccessGreen(context);
+        statusBg = _getSuccessGreen(context).withOpacity(0.1);
         break;
       case 'Cancelled':
       case 'Failed':
-        statusColor = _errorRed;
-        statusBg = _errorRed.withOpacity(0.1);
+        statusColor = _getErrorRed(context);
+        statusBg = _getErrorRed(context).withOpacity(0.1);
         break;
       default:
-        statusColor = _textSecondary;
-        statusBg = _bgGray;
+        statusColor = _getTextSecondary(context);
+        statusBg = _getBgGray(context);
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(12)),
-      child: Text(status, style: GoogleFonts.inter(color: statusColor, fontWeight: FontWeight.w600, fontSize: 12)),
+      child: Text(status, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: statusColor, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -517,14 +524,14 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFC7D2FE)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          hint: Text("Cập nhật trạng thái", style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF4338CA), fontWeight: FontWeight.bold)),
-          icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF4338CA)),
+          hint: Text("Cập nhật trạng thái", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
+          icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).primaryColor),
           items: <String>['Pending', 'Processing', 'In Transit', 'Completed', 'Cancelled']
               .map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
           onChanged: (newValue) {
@@ -541,8 +548,8 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Xác nhận cập nhật hàng loạt", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-        content: Text("Bạn có chắc chắn muốn cập nhật trạng thái cho ${_selectedIds.length} đơn hàng sang '$newStatus'?"),
+        title: Text("Xác nhận cập nhật hàng loạt", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        content: Text("Bạn có chắc chắn muốn cập nhật trạng thái cho ${_selectedIds.length} đơn hàng sang '$newStatus'?", style: Theme.of(context).textTheme.bodyMedium),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Hủy")),
           ElevatedButton(
@@ -550,7 +557,7 @@ class OrdersTableWidgetState extends State<OrdersTableWidget> {
               Navigator.pop(context);
               await _executeBulkUpdate(newStatus);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen),
+            style: ElevatedButton.styleFrom(backgroundColor: _getPrimaryGreen(context)),
             child: const Text("Xác nhận", style: TextStyle(color: Colors.white)),
           ),
         ],

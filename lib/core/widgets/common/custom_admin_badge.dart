@@ -25,10 +25,10 @@ class CustomAdminBadge extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: color,
           fontSize: fontSize,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.bold, // Giữ nguyên độ đậm cho Badge
         ),
         textAlign: TextAlign.center,
       ),

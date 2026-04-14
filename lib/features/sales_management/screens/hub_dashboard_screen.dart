@@ -1,27 +1,22 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:admin_daklak_web/features/sales_management/widgets/create_order_dialog.dart';
 
 // --- Shared Theme Information ---
-const Color _primaryGreen = Color(0xFF2E7D32); // Main Green
-const Color _bgGray = Color(0xFFF5F7FA);
-const Color _successGreen = Color(0xFF388E3C);
-const Color _errorRed = Color(0xFFD32F2F);
-const Color _warningOrange = Color(0xFFF57C00);
-const Color _infoBlue = Color(0xFF1976D2);
-const Color _textPrimary = Color(0xFF1C2826);
-const Color _textSecondary = Color(0xFF6B7280);
-const Color _borderColor = Color(0xFFE5E7EB);
+// Theme-aware color constants logic moved into build or resolved via helpers
+const Color _infoBlue = Color(0xFF2196F3);
+const Color _primaryGreen = Color(0xFF43A047);
+const Color _warningOrange = Color(0xFFFF9800);
 
 void _showToast(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
-      backgroundColor: _textPrimary,
+      content: Text(message, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
+      backgroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       margin: const EdgeInsets.only(bottom: 24, right: 24, left: 24),
@@ -47,10 +42,11 @@ class _HubDashboardScreenState extends State<HubDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final primaryGreen = Theme.of(context).primaryColor;
     return Scaffold(
-      backgroundColor: _bgGray,
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -106,13 +102,16 @@ class _HeaderSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Admin Hub',
-              style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: _textPrimary),
+              'Quản lý Đơn hàng',
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                fontWeight: FontWeight.bold, 
+                color: Theme.of(context).colorScheme.onSurface
+              ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Overview of your agricultural sales and orders.',
-              style: GoogleFonts.inter(fontSize: 14, color: _textSecondary),
+              'Tổng quan hoạt động bán hàng và đơn hàng nông sản.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
             ),
           ],
         ),
@@ -121,9 +120,9 @@ class _HeaderSection extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onCreateOrder,
               icon: const Icon(Icons.add, color: Colors.white, size: 20),
-              label: Text('Create Order', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+              label: Text('Tạo đơn hàng', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: Colors.white)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryGreen,
+                backgroundColor: Theme.of(context).primaryColor,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -190,36 +189,36 @@ class _KPISection extends StatelessWidget {
           children: [
             Expanded(
               child: _KPICard(
-                title: 'Revenue Today',
+                title: 'Doanh thu hôm nay',
                 value: '${todayRev.toStringAsFixed(0)} đ',
-                subtitle: 'All orders placed today',
-                trend: '● Live',
+                subtitle: 'Tổng giá trị đơn hàng trong ngày',
+                trend: '● Trực tiếp',
                 isPositiveChange: true,
                 icon: Icons.account_balance_wallet_rounded,
-                iconBgColor: _primaryGreen.withOpacity(0.1),
-                iconColor: _primaryGreen,
+                iconBgColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                iconColor: Theme.of(context).primaryColor,
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: _KPICard(
-                title: 'New Orders Today',
+                title: 'Đơn hàng mới',
                 value: '$newOrders',
-                subtitle: 'Orders created since midnight',
-                trend: '● Live',
+                subtitle: 'Số đơn hàng tạo mới từ nửa đêm',
+                trend: '● Trực tiếp',
                 isPositiveChange: true,
                 icon: Icons.shopping_cart_rounded,
-                iconBgColor: _infoBlue.withOpacity(0.1),
-                iconColor: _infoBlue,
+                iconBgColor: Colors.blue.withOpacity(0.1),
+                iconColor: Colors.blue,
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: _KPICard(
-                title: 'In Transit',
+                title: 'Đang vận chuyển',
                 value: '$inTransit',
-                subtitle: 'Orders currently out for delivery',
-                trend: inTransit > 0 ? '● Shipping' : '○ None today',
+                subtitle: 'Đơn hàng đang giao cho khách',
+                trend: inTransit > 0 ? '● Đang giao' : '○ Trống',
                 isPositiveChange: true,
                 icon: Icons.local_shipping_rounded,
                 iconBgColor: Colors.purple.withOpacity(0.1),
@@ -229,14 +228,14 @@ class _KPISection extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: _KPICard(
-                title: 'Needs Attention',
+                title: 'Cần chú ý',
                 value: '$pendingCancelled',
-                subtitle: 'Pending or cancelled orders today',
-                trend: pendingCancelled > 0 ? '⚠ Review now' : '✓ All clear',
+                subtitle: 'Đơn hàng chờ hoặc đã hủy',
+                trend: pendingCancelled > 0 ? '⚠ Xem ngay' : '✓ Đã xử lý',
                 isPositiveChange: pendingCancelled == 0,
                 icon: Icons.notifications_active_rounded,
-                iconBgColor: _warningOrange.withOpacity(0.1),
-                iconColor: _warningOrange,
+                iconBgColor: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                iconColor: Theme.of(context).colorScheme.error,
               ),
             ),
           ],
@@ -337,8 +336,8 @@ class _ChartSectionState extends State<_ChartSection> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Performance Over Last 7 Days',
-                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary),
+                'Hiệu suất kinh doanh 7 ngày qua',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textHeading),
               ),
               Row(
                 children: [
@@ -351,11 +350,11 @@ class _ChartSectionState extends State<_ChartSection> {
                     },
                   ),
                   Container(
-                    decoration: BoxDecoration(color: _bgGray, borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : const Color(0xFFF5F7FA), borderRadius: BorderRadius.circular(8)),
                     child: Row(
                       children: [
-                        _buildChartToggleButton('Revenue', true),
-                        _buildChartToggleButton('Orders', false),
+                        _buildChartToggleButton('Doanh thu', true),
+                        _buildChartToggleButton('Đơn hàng', false),
                       ],
                     ),
                   ),
@@ -367,6 +366,7 @@ class _ChartSectionState extends State<_ChartSection> {
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _chartFuture,
             builder: (context, snapshot) {
+              final borderColor = Theme.of(context).dividerColor;
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox(height: 300, child: Center(child: CircularProgressIndicator()));
               }
@@ -374,7 +374,7 @@ class _ChartSectionState extends State<_ChartSection> {
                 return Text("Firebase Error: ${snapshot.error}", style: const TextStyle(color: Colors.red));
               }
               if (!snapshot.hasData) {
-                return const SizedBox(height: 300, child: Center(child: Text("No chart data available.")));
+                return const SizedBox(height: 300, child: Center(child: Text("Không có dữ liệu biểu đồ.")));
               }
 
               final stats = snapshot.data!;
@@ -421,7 +421,7 @@ class _ChartSectionState extends State<_ChartSection> {
                       show: true,
                       drawVerticalLine: false,
                       horizontalInterval: maxValue / 4,
-                      getDrawingHorizontalLine: (_) => FlLine(color: _borderColor.withOpacity(0.5), strokeWidth: 1),
+                      getDrawingHorizontalLine: (_) => FlLine(color: borderColor.withOpacity(0.5), strokeWidth: 1),
                     ),
                     titlesData: FlTitlesData(
                       show: true,
@@ -432,11 +432,11 @@ class _ChartSectionState extends State<_ChartSection> {
                           showTitles: true,
                           reservedSize: 30,
                           interval: 1,
-                          getTitlesWidget: (value, meta) {
+                           getTitlesWidget: (value, meta) {
                             if (value.toInt() >= 0 && value.toInt() < dates.length) {
                                return Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(dates[value.toInt()], style: GoogleFonts.inter(color: _textSecondary, fontSize: 12)),
+                                child: Text(dates[value.toInt()], style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 12)),
                               );
                             }
                             return const Text('');
@@ -449,10 +449,10 @@ class _ChartSectionState extends State<_ChartSection> {
                           interval: (maxValue / 4) == 0 ? 1 : (maxValue / 4),
                           reservedSize: 60,
                           getTitlesWidget: (value, meta) {
-                            if (value == 0) return const Text('');
+                             if (value == 0) return const Text('');
                             return Text(
-                              _formatValue(value),
-                              style: GoogleFonts.inter(color: _textSecondary, fontSize: 12),
+                               _formatValue(value),
+                               style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 12),
                             );
                           },
                         ),
@@ -466,12 +466,12 @@ class _ChartSectionState extends State<_ChartSection> {
                     lineBarsData: [
                       LineChartBarData(
                         spots: spots,
-                        isCurved: true,
-                        color: _primaryGreen,
+                         isCurved: true,
+                        color: Theme.of(context).primaryColor,
                         barWidth: 4,
                         isStrokeCapRound: true,
-                        dotData: FlDotData(show: true, getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 4, color: _primaryGreen, strokeWidth: 2, strokeColor: Colors.white)),
-                        belowBarData: BarAreaData(show: true, color: _primaryGreen.withOpacity(0.1)),
+                        dotData: FlDotData(show: true, getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 4, color: Theme.of(context).primaryColor, strokeWidth: 2, strokeColor: Colors.white)),
+                        belowBarData: BarAreaData(show: true, color: Theme.of(context).primaryColor.withOpacity(0.1)),
                       ),
                     ],
                   ),
@@ -497,13 +497,13 @@ class _ChartSectionState extends State<_ChartSection> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
+          color: isSelected ? Theme.of(context).colorScheme.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))] : null,
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400, color: isSelected ? _textPrimary : _textSecondary),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400, color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).textTheme.bodySmall?.color),
         ),
       ),
     );
@@ -522,9 +522,9 @@ class _TopProductsSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.insights, color: _primaryGreen, size: 20),
+              Icon(Icons.insights, color: Theme.of(context).primaryColor, size: 20),
               const SizedBox(width: 8),
-              Text('Top Products Analytics', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary)),
+              Text('Phân tích sản phẩm bán chạy', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             ],
           ),
           const SizedBox(height: 16),
@@ -542,15 +542,15 @@ class _TopProductsSection extends StatelessWidget {
                   builder: (context, prodSnapshot) {
                     if (prodSnapshot.connectionState == ConnectionState.waiting) return const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()));
                     if (!prodSnapshot.hasData || prodSnapshot.data!.docs.isEmpty) {
-                      return Padding(padding: const EdgeInsets.all(8.0), child: Text("No product records found.", style: GoogleFonts.inter(color: _textSecondary)));
+                      return Padding(padding: const EdgeInsets.all(8.0), child: Text("Không tìm thấy dữ liệu sản phẩm.", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)));
                     }
                     
-                    return _buildProductList(prodSnapshot.data!.docs, isStats: false);
+                    return _buildProductList(context, prodSnapshot.data!.docs, isStats: false);
                   },
                 );
               }
 
-              return _buildProductList(snapshot.data!.docs, isStats: true);
+              return _buildProductList(context, snapshot.data!.docs, isStats: true);
             },
           ),
         ],
@@ -558,7 +558,7 @@ class _TopProductsSection extends StatelessWidget {
     );
   }
 
-  Widget _buildProductList(List<QueryDocumentSnapshot> docs, {required bool isStats}) {
+  Widget _buildProductList(BuildContext context, List<QueryDocumentSnapshot> docs, {required bool isStats}) {
     return Column(
       children: docs.asMap().entries.map((entry) {
         int idx = entry.key;
@@ -568,10 +568,10 @@ class _TopProductsSection extends StatelessWidget {
         String detailText;
         if (isStats) {
           int sold = (data['quantitySold'] ?? 0) is num ? (data['quantitySold'] as num).toInt() : 0;
-          detailText = '$sold sold';
+          detailText = '$sold đã bán';
         } else {
           // If no stats, display category or just a placeholder
-          detailText = data['category'] ?? 'Product';
+          detailText = data['category'] ?? 'Sản phẩm';
         }
         
         return Padding(
@@ -583,14 +583,13 @@ class _TopProductsSection extends StatelessWidget {
                 height: 32,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: idx == 0 ? Colors.amber.withOpacity(0.2) : _bgGray, 
+                  color: idx == 0 ? Colors.amber.withOpacity(0.2) : Theme.of(context).colorScheme.surfaceVariant, 
                   shape: BoxShape.circle
                 ),
-                child: Text('#${idx + 1}', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: idx == 0 ? Colors.amber[800] : _textSecondary)),
+                child: Text('#${idx + 1}', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: idx == 0 ? Colors.amber[800] : Theme.of(context).textTheme.bodySmall?.color)),
               ),
               const SizedBox(width: 12),
-              Expanded(child: Text(name, style: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 13, color: _textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)),
-              Text(detailText, style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: _primaryGreen)),
+              Text(detailText, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
             ],
           ),
         );
@@ -611,9 +610,9 @@ class _ProblematicOrdersSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: _warningOrange, size: 20),
+              Icon(Icons.warning_amber_rounded, color: Theme.of(context).colorScheme.error, size: 20),
               const SizedBox(width: 8),
-              Text('Problematic Orders', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary)),
+              Text('Đơn hàng cần xử lý', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             ],
           ),
           const SizedBox(height: 16),
@@ -621,16 +620,17 @@ class _ProblematicOrdersSection extends StatelessWidget {
             stream: FirebaseFirestore.instance.collection('orders').where('status', whereIn: ['Cancelled', 'Failed']).orderBy('createdAt', descending: true).limit(5).snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) return const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()));
-              if (snapshot.hasError) return Text("Error loading issues.", style: GoogleFonts.inter(color: _errorRed));
+              if (snapshot.hasError) return Text("Error loading issues.", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error));
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Padding(padding: const EdgeInsets.all(8.0), child: Text("No issues found. Everything is smooth!", style: GoogleFonts.inter(color: _successGreen, fontWeight: FontWeight.w500)));
+                return Padding(padding: const EdgeInsets.all(8.0), child: Text("Không có vấn đề gì. Hệ thống ổn định!", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.green, fontWeight: FontWeight.w500)));
               }
 
               return Column(
                 children: snapshot.data!.docs.map((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final status = data['status'] as String? ?? 'Failed';
-                  final color = status == 'Cancelled' ? _warningOrange : _errorRed;
+                   final data = doc.data() as Map<String, dynamic>;
+                  final status = data['status'] as String? ?? 'Thất bại';
+                  final color = (status == 'Cancelled' || status == 'Đã hủy') ? Colors.orange : Theme.of(context).colorScheme.error;
+                  final displayStatus = status == 'Cancelled' ? 'Đã hủy' : (status == 'Failed' ? 'Thất bại' : status);
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -642,15 +642,15 @@ class _ProblematicOrdersSection extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(status, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13, color: color)),
+                            Text(displayStatus, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 13, color: color)),
                             const SizedBox(height: 4),
-                            Text('#${doc.id.substring(0, 8).toUpperCase()}', style: GoogleFonts.inter(fontSize: 12, color: _textSecondary)),
+                            Text('#${doc.id.substring(0, 8).toUpperCase()}', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color)),
                           ],
                         ),
                         TextButton(
-                          onPressed: () => _showToast(context, 'Checking order: ${doc.id}'),
+                          onPressed: () => _showToast(context, 'Đang kiểm tra đơn hàng: ${doc.id}'),
                           style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(50, 30)),
-                          child: Text('Review', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+                          child: Text('Kiểm tra', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
                         )
                       ],
                     ),
@@ -709,10 +709,10 @@ class _KPICard extends StatelessWidget {
                 children: [
                   Text(
                     trend,
-                    style: GoogleFonts.inter(
+                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isPositiveChange ? _successGreen : _warningOrange,
+                      color: isPositiveChange ? Colors.green : Colors.orange,
                     ),
                   ),
                 ],
@@ -720,25 +720,25 @@ class _KPICard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            value,
-            style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: _textPrimary),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: GoogleFonts.inter(fontSize: 14, color: _textPrimary, fontWeight: FontWeight.w600),
-          ),
-          if (subtitle.isNotEmpty) ...[  
-            const SizedBox(height: 2),
             Text(
-              subtitle,
-              style: GoogleFonts.inter(fontSize: 12, color: _textSecondary),
+              value,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+          const SizedBox(height: 4),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600),
+            ),
+          if (subtitle.isNotEmpty) ...[  
+            const SizedBox(height: 2),
+               Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
           ],
         ],
       ),
@@ -768,8 +768,8 @@ class _DashboardCardState extends State<_DashboardCard> {
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
         transform: Matrix4.translationValues(0, _isHovered ? -2 : 0, 0),
-        decoration: BoxDecoration(
-          color: Colors.white,
+         decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.surfaceVariant : Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(_isHovered ? 0.08 : 0.04), blurRadius: _isHovered ? 20 : 10, offset: Offset(0, _isHovered ? 8 : 4)),
@@ -793,8 +793,8 @@ class _NavigationGridSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Quick Modules',
-          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary),
+          'Phân hệ nhanh',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textHeading),
         ),
         const SizedBox(height: 16),
         GridView.count(
@@ -804,26 +804,26 @@ class _NavigationGridSection extends StatelessWidget {
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
           childAspectRatio: 2.0, // Wider
-          children: const [
-            _NavCard(
+          children: [
+            const _NavCard(
               title: 'Order Management',
               icon: Icons.inventory_2_rounded,
               color: _infoBlue,
               route: '/orders',
             ),
-            _NavCard(
+            const _NavCard(
               title: 'Agricultural Products',
               icon: Icons.eco_rounded,
               color: _primaryGreen,
               route: '/products',
             ),
-            _NavCard(
+            const _NavCard(
               title: 'Promotions & Vouchers',
               icon: Icons.card_giftcard_rounded,
               color: _warningOrange,
               route: '/promotions',
             ),
-            _NavCard(
+            const _NavCard(
               title: 'Finance & Permissions',
               icon: Icons.account_balance_wallet_rounded,
               color: Colors.purple,
@@ -858,6 +858,9 @@ class _NavCardState extends State<_NavCard> {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = Theme.of(context).dividerColor;
+    final textPrimary = Theme.of(context).colorScheme.onSurface;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
@@ -867,9 +870,9 @@ class _NavCardState extends State<_NavCard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _isHovering ? widget.color : _borderColor, width: _isHovering ? 2 : 1),
+            border: Border.all(color: _isHovering ? widget.color : borderColor, width: _isHovering ? 2 : 1),
             boxShadow: _isHovering ? [BoxShadow(color: widget.color.withOpacity(0.15), spreadRadius: 2, blurRadius: 10)] : [const BoxShadow(color: Color(0x05000000), offset: Offset(0, 4), blurRadius: 10)],
           ),
           padding: const EdgeInsets.all(16),
@@ -881,7 +884,7 @@ class _NavCardState extends State<_NavCard> {
               Text(
                 widget.title,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 13),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: textPrimary, fontSize: 13),
               ),
             ],
           ),

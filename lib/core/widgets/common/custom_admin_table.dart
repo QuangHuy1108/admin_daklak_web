@@ -25,15 +25,19 @@ class CustomAdminTable extends StatelessWidget {
   Widget build(BuildContext context) {
     if (itemCount == 0) return emptyWidget ?? const _DefaultEmptyState();
 
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final glassColor = isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.75);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.6);
+
     return Column(
       children: [
         // Header Row
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            border: Border.all(color: AppColors.border.withOpacity(0.5)),
+            color: glassColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: borderColor, width: 1.5),
           ),
           child: Row(
             children: List.generate(labels.length, (index) {
@@ -41,7 +45,7 @@ class CustomAdminTable extends StatelessWidget {
                 flex: flex[index],
                 child: Text(
                   labels[index].toUpperCase(),
-                  style: const TextStyle(
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.textMuted,
                     fontSize: 12,
@@ -56,12 +60,13 @@ class CustomAdminTable extends StatelessWidget {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: glassColor,
               border: Border(
-                left: BorderSide(color: AppColors.border.withOpacity(0.5)),
-                right: BorderSide(color: AppColors.border.withOpacity(0.5)),
-                bottom: BorderSide(color: AppColors.border.withOpacity(0.5)),
+                left: BorderSide(color: borderColor, width: 1.5),
+                right: BorderSide(color: borderColor, width: 1.5),
+                bottom: BorderSide(color: borderColor, width: 1.5),
               ),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
             ),
             child: ListView.separated(
               itemCount: itemCount,
@@ -114,7 +119,7 @@ class _AdminTableRowState extends State<_AdminTableRow> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          color: _isHovered ? AppColors.background.withOpacity(0.5) : Colors.transparent,
+          color: _isHovered ? Colors.white.withValues(alpha: 0.03) : Colors.transparent,
           child: Row(
             children: List.generate(widget.cells.length, (index) {
               return Expanded(
@@ -140,7 +145,7 @@ class _DefaultEmptyState extends StatelessWidget {
         children: [
           Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[300]),
           const SizedBox(height: 16),
-          const Text('Không có dữ liệu hiển thị', style: TextStyle(color: AppColors.textMuted)),
+          Text('Không có dữ liệu hiển thị', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted)),
         ],
       ),
     );

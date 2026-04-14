@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 
@@ -72,7 +71,7 @@ class _VoucherDialogState extends State<VoucherDialog> {
   void _showToast(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
+      content: Text(message, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
       backgroundColor: _textPrimary,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -137,7 +136,7 @@ class _VoucherDialogState extends State<VoucherDialog> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-           Text(widget.voucherId == null ? 'Create Voucher' : 'Edit Voucher', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: _textPrimary)),
+           Text(widget.voucherId == null ? 'Create Voucher' : 'Edit Voucher', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: _textPrimary)),
            Switch(
              value: _isActive,
              onChanged: (val) => setState(() => _isActive = val),
@@ -232,7 +231,7 @@ class _VoucherDialogState extends State<VoucherDialog> {
                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                     Text(_expiryDate == null ? 'Select Expiry Date' : '${_expiryDate!.day}/${_expiryDate!.month}/${_expiryDate!.year}', style: GoogleFonts.inter(color: _expiryDate == null ? _textSecondary : _textPrimary)),
+                                     Text(_expiryDate == null ? 'Select Expiry Date' : '${_expiryDate!.day}/${_expiryDate!.month}/${_expiryDate!.year}', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _expiryDate == null ? _textSecondary : _textPrimary)),
                                      const Icon(Icons.calendar_today, size: 18),
                                   ]
                                )
@@ -249,14 +248,14 @@ class _VoucherDialogState extends State<VoucherDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: Text('Cancel', style: GoogleFonts.inter(color: _textSecondary)),
+          child: Text('Cancel', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: _textSecondary)),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen),
           child: _isLoading 
             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : Text(widget.voucherId == null ? 'Create Voucher' : 'Save Changes', style: GoogleFonts.inter(color: Colors.white)),
+            : Text(widget.voucherId == null ? 'Create Voucher' : 'Save Changes', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
         ),
       ],
     );

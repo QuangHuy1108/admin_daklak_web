@@ -81,7 +81,7 @@ class StickySaveBar extends StatelessWidget {
                           color: AppColors.textInverse,
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'Lưu thay đổi',
                         style: AppTextStyles.buttonText,
                       ),

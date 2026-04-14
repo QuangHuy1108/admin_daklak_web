@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:admin_daklak_web/core/constants/app_colors.dart';
@@ -26,6 +25,8 @@ class _ReportScreenState extends State<ReportScreen> {
   late Stream<Map<String, dynamic>> _aiStream;
   late Future<List<Map<String, dynamic>>> _alertsFuture;
   late Future<List<Map<String, dynamic>>> _insightsFuture;
+  int _selectedTabIndex = 0;
+  bool _isSidebarExpanded = true;
 
   @override
   void initState() {
@@ -45,86 +46,122 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: _buildAppBar(),
-        body: TabBarView(
-          children: [
-            _BusinessOverviewTab(
-              future: _businessFuture,
-              alertsFuture: _alertsFuture,
-              insightsFuture: _insightsFuture,
-              onRefresh: _refreshData,
+    // isDark removed as it was unused locally
+    return Container(
+      color: Colors.transparent,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with Title and Stacked Actions
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 32, 32, 0), // Adjusted to align with Dashboard standards
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Báo cáo & Thống kê',
+                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 32, // HeadlineLarge standard
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Phân tích và theo dõi hiệu suất hoạt động toàn diện của hệ thống',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildFilterCluster(),
+                    const SizedBox(width: 12),
+                    _buildExportButton(),
+                  ],
+                ),
+              ],
             ),
-            _AgriExpertTab(
-              future: _agriFuture,
-            ),
-            _AISystemTab(
-              stream: _aiStream,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+          ),
+          
+          const SizedBox(height: 12), // Sitting tight with the subtitle
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      title: Text(
-        "Reports & Statistics",
-        style: GoogleFonts.inter(
-          color: AppColors.textHeading,
-          fontWeight: FontWeight.bold,
-          fontSize: 24,
-        ),
-      ),
-      actions: [
-        _buildExportButton(),
-        const SizedBox(width: 16),
-        _buildFilterCluster(),
-        const SizedBox(width: 24),
-      ],
-      bottom: TabBar(
-        isScrollable: true,
-        labelColor: AppColors.primary,
-        unselectedLabelColor: AppColors.textMuted,
-        indicatorColor: AppColors.primary,
-        indicatorPadding: const EdgeInsets.symmetric(horizontal: 16),
-        tabs: const [
-          Tab(text: "Business Overview"),
-          Tab(text: "Agriculture & Experts"),
-          Tab(text: "Users & AI System"),
+          // Main Sidebar + Content Row
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ReportSidebar(
+                  selectedIndex: _selectedTabIndex,
+                  isExpanded: _isSidebarExpanded,
+                  onSelected: (index) => setState(() => _selectedTabIndex = index),
+                  onToggle: () => setState(() => _isSidebarExpanded = !_isSidebarExpanded),
+                ),
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 24, right: 32),
+                    child: _buildTabContent(),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
+
+  Widget _buildTabContent() {
+    switch (_selectedTabIndex) {
+      case 0:
+        return _BusinessOverviewTab(
+          future: _businessFuture,
+          alertsFuture: _alertsFuture,
+          insightsFuture: _insightsFuture,
+          onRefresh: _refreshData,
+        );
+      case 1:
+        return _AgriExpertTab(
+          future: _agriFuture,
+        );
+      case 2:
+        return _AISystemTab(
+          stream: _aiStream,
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+
 
   Widget _buildExportButton() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: PopupMenuButton<String>(
-        onSelected: _handleExport,
-        enabled: !_isExporting,
-        itemBuilder: (context) => [
-          const PopupMenuItem(value: 'orders', child: Text("Xuất Đơn Hàng")),
-          const PopupMenuItem(value: 'expenses', child: Text("Xuất Chi Phí")),
-          const PopupMenuItem(value: 'all', child: Text("Xuất Tất Cả")),
-        ],
-        child: OutlinedButton.icon(
-          onPressed: null, // Disabled because PopupMenuButton handles tap
-          icon: _isExporting 
-            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-            : const Icon(Icons.download, size: 18),
-          label: Text(_isExporting ? "Đang xuất..." : "Xuất File"),
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: AppColors.border),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            disabledForegroundColor: AppColors.primary,
-          ),
+    return PopupMenuButton<String>(
+      onSelected: _handleExport,
+      enabled: !_isExporting,
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'orders', child: Text("Xuất Đơn Hàng")),
+        const PopupMenuItem(value: 'expenses', child: Text("Xuất Chi Phí")),
+        const PopupMenuItem(value: 'all', child: Text("Xuất Tất Cả")),
+      ],
+      child: OutlinedButton.icon(
+        onPressed: null, // Disabled because PopupMenuButton handles tap
+        icon: _isExporting 
+          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+          : const Icon(Icons.download, size: 18),
+        label: Text(_isExporting ? "Đang xuất..." : "Xuất File"),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: AppColors.border),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          disabledForegroundColor: AppColors.primary,
         ),
       ),
     );
@@ -147,6 +184,7 @@ class _ReportScreenState extends State<ReportScreen> {
         const SnackBar(content: Text("Xuất dữ liệu thành công!")),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Lỗi khi xuất dữ liệu: $e")),
       );
@@ -157,28 +195,32 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildFilterCluster() {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.background.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.filter_list, size: 20),
-            onPressed: () {},
-            tooltip: "Advanced Filters",
-          ),
-          const VerticalDivider(width: 1, indent: 8, endIndent: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              "Last 30 Days",
-              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHeading),
+      child: IntrinsicHeight(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.filter_list, size: 20),
+              onPressed: () {},
+              tooltip: "Bộ lọc nâng cao",
             ),
-          ),
-        ],
+            const VerticalDivider(width: 1, indent: 8, endIndent: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                "30 ngày qua",
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -210,11 +252,10 @@ class _BusinessOverviewTab extends StatelessWidget {
 
         final data = snapshot.data ?? {};
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.only(bottom: 32),
           child: Column(
             children: [
-              _buildAIInsightTop(),
-              const SizedBox(height: 24),
+              _buildAlertsSection(),
               _buildKPIGrid(data),
               const SizedBox(height: 24),
               LayoutBuilder(
@@ -233,14 +274,14 @@ class _BusinessOverviewTab extends StatelessWidget {
                                FlSpot(6, 2500000)
                             ],
                             maxY: 2500000,
-                            labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                            labels: ["Th 2", "Th 3", "Th 4", "Th 5", "Th 6", "Th 7", "CN"],
                           ),
                         ),
                         const SizedBox(width: 24),
                         Expanded(
                           flex: 1,
                           child: RankingList(
-                            title: "Top Products (Quantity)",
+                            title: "Top sản phẩm (Số lượng)",
                             items: data['topProducts'] ?? [],
                           ),
                         ),
@@ -257,11 +298,11 @@ class _BusinessOverviewTab extends StatelessWidget {
                            FlSpot(6, 2500000)
                         ],
                         maxY: 2500000,
-                        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                        labels: ["Th 2", "Th 3", "Th 4", "Th 5", "Th 6", "Th 7", "CN"],
                       ),
                       const SizedBox(height: 24),
                       RankingList(
-                        title: "Top Products (Quantity)",
+                        title: "Top sản phẩm (Số lượng)",
                         items: data['topProducts'] ?? [],
                       ),
                     ],
@@ -277,7 +318,7 @@ class _BusinessOverviewTab extends StatelessWidget {
 
   Widget _buildLoadingState() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.only(bottom: 32),
       child: Column(
         children: [
           Row(
@@ -294,71 +335,41 @@ class _BusinessOverviewTab extends StatelessWidget {
     );
   }
 
-  Widget _buildAIInsightTop() {
-    return Column(
-      children: [
-        FutureBuilder<List<Map<String, dynamic>>>(
-          future: insightsFuture,
-          builder: (context, snapshot) {
-            final insights = snapshot.data ?? [];
-            if (insights.isEmpty) return const SizedBox.shrink();
-            
-            final latest = insights.first;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue[100]!),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.auto_awesome, color: Colors.blue),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "AI Analysis: ${latest['content'] ?? 'No recent insights available.'}",
-                      style: GoogleFonts.inter(color: Colors.blue[900], fontSize: 13, fontWeight: FontWeight.w500),
+  // _buildAIInsightTop was removed, replaced with _buildAlertsSection
+  Widget _buildAlertsSection() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: alertsFuture,
+      builder: (context, snapshot) {
+        final alerts = snapshot.data ?? [];
+        if (alerts.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          children: alerts.map((alert) => Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.orange[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.orange[100]!),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.warning_amber, color: Colors.orange),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    alert['content'] ?? "Đã phát hiện bất thường.",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.orange[900],
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
-              ),
-            );
-          },
-        ),
-        FutureBuilder<List<Map<String, dynamic>>>(
-          future: alertsFuture,
-          builder: (context, snapshot) {
-            final alerts = snapshot.data ?? [];
-            if (alerts.isEmpty) return const SizedBox.shrink();
-
-            return Column(
-              children: alerts.map((alert) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.orange[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange[100]!),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.warning_amber, color: Colors.orange),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        alert['content'] ?? "Anomaly detected.",
-                        style: GoogleFonts.inter(color: Colors.orange[900], fontSize: 13, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ],
-                ),
-              )).toList(),
-            );
-          },
-        ),
-      ],
+              ],
+            ),
+          )).toList(),
+        );
+      },
     );
   }
 
@@ -375,9 +386,9 @@ class _BusinessOverviewTab extends StatelessWidget {
           childAspectRatio: 1.6,
           children: [
             ReportKPICard(
-              title: "Total Revenue",
+              title: "Tổng doanh thu",
               value: "${(data['totalRevenue'] ?? 0).toInt()} đ",
-              subtitle: "All-time accumulated value",
+              subtitle: "Giá trị tích lũy toàn thời gian",
               trend: "↑ 12.5%",
               isPositive: true,
               icon: Icons.payments_outlined,
@@ -385,9 +396,9 @@ class _BusinessOverviewTab extends StatelessWidget {
               onTap: () => context.push('/finance'),
             ),
             ReportKPICard(
-              title: "Today's Orders",
+              title: "Đơn hàng hôm nay",
               value: "${data['todayOrders'] ?? 0}",
-              subtitle: "Orders placed since midnight",
+              subtitle: "Số đơn hàng mới từ 0h sáng",
               trend: "↑ 4.2%",
               isPositive: true,
               icon: Icons.shopping_basket_outlined,
@@ -395,20 +406,20 @@ class _BusinessOverviewTab extends StatelessWidget {
               onTap: () => context.push('/orders'),
             ),
             ReportKPICard(
-              title: "Volume",
+              title: "Sản lượng",
               value: "${data['totalOrders'] ?? 0}",
-              subtitle: "Total lifetime orders count",
-              trend: "Stable",
+              subtitle: "Tổng số lượng đơn hàng tích lũy",
+              trend: "Ổn định",
               isPositive: true,
               icon: Icons.inventory_2_outlined,
               iconColor: Colors.orange,
               onTap: () => context.push('/products'),
             ),
             ReportKPICard(
-              title: "Today Revenue",
+              title: "Doanh thu hôm nay",
               value: "${(data['todayRevenue'] ?? 0).toInt()} đ",
-              subtitle: "Real-time earnings today",
-              trend: "Live",
+              subtitle: "Thu nhập thực tế trong ngày",
+              trend: "Trực tiếp",
               isPositive: true,
               icon: Icons.trending_up,
               iconColor: Colors.teal,
@@ -436,16 +447,16 @@ class _AgriExpertTab extends StatelessWidget {
         final data = snapshot.data!;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.only(bottom: 32),
           child: Column(
             children: [
               Row(
                 children: [
                   Expanded(
                     child: ReportKPICard(
-                      title: "Consultant Appointments",
+                      title: "Lịch hẹn tư vấn",
                       value: "${data['totalAppointments']}",
-                      subtitle: "Scheduled expert sessions",
+                      subtitle: "Buổi làm việc với chuyên gia",
                       trend: "↑ 8%",
                       isPositive: true,
                       icon: Icons.event,
@@ -456,10 +467,10 @@ class _AgriExpertTab extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ReportKPICard(
-                      title: "Active Experts",
+                      title: "Chuyên gia hoạt động",
                       value: "${data['activeExperts']}",
-                      subtitle: "Verified agriculture specialists",
-                      trend: "Stable",
+                      subtitle: "Chuyên gia nông nghiệp đã xác minh",
+                      trend: "Ổn định",
                       isPositive: true,
                       icon: Icons.verified,
                       iconColor: AppColors.primary,
@@ -501,7 +512,7 @@ class _AISystemTab extends StatelessWidget {
         };
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.only(bottom: 32),
           child: Column(
             children: [
               Row(
@@ -518,10 +529,10 @@ class _AISystemTab extends StatelessWidget {
                   Expanded(
                     flex: 1,
                     child: ReportKPICard(
-                      title: "Success Rate",
+                      title: "Tỷ lệ thành công",
                       value: "${(data['successRate'] ?? 0.0).toString()}%",
-                      subtitle: "AI questions correctly processed",
-                      trend: "Target > 90%",
+                      subtitle: "Câu hỏi AI được xử lý đúng",
+                      trend: "Mục tiêu > 90%",
                       isPositive: (data['successRate'] ?? 0.0) >= 90,
                       icon: Icons.check_circle_outline,
                       iconColor: Colors.teal,
@@ -537,7 +548,7 @@ class _AISystemTab extends StatelessWidget {
                   Expanded(
                     flex: 1,
                     child: RankingList(
-                      title: "Popular Topic Queries",
+                      title: "Chủ đề truy vấn phổ biến",
                       items: data['popularQuestions'] ?? [],
                     ),
                   ),
@@ -552,6 +563,280 @@ class _AISystemTab extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+// --- Sidebar Widgets ---
+
+class _ReportSidebar extends StatelessWidget {
+  final int selectedIndex;
+  final bool isExpanded;
+  final ValueChanged<int> onSelected;
+  final VoidCallback onToggle;
+
+  const _ReportSidebar({
+    required this.selectedIndex,
+    required this.isExpanded,
+    required this.onSelected,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final List<Map<String, dynamic>> items = [
+      {'icon': Icons.analytics_rounded, 'label': 'Tổng quan kinh doanh'},
+      {'icon': Icons.agriculture_rounded, 'label': 'Nông nghiệp & Chuyên gia'},
+      {'icon': Icons.psychology_rounded, 'label': 'Người dùng & Hệ thống AI'},
+    ];
+
+    const itemHeight = 48.0;
+
+    final sidebarWidth = isExpanded ? 260.0 : 88.0;
+
+    return Transform.translate(
+      offset: const Offset(-40, 0), // Increased overlap to fully cover main sidebar's rounded edge
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        width: sidebarWidth + 40, // Increased width to compensate for the overlap
+        margin: const EdgeInsets.fromLTRB(0, 0, 0, 24), // Edge-to-edge body proximity (0 spacing)
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.75),
+          borderRadius: const BorderRadius.only(
+            topRight: Radius.circular(32),
+            bottomRight: Radius.circular(32),
+          ), 
+          border: Border.all(
+            color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 24,
+              offset: const Offset(4, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 40), // Push content back to visible area
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: isExpanded ? 1.0 : 0.0,
+                  child: isExpanded ? SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: Text(
+                      'DANH MỤC',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ),
+                  ) : const SizedBox(height: 12),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Stack(
+                    children: [
+                      // Moving Pill Indicator
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 350),
+                        curve: Curves.easeInOutCubic,
+                        top: selectedIndex * (itemHeight + 8),
+                        left: 0,
+                        right: 0,
+                        height: itemHeight,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                        ),
+                      ),
+                      
+                      ListView.separated(
+                        padding: EdgeInsets.zero,
+                        itemCount: items.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          return _ReportSidebarTile(
+                            icon: items[index]['icon'],
+                            label: items[index]['label'],
+                            isSelected: selectedIndex == index,
+                            isExpanded: isExpanded,
+                            onTap: () => onSelected(index),
+                            height: itemHeight,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              _ReportCollapseToggle(
+                isExpanded: isExpanded,
+                onTap: onToggle,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportCollapseToggle extends StatelessWidget {
+  final bool isExpanded;
+  final VoidCallback onTap;
+
+  const _ReportCollapseToggle({
+    required this.isExpanded,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03);
+    final fgColor = Theme.of(context).textTheme.bodySmall?.color;
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(100),
+        child: Container(
+          height: 48,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(100), // Pill toggle 100%
+          ),
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Icon(
+                isExpanded ? Icons.keyboard_arrow_left_rounded : Icons.keyboard_arrow_right_rounded,
+                key: ValueKey(isExpanded),
+                size: 20,
+                color: fgColor,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+class _ReportSidebarTile extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final bool isExpanded;
+  final VoidCallback onTap;
+  final double height;
+
+  const _ReportSidebarTile({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.isExpanded,
+    required this.onTap,
+    required this.height,
+  });
+
+  @override
+  State<_ReportSidebarTile> createState() => _ReportSidebarTileState();
+}
+
+class _ReportSidebarTileState extends State<_ReportSidebarTile> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = widget.isSelected;
+    final activeColor = AppColors.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(100), // Pill shape 100%
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: widget.height,
+          padding: EdgeInsets.symmetric(horizontal: widget.isExpanded ? 16 : 0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(100),
+            color: _isHovered && !isSelected
+                ? (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03))
+                : Colors.transparent,
+          ),
+          child: Row(
+            mainAxisAlignment: widget.isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+            children: [
+              Icon(
+                widget.icon,
+                size: 20,
+                color: isSelected ? activeColor : Theme.of(context).textTheme.bodySmall?.color,
+              ),
+              if (widget.isExpanded) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            color: isSelected ? activeColor : Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        if (isSelected) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 5,
+                            height: 5,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

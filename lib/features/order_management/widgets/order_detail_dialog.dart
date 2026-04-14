@@ -1,11 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
-const Color _primaryGreen = Color(0xFF2E7D32);
-const Color _textPrimary = Color(0xFF1C2826);
-const Color _textSecondary = Color(0xFF6B7280);
-const Color _borderColor = Color(0xFFE5E7EB);
-const Color _bgGray = Color(0xFFF5F7FA);
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 
 class OrderDetailDialog extends StatelessWidget {
   final String orderId;
@@ -18,6 +12,12 @@ class OrderDetailDialog extends StatelessWidget {
     required this.orderData,
     required this.onStatusChange,
   }) : super(key: key);
+
+  Color _getTextPrimary(BuildContext context) => Theme.of(context).colorScheme.onSurface;
+  Color _getTextSecondary(BuildContext context) => Theme.of(context).textTheme.bodySmall?.color ?? const Color(0xFF6B7280);
+  Color _getBorderColor(BuildContext context) => Theme.of(context).dividerColor;
+  Color _getBgGray(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : const Color(0xFFF5F7FA);
+  final Color _primaryGreen = const Color(0xFF2E7D32);
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,7 @@ class OrderDetailDialog extends StatelessWidget {
     }
 
     return Dialog(
-       backgroundColor: Colors.white,
+       backgroundColor: Theme.of(context).dialogBackgroundColor,
        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
        child: SizedBox(
           width: 600,
@@ -45,22 +45,22 @@ class OrderDetailDialog extends StatelessWidget {
                 // Header
                 Container(
                    padding: const EdgeInsets.all(24),
-                   decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: _borderColor)),
+                   decoration: BoxDecoration(
+                      border: Border(bottom: BorderSide(color: _getBorderColor(context))),
                    ),
                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                               Text('Order Details', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: _textPrimary)),
-                               const SizedBox(height: 4),
-                               Text('#${orderId.toUpperCase()}', style: GoogleFonts.inter(color: _textSecondary, fontSize: 13)),
-                            ]
+                             crossAxisAlignment: CrossAxisAlignment.start,
+                             children: [
+                                Text('Order Details', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: _getTextPrimary(context))),
+                                const SizedBox(height: 4),
+                                Text('#${orderId.toUpperCase()}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _getTextSecondary(context))),
+                             ]
                          ),
                          IconButton(
-                            icon: const Icon(Icons.close, color: _textSecondary),
+                            icon: Icon(Icons.close, color: _getTextSecondary(context)),
                             onPressed: () => Navigator.of(context).pop(),
                          )
                       ]
@@ -72,44 +72,44 @@ class OrderDetailDialog extends StatelessWidget {
                       child: Column(
                          crossAxisAlignment: CrossAxisAlignment.start,
                          children: [
-                            // User Info Section
-                            Text('Customer Information', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textPrimary, fontSize: 16)),
+                             // User Info Section
+                            Text('Customer Information', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: _getTextPrimary(context))),
                             const SizedBox(height: 16),
                             Container(
                                padding: const EdgeInsets.all(16),
-                               decoration: BoxDecoration(color: _bgGray, borderRadius: BorderRadius.circular(12)),
+                               decoration: BoxDecoration(color: _getBgGray(context), borderRadius: BorderRadius.circular(12)),
                                child: Column(
                                   children: [
-                                     _buildInfoRow(Icons.person_outline, 'Name', customerName),
+                                     _buildInfoRow(Icons.person_outline, 'Name', customerName, context),
                                      const SizedBox(height: 12),
-                                     _buildInfoRow(Icons.phone_outlined, 'Phone', phone),
+                                     _buildInfoRow(Icons.phone_outlined, 'Phone', phone, context),
                                      const SizedBox(height: 12),
-                                     _buildInfoRow(Icons.location_on_outlined, 'Address', address),
+                                     _buildInfoRow(Icons.location_on_outlined, 'Address', address, context),
                                   ]
                                )
                             ),
-                            const SizedBox(height: 32),
+                             const SizedBox(height: 32),
                             // Products Table
-                            Text('Ordered Items', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textPrimary, fontSize: 16)),
+                            Text('Ordered Items', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: _getTextPrimary(context))),
                             const SizedBox(height: 16),
                             Container(
                                decoration: BoxDecoration(
-                                  border: Border.all(color: _borderColor),
+                                  border: Border.all(color: _getBorderColor(context)),
                                   borderRadius: BorderRadius.circular(12),
-                               ),
+                                ),
                                child: Column(
                                   children: [
                                      Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                        decoration: const BoxDecoration(color: _bgGray, borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-                                        child: Row(
-                                           children: [
-                                              Expanded(flex: 3, child: Text('Product Name', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textSecondary, fontSize: 13))),
-                                              Expanded(flex: 1, child: Text('Qty', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textSecondary, fontSize: 13))),
-                                              Expanded(flex: 2, child: Text('Unit Price', textAlign: TextAlign.right, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textSecondary, fontSize: 13))),
-                                              Expanded(flex: 2, child: Text('Total', textAlign: TextAlign.right, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textSecondary, fontSize: 13))),
-                                           ]
-                                        )
+                                        decoration: BoxDecoration(color: _getBgGray(context), borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+                                         child: Row(
+                                            children: [
+                                               Expanded(flex: 3, child: Text('Product Name', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
+                                               Expanded(flex: 1, child: Text('Qty', textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
+                                               Expanded(flex: 2, child: Text('Unit Price', textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
+                                               Expanded(flex: 2, child: Text('Total', textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: _getTextSecondary(context)))),
+                                            ]
+                                         )
                                      ),
                                      ...items.map((item) {
                                          final itemName = item['productName'] ?? 'Unknown';
@@ -117,15 +117,15 @@ class OrderDetailDialog extends StatelessWidget {
                                          final price = (item['price'] ?? 0) is num ? (item['price'] as num).toDouble() : double.tryParse(item['price'].toString()) ?? 0;
                                          return Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                            decoration: const BoxDecoration(border: Border(top: BorderSide(color: _borderColor))),
-                                            child: Row(
-                                               children: [
-                                                  Expanded(flex: 3, child: Text(itemName, style: GoogleFonts.inter(color: _textPrimary, fontWeight: FontWeight.w500))),
-                                                  Expanded(flex: 1, child: Text('x$qty', textAlign: TextAlign.center, style: GoogleFonts.inter(color: _textSecondary))),
-                                                  Expanded(flex: 2, child: Text('${price.toStringAsFixed(0)} đ', textAlign: TextAlign.right, style: GoogleFonts.inter(color: _textSecondary))),
-                                                  Expanded(flex: 2, child: Text('${(price * qty).toStringAsFixed(0)} đ', textAlign: TextAlign.right, style: GoogleFonts.inter(color: _textPrimary, fontWeight: FontWeight.w600))),
-                                               ]
-                                            )
+                                            decoration: BoxDecoration(border: Border(top: BorderSide(color: _getBorderColor(context)))),
+                                             child: Row(
+                                                children: [
+                                                   Expanded(flex: 3, child: Text(itemName, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _getTextPrimary(context), fontWeight: FontWeight.w500))),
+                                                   Expanded(flex: 1, child: Text('x$qty', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _getTextSecondary(context)))),
+                                                   Expanded(flex: 2, child: Text('${price.toStringAsFixed(0)} đ', textAlign: TextAlign.right, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _getTextSecondary(context)))),
+                                                   Expanded(flex: 2, child: Text('${(price * qty).toStringAsFixed(0)} đ', textAlign: TextAlign.right, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _getTextPrimary(context), fontWeight: FontWeight.w600))),
+                                                ]
+                                             )
                                          );
                                      }).toList(),
                                   ]
@@ -135,11 +135,11 @@ class OrderDetailDialog extends StatelessWidget {
                             // Total Section
                             Row(
                                mainAxisAlignment: MainAxisAlignment.end,
-                               children: [
-                                  Text('Total Amount:', style: GoogleFonts.inter(color: _textSecondary, fontSize: 16)),
-                                  const SizedBox(width: 16),
-                                  Text('${amount.toStringAsFixed(0)} đ', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: _primaryGreen, fontSize: 24)),
-                               ]
+                                children: [
+                                   Text('Total Amount:', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: _getTextSecondary(context))),
+                                   const SizedBox(width: 16),
+                                   Text('${amount.toStringAsFixed(0)} đ', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: _primaryGreen)),
+                                ]
                             )
                          ]
                       )
@@ -148,28 +148,32 @@ class OrderDetailDialog extends StatelessWidget {
                 // Footer (Status Actions)
                 Container(
                    padding: const EdgeInsets.all(24),
-                   decoration: const BoxDecoration(
-                      color: _bgGray,
-                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+                   decoration: BoxDecoration(
+                      color: _getBgGray(context),
+                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
                    ),
-                   child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                         Text('Change Status:', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textPrimary)),
-                         Row(
-                            children: [
-                               _buildStatusButton('Pending', Colors.orange, status, context),
-                               const SizedBox(width: 8),
-                               _buildStatusButton('Processing', Colors.blue, status, context),
-                               const SizedBox(width: 8),
-                               _buildStatusButton('In Transit', Colors.purple, status, context),
-                               const SizedBox(width: 8),
-                               _buildStatusButton('Completed', Colors.green, status, context),
-                               const SizedBox(width: 8),
-                               _buildStatusButton('Cancelled', Colors.red, status, context),
-                            ]
-                         )
-                      ]
+                   child: SingleChildScrollView(
+                     scrollDirection: Axis.horizontal,
+                     child: Row(
+                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                           Text('Change Status:', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: _getTextPrimary(context))),
+                           const SizedBox(width: 16),
+                           Row(
+                              children: [
+                                 _buildStatusButton('Pending', Colors.orange, status, context),
+                                 const SizedBox(width: 8),
+                                 _buildStatusButton('Processing', Colors.blue, status, context),
+                                 const SizedBox(width: 8),
+                                 _buildStatusButton('In Transit', Colors.purple, status, context),
+                                 const SizedBox(width: 8),
+                                 _buildStatusButton('Completed', Colors.green, status, context),
+                                 const SizedBox(width: 8),
+                                 _buildStatusButton('Cancelled', Colors.red, status, context),
+                              ]
+                           )
+                        ]
+                     ),
                    )
                 )
              ]
@@ -178,17 +182,17 @@ class OrderDetailDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(IconData icon, String label, String value, BuildContext context) {
       return Row(
          crossAxisAlignment: CrossAxisAlignment.start,
          children: [
-            Icon(icon, size: 20, color: _textSecondary),
+            Icon(icon, size: 20, color: _getTextSecondary(context)),
             const SizedBox(width: 12),
-            SizedBox(
-               width: 80,
-               child: Text(label, style: GoogleFonts.inter(color: _textSecondary)),
-            ),
-            Expanded(child: Text(value, style: GoogleFonts.inter(color: _textPrimary, fontWeight: FontWeight.w500))),
+             SizedBox(
+                width: 80,
+                child: Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _getTextSecondary(context))),
+             ),
+             Expanded(child: Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: _getTextPrimary(context), fontWeight: FontWeight.w500))),
          ]
       );
   }
@@ -206,18 +210,17 @@ class OrderDetailDialog extends StatelessWidget {
          child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-               color: isCurrent ? color : Colors.white,
-               border: Border.all(color: isCurrent ? color : _borderColor),
+               color: isCurrent ? color : (Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfacePrimary.withValues(alpha: 0.1) : Colors.white),
+               border: Border.all(color: isCurrent ? color : _getBorderColor(context)),
                borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-               targetStatus,
-               style: GoogleFonts.inter(
-                  color: isCurrent ? Colors.white : _textSecondary,
-                  fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 12,
-               )
-            )
+             child: Text(
+                targetStatus,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                   color: isCurrent ? Colors.white : _getTextSecondary(context),
+                   fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+                )
+             )
          )
       );
   }

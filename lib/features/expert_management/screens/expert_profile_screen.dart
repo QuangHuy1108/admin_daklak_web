@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:admin_daklak_web/core/constants/app_colors.dart';
 
 class ExpertProfileSetup extends StatefulWidget {
   const ExpertProfileSetup({super.key});
@@ -150,9 +151,15 @@ class _ExpertProfileSetupState extends State<ExpertProfileSetup> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: const Text("Cài Đặt Hồ Sơ"),
-          backgroundColor: Colors.blue[800],
-          foregroundColor: Colors.white
+        title: Text(
+          "Cài Đặt Hồ Sơ",
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+        ),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -160,9 +167,9 @@ class _ExpertProfileSetupState extends State<ExpertProfileSetup> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- Phần 1: Thông tin Liên hệ (MỚI) ---
-            const Text("Thông tin liên hệ", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+            Text("Thông tin liên hệ", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.blue)),
             const SizedBox(height: 5),
-            const Text("Thông tin này sẽ hiển thị cho nông dân sau khi bạn ĐỒNG Ý lịch hẹn.", style: TextStyle(fontSize: 12, color: Colors.grey)),
+            Text("Thông tin này sẽ hiển thị cho nông dân sau khi bạn ĐỒNG Ý lịch hẹn.", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
             const SizedBox(height: 15),
 
             TextField(
@@ -189,7 +196,7 @@ class _ExpertProfileSetupState extends State<ExpertProfileSetup> {
             const SizedBox(height: 30),
 
             // --- Phần 2: Thông tin chuyên môn ---
-            const Text("Thông tin chuyên môn", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+            Text("Thông tin chuyên môn", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.blue)),
             const SizedBox(height: 10),
             TextField(
               controller: _specialtyController,
@@ -220,17 +227,17 @@ class _ExpertProfileSetupState extends State<ExpertProfileSetup> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Lịch Rảnh Sắp Tới", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+                Text("Lịch Rảnh Sắp Tới", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.blue)),
                 ElevatedButton.icon(
                   onPressed: _addTimeSlot,
                   icon: const Icon(Icons.add),
-                  label: const Text("Thêm Giờ"),
+                  label: Text("Thêm Giờ", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                 )
               ],
             ),
             const SizedBox(height: 5),
-            const Text("Thêm các khung giờ bạn có thể nhận tư vấn để nông dân đặt lịch.", style: TextStyle(color: Colors.grey, fontSize: 13)),
+            Text("Thêm các khung giờ bạn có thể nhận tư vấn để nông dân đặt lịch.", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
             const SizedBox(height: 15),
 
             _availableSlots.isEmpty
@@ -238,7 +245,7 @@ class _ExpertProfileSetupState extends State<ExpertProfileSetup> {
               padding: const EdgeInsets.all(20),
               width: double.infinity,
               decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(10)),
-              child: const Center(child: Text("Chưa có lịch rảnh nào được thêm.", style: TextStyle(color: Colors.grey))),
+              child: Center(child: Text("Chưa có lịch rảnh nào được thêm.", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey))),
             )
                 : Wrap(
               spacing: 10.0,
@@ -248,7 +255,7 @@ class _ExpertProfileSetupState extends State<ExpertProfileSetup> {
                   avatar: const Icon(Icons.access_time, size: 16, color: Colors.white),
                   label: Text(
                     DateFormat('dd/MM - HH:mm').format(slot),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   backgroundColor: Colors.blue[400],
                   deleteIcon: const Icon(Icons.cancel, size: 18, color: Colors.white),
@@ -269,7 +276,7 @@ class _ExpertProfileSetupState extends State<ExpertProfileSetup> {
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[800], foregroundColor: Colors.white),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("LƯU CÀI ĐẶT", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : Text("LƯU CÀI ĐẶT", style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
               ),
             ),
             const SizedBox(height: 30),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/material.dart';
 
 class BulkActionBar extends StatelessWidget {
   final int selectedCount;
@@ -37,10 +37,9 @@ class BulkActionBar extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             "Đã chọn: $selectedCount mục",
-            style: GoogleFonts.inter(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: const Color(0xFF4338CA),
               fontWeight: FontWeight.bold,
-              fontSize: 16,
             ),
           ),
           const Spacer(),
