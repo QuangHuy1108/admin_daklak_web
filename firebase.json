@@ -45,6 +45,7 @@
     }
   },
   "hosting": {
+    "target": "main_site",
     "public": "build/web",
     "ignore": [
       "firebase.json",

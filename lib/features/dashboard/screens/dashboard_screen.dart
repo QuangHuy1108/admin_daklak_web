@@ -672,12 +672,36 @@ class _WeatherCardState extends State<_WeatherCard> {
 
   Future<Map<String, dynamic>> fetchWeather() async {
     final String cityName = dotenv.env['DEFAULT_CITY'] ?? "Buon Ma Thuot";
-    final url = Uri.parse('https://api.openweathermap.org/data/2.5/weather?q=$cityName,VN&appid=$apiKey&units=metric&lang=vi');
+    
+    // Kiểm tra API Key
+    if (apiKey.isEmpty) {
+      debugPrint('Weather Error: API Key is missing in .env');
+      throw Exception('Thiếu API Key');
+    }
+
+    // Sử dụng Uri.https để tự động mã hóa (encode) các tham số, tránh lỗi khoảng trắng
+    final url = Uri.https('api.openweathermap.org', '/data/2.5/weather', {
+      'q': '$cityName,VN',
+      'appid': apiKey,
+      'units': 'metric',
+      'lang': 'vi',
+    });
+
     try {
       final response = await http.get(url);
-      if (response.statusCode == 200) return json.decode(response.body);
-      throw Exception('Error ${response.statusCode}');
-    } catch (e) { throw Exception('Failed to load weather'); }
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        final message = errorData['message'] ?? 'Unknown error';
+        debugPrint('Weather API Error ${response.statusCode}: $message');
+        throw Exception('Mã lỗi ${response.statusCode}: $message');
+      }
+    } catch (e) {
+      debugPrint('Weather Connection Error: $e');
+      if (e is Exception) rethrow;
+      throw Exception('Không thể kết nối máy chủ thời tiết');
+    }
   }
 
   @override
