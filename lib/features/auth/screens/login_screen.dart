@@ -225,16 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
               child: Row(
                 children: [
-                  const Icon(Icons.eco, color: AppColors.primary, size: 28),
                   const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    'Editorial Agronomy',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                   const Spacer(),
                   Tooltip(
                     message: 'Coming Soon: Localization',
@@ -295,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Image.asset(
-                          'assets/images/ea_agri_logo.png',
+                          'assets/images/logo2.png',
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -303,7 +294,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'Smart Farming',
+                    'Nền Tảng Nông Nghiệp Số',
                     style: Theme.of(context).textTheme.displaySmall?.copyWith(
                       // fontSize: 32, // displaySmall mặc định đã là 36, phù hợp cho tiêu đề lớn
                       fontWeight: FontWeight.bold,
@@ -313,7 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'Hệ thống quản lý admin_daklakweb',
+                    'Hệ thống quản lý Ea Agri',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white.withValues(alpha: 0.8),
                     ),
@@ -461,7 +452,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Icon(Icons.verified_user, color: AppColors.primary, size: 16),
                   const SizedBox(width: AppSpacing.sm),
                   Text(
-                    'v2.4.0 Editorial Agronomy © 2024',
+                    '© 2026 EaAgri',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -469,11 +460,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const Spacer(),
                   // Footer Links
-                  _buildFooterLink('PRIVACY POLICY'),
+                  _buildFooterLink('CHÍNH SÁCH BẢO MẬT'),
                   const SizedBox(width: AppSpacing.lg),
-                  _buildFooterLink('TERMS OF SERVICE'),
+                  _buildFooterLink('ĐIỀU KHOẢN DỊCH VỤ'),
                   const SizedBox(width: AppSpacing.lg),
-                  _buildFooterLink('SUPPORT'),
+                  _buildFooterLink('HỖ TRỢ'),
+                  const SizedBox(width: AppSpacing.lg),
+                  _buildFooterLink('LIÊN HỆ'),
                 ],
               ),
             ),
@@ -496,4 +489,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-}
+}

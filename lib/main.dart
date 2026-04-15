@@ -66,7 +66,7 @@ class _AdminAppState extends State<AdminApp> {
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
     return MaterialApp.router(
-      title: 'Daklak Agent Admin',
+      title: 'Ea Agri Admin',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

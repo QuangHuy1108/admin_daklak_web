@@ -188,42 +188,102 @@ class _ExpertRequestDetailDialogState extends State<ExpertRequestDetailDialog> {
   }
 
   Widget _buildEvidenceGrid() {
-    if (widget.request.evidenceDocuments.isEmpty) {
-      return const Text('Không có tài liệu đính kèm', style: TextStyle(fontStyle: FontStyle.italic));
+    // 1. Gom tất cả tài liệu vào 1 list (bao gồm cả portfolioUrl từ Mobile gửi lên)
+    List<String> filesToShow = [];
+
+    if (widget.request.portfolioUrl.isNotEmpty) {
+      filesToShow.add(widget.request.portfolioUrl);
     }
 
+    if (widget.request.evidenceDocuments.isNotEmpty) {
+      filesToShow.addAll(widget.request.evidenceDocuments);
+    }
+
+    // 2. Kiểm tra nếu không có file nào
+    if (filesToShow.isEmpty) {
+      return const Text('Không có tài liệu đính kèm',
+          style: TextStyle(fontStyle: FontStyle.italic));
+    }
+
+    // 3. Hiển thị danh sách file
     return Wrap(
       spacing: 12,
       runSpacing: 12,
-      children: widget.request.evidenceDocuments.map((url) => _buildEvidenceCard(url)).toList(),
+      children: filesToShow.map((url) => _buildEvidenceCard(url)).toList(),
     );
   }
 
-  Widget _buildEvidenceCard(String url) {
-    final bool isImage = url.toLowerCase().contains(RegExp(r'\.(jpg|jpeg|png|webp|gif|svg)'));
+  // Hàm hỗ trợ nhận diện loại file từ URL Firebase
+  String _getFileType(String url) {
+    final lowerUrl = url.toLowerCase();
+    final cleanUrl = lowerUrl.split('?').first; // Bỏ phần token của Firebase
 
-    return InkWell(
-      onTap: () => _openUrl(url),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 140,
-        height: 100,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.grey[100],
-          border: Border.all(color: Theme.of(context).dividerColor),
+    if (cleanUrl.contains('.pdf') || lowerUrl.contains('pdf')) return 'pdf';
+    if (cleanUrl.contains('.doc') || cleanUrl.contains('.docx')) return 'word';
+    if (cleanUrl.contains('.jpg') || cleanUrl.contains('.jpeg') || cleanUrl.contains('.png')) return 'image';
+
+    return 'unknown';
+  }
+
+  Widget _buildEvidenceCard(String url) {
+    final String fileType = _getFileType(url);
+    final bool isImage = fileType == 'image';
+
+    return Tooltip(
+      message: 'Nhấn để mở/tải tài liệu',
+      child: InkWell(
+        onTap: () => _openUrl(url), // Mở link sang tab mới
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: isImage ? 140 : 160,
+          height: 100,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkSurfaceVariant
+                : Colors.grey[100],
+            border: Border.all(color: Theme.of(context).dividerColor),
+          ),
+          child: isImage
+              ? ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.grey),
+            ),
+          )
+              : _buildDocumentIcon(fileType),
         ),
-        child: isImage
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.grey),
-                ),
-              )
-            : const Icon(Icons.description, size: 32, color: Colors.blueGrey),
       ),
+    );
+  }
+
+  // Giao diện Icon cho file PDF / Word
+  Widget _buildDocumentIcon(String fileType) {
+    IconData icon = Icons.insert_drive_file;
+    Color color = Colors.blueGrey;
+    String label = 'Tài liệu';
+
+    if (fileType == 'pdf') {
+      icon = Icons.picture_as_pdf;
+      color = Colors.red[400]!;
+      label = 'File PDF';
+    } else if (fileType == 'word') {
+      icon = Icons.description;
+      color = Colors.blue[600]!;
+      label = 'File Word';
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: 36, color: color),
+        const SizedBox(height: 8),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        const SizedBox(height: 2),
+        const Text('Nhấn để xem', style: TextStyle(fontSize: 11, color: Colors.grey)),
+      ],
     );
   }
 

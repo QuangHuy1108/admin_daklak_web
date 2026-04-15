@@ -25,7 +25,11 @@ const _menuGroups = [
     _MenuItem(Icons.bar_chart_outlined, 'Báo cáo & Thống kê', '/reports'),
   ]),
   _MenuGroup('Chuyên gia', [
-    _MenuItem(Icons.verified_user_outlined, 'Duyệt chuyên gia', '/expert-verifications'),
+    _MenuItem(
+      Icons.verified_user_outlined,
+      'Duyệt chuyên gia',
+      '/expert-verifications',
+    ),
     _MenuItem(Icons.calendar_today_outlined, 'Lịch hẹn', '/appointments'),
   ]),
   _MenuGroup('Vận hành', [
@@ -52,7 +56,9 @@ class AdminSidebar extends StatelessWidget {
     bool showIconsOnly = screenWidth > 768 && screenWidth <= 1024;
 
     bool providerExpanded = context.watch<MenuProvider>().isExpanded;
-    bool isExpanded = isDrawer ? true : (showIconsOnly ? false : providerExpanded);
+    bool isExpanded = isDrawer
+        ? true
+        : (showIconsOnly ? false : providerExpanded);
 
     final currentRoute = GoRouterState.of(context).matchedLocation;
     final themeProvider = context.watch<ThemeProvider>();
@@ -64,7 +70,7 @@ class AdminSidebar extends StatelessWidget {
       borderRadius: BorderRadius.circular(32), // Liquid glass rounded
       child: Column(
         children: [
-            // ── Logo ─────────────────────────────────────────────
+          // ── Logo ─────────────────────────────────────────────
           InkWell(
             onTap: () {
               if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
@@ -75,7 +81,9 @@ class AdminSidebar extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               alignment: Alignment.center,
               child: Row(
-                mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+                mainAxisAlignment: isExpanded
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
                 children: [
                   Container(
                     width: 44,
@@ -95,7 +103,7 @@ class AdminSidebar extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(4.0),
                         child: Image.asset(
-                          'assets/images/ea_agri_logo.png',
+                          'assets/images/logo2.png',
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -116,18 +124,22 @@ class AdminSidebar extends StatelessWidget {
                               children: [
                                 Text(
                                   'EaAgri',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 18,
-                                    color: isDark ? Colors.white : const Color(0xFF1E1E1E),
-                                  ),
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 18,
+                                        color: isDark
+                                            ? Colors.white
+                                            : const Color(0xFF1E1E1E),
+                                      ),
                                 ),
                                 const Text(
                                   'SMART FARMING',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w800,
                                     color: Color(0xFF13B26F),
-                                    fontSize: 9, // Slightly smaller to match long English word
+                                    fontSize:
+                                        9, // Slightly smaller to match long English word
                                     letterSpacing: 1.2,
                                   ),
                                 ),
@@ -141,7 +153,7 @@ class AdminSidebar extends StatelessWidget {
               ),
             ),
           ),
-          
+
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -177,11 +189,17 @@ class _SidebarGroupWidget extends StatelessWidget {
   final _MenuGroup group;
   final bool isExpanded;
   final String currentRoute;
-  const _SidebarGroupWidget({required this.group, required this.isExpanded, required this.currentRoute});
+  const _SidebarGroupWidget({
+    required this.group,
+    required this.isExpanded,
+    required this.currentRoute,
+  });
 
   @override
   Widget build(BuildContext context) {
-    int activeIndex = group.items.indexWhere((item) => currentRoute.startsWith(item.route));
+    int activeIndex = group.items.indexWhere(
+      (item) => currentRoute.startsWith(item.route),
+    );
     final isDark = context.watch<ThemeProvider>().isDarkMode;
     final groupBgColor = Colors.transparent;
 
@@ -190,11 +208,18 @@ class _SidebarGroupWidget extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      padding: EdgeInsets.symmetric(vertical: isExpanded ? 12 : 8, horizontal: 8),
+      padding: EdgeInsets.symmetric(
+        vertical: isExpanded ? 12 : 8,
+        horizontal: 8,
+      ),
       decoration: BoxDecoration(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.05),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,7 +237,7 @@ class _SidebarGroupWidget extends StatelessWidget {
               ),
             ),
           ],
-          
+
           Stack(
             children: [
               if (activeIndex >= 0)
@@ -225,12 +250,14 @@ class _SidebarGroupWidget extends StatelessWidget {
                   height: itemHeight,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark ? Theme.of(context).primaryColor.withOpacity(0.15) : Theme.of(context).primaryColor.withOpacity(0.08),
+                      color: isDark
+                          ? Theme.of(context).primaryColor.withOpacity(0.15)
+                          : Theme.of(context).primaryColor.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(100),
                     ),
                   ),
                 ),
-              
+
               Column(
                 children: List.generate(group.items.length, (index) {
                   return SizedBox(
@@ -255,7 +282,11 @@ class _SidebarTile extends StatefulWidget {
   final _MenuItem item;
   final bool isExpanded;
   final bool isActive;
-  const _SidebarTile({required this.item, required this.isExpanded, required this.isActive});
+  const _SidebarTile({
+    required this.item,
+    required this.isExpanded,
+    required this.isActive,
+  });
 
   @override
   State<_SidebarTile> createState() => _SidebarTileState();
@@ -268,11 +299,13 @@ class _SidebarTileState extends State<_SidebarTile> {
   Widget build(BuildContext context) {
     final active = widget.isActive;
     final isDark = context.watch<ThemeProvider>().isDarkMode;
-    
-    final inactiveColor = Theme.of(context).textTheme.bodySmall?.color ?? (isDark ? Colors.grey.shade400 : Colors.grey.shade600);
+
+    final inactiveColor =
+        Theme.of(context).textTheme.bodySmall?.color ??
+        (isDark ? Colors.grey.shade400 : Colors.grey.shade600);
     final activeColor = Theme.of(context).primaryColor;
     final fgColor = active ? activeColor : inactiveColor;
-    
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -287,12 +320,16 @@ class _SidebarTileState extends State<_SidebarTile> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: _hovered && !active
-                ? (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04))
+                ? (isDark
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.black.withValues(alpha: 0.04))
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(100),
           ),
           child: Row(
-            mainAxisAlignment: widget.isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+            mainAxisAlignment: widget.isExpanded
+                ? MainAxisAlignment.start
+                : MainAxisAlignment.center,
             children: [
               if (widget.isExpanded) const SizedBox(width: 16),
               Icon(widget.item.icon, size: 22, color: fgColor),
@@ -307,10 +344,13 @@ class _SidebarTileState extends State<_SidebarTile> {
                         const SizedBox(width: 14),
                         Text(
                           widget.item.label,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: fgColor,
-                            fontWeight: active ? FontWeight.bold : FontWeight.w500,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: fgColor,
+                                fontWeight: active
+                                    ? FontWeight.bold
+                                    : FontWeight.w500,
+                              ),
                         ),
                       ],
                     ),
@@ -333,7 +373,9 @@ class _ThemeToggleBtn extends StatelessWidget {
     final themeProvider = context.watch<ThemeProvider>();
     final isDark = themeProvider.isDarkMode;
 
-    final bgColor = isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03);
+    final bgColor = isDark
+        ? Colors.white.withOpacity(0.05)
+        : Colors.black.withOpacity(0.03);
     final fgColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
 
     return InkWell(
@@ -348,7 +390,9 @@ class _ThemeToggleBtn extends StatelessWidget {
           borderRadius: BorderRadius.circular(100),
         ),
         child: Row(
-          mainAxisAlignment: isExpanded ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
+          mainAxisAlignment: isExpanded
+              ? MainAxisAlignment.spaceBetween
+              : MainAxisAlignment.center,
           children: [
             if (isExpanded)
               Expanded(
@@ -356,15 +400,18 @@ class _ThemeToggleBtn extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   physics: const NeverScrollableScrollPhysics(),
                   child: Text(
-                    isDark ? 'Chế độ tối' : 'Chế độ sáng', 
-                    style: TextStyle(fontWeight: FontWeight.w600, color: fgColor)
+                    isDark ? 'Chế độ tối' : 'Chế độ sáng',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: fgColor,
+                    ),
                   ),
                 ),
               ),
             Icon(
-              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, 
-              size: 20, 
-              color: fgColor
+              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              size: 20,
+              color: fgColor,
             ),
           ],
         ),
@@ -381,7 +428,9 @@ class _CollapseToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeProvider>().isDarkMode;
 
-    final bgColor = isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03);
+    final bgColor = isDark
+        ? Colors.white.withOpacity(0.05)
+        : Colors.black.withOpacity(0.03);
     final fgColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
 
     return InkWell(
@@ -396,19 +445,23 @@ class _CollapseToggle extends StatelessWidget {
           borderRadius: BorderRadius.circular(100),
         ),
         child: Row(
-          mainAxisAlignment: isExpanded ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
+          mainAxisAlignment: isExpanded
+              ? MainAxisAlignment.spaceBetween
+              : MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             if (isExpanded)
               Expanded(
                 child: Text(
-                  'Thu gọn', 
+                  'Thu gọn',
                   style: TextStyle(fontWeight: FontWeight.w600, color: fgColor),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             Icon(
-              isExpanded ? Icons.keyboard_arrow_left_rounded : Icons.keyboard_arrow_right_rounded,
+              isExpanded
+                  ? Icons.keyboard_arrow_left_rounded
+                  : Icons.keyboard_arrow_right_rounded,
               size: 20,
               color: fgColor,
             ),
@@ -417,4 +470,4 @@ class _CollapseToggle extends StatelessWidget {
       ),
     );
   }
-}
+}
