@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'glass_container.dart';
 import '../../constants/app_colors.dart';
 
 class CustomAdminToolbar extends StatelessWidget {
@@ -22,21 +23,9 @@ class CustomAdminToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
+    return GlassContainer(
       height: height,
       padding: padding,
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xCC1E2538) : Colors.white.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 24,
-            offset: const Offset(4, 4),
-          ),
-        ],
-      ),
       child: children != null 
         ? Row(children: children!)
         : Row(

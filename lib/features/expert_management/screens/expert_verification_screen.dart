@@ -21,11 +21,14 @@ class ExpertVerificationScreen extends StatefulWidget {
 
 class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
   final ExpertVerificationService _service = ExpertVerificationService();
-  
+
   // State variables for filtering and pagination
   final ValueNotifier<String> _searchQuery = ValueNotifier<String>('');
-  final ValueNotifier<String> _selectedStatus = ValueNotifier<String>('Lọc theo trạng thái');
-  final ValueNotifier<DateTimeRange?> _selectedDateRange = ValueNotifier<DateTimeRange?>(null);
+  final ValueNotifier<String> _selectedStatus = ValueNotifier<String>(
+    'Lọc theo trạng thái',
+  );
+  final ValueNotifier<DateTimeRange?> _selectedDateRange =
+      ValueNotifier<DateTimeRange?>(null);
   final ValueNotifier<int> _currentPage = ValueNotifier<int>(1);
   final int _itemsPerPage = 10;
 
@@ -52,42 +55,56 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
   }
 
   void _exportToCsv(List<ExpertVerificationRequestModel> data) {
-    String csvString = '\uFEFF"Họ tên","Số điện thoại","Chuyên môn","Trạng thái","Ngày gửi"\n';
-    
+    String csvString =
+        '\uFEFF"Họ tên","Số điện thoại","Chuyên môn","Trạng thái","Ngày gửi"\n';
+
     for (var item in data) {
       final String statusText = _getStatusText(item.status);
       final String dateText = DateFormat('dd/MM/yyyy').format(item.createdAt);
       final String phoneFormatted = '="""${item.phone}"""';
-      
-      csvString += '"${item.fullName}",$phoneFormatted,"${item.expertise}","$statusText","$dateText"\n';
+
+      csvString +=
+          '"${item.fullName}",$phoneFormatted,"${item.expertise}","$statusText","$dateText"\n';
     }
 
     final bytes = utf8.encode(csvString);
     final blob = html.Blob([bytes], 'text/csv;charset=utf-8;');
     final url = html.Url.createObjectUrlFromBlob(blob);
     html.AnchorElement(href: url)
-      ..setAttribute("download", "danh_sach_chuyen_gia_${DateFormat('yyyyMMdd').format(DateTime.now())}.csv")
+      ..setAttribute(
+        "download",
+        "danh_sach_chuyen_gia_${DateFormat('yyyyMMdd').format(DateTime.now())}.csv",
+      )
       ..click();
     html.Url.revokeObjectUrl(url);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đang tải tệp CSV...'), backgroundColor: AppColors.primary),
+      const SnackBar(
+        content: Text('Đang tải tệp CSV...'),
+        backgroundColor: AppColors.primary,
+      ),
     );
   }
 
   String _getStatusText(String status) {
     switch (status.toLowerCase()) {
-      case 'approved': return 'Đã duyệt';
-      case 'rejected': return 'Đã từ chối';
-      default: return 'Chờ duyệt';
+      case 'approved':
+        return 'Đã duyệt';
+      case 'rejected':
+        return 'Đã từ chối';
+      default:
+        return 'Chờ duyệt';
     }
   }
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'approved': return Colors.green;
-      case 'rejected': return Colors.red;
-      default: return Colors.orange;
+      case 'approved':
+        return Colors.green;
+      case 'rejected':
+        return Colors.red;
+      default:
+        return Colors.orange;
     }
   }
 
@@ -115,19 +132,42 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                     valueListenable: _selectedDateRange,
                     builder: (context, dateRange, _) {
                       final filteredData = allData.where((item) {
-                        final matchesSearch = item.fullName.toLowerCase().contains(query.toLowerCase()) || 
-                                             item.expertise.toLowerCase().contains(query.toLowerCase());
-                        final matchesStatus = statusFilter == 'Lọc theo trạng thái' || _getStatusText(item.status) == statusFilter;
-                        
+                        final matchesSearch =
+                            item.fullName.toLowerCase().contains(
+                              query.toLowerCase(),
+                            ) ||
+                            item.expertise.toLowerCase().contains(
+                              query.toLowerCase(),
+                            );
+                        final matchesStatus =
+                            statusFilter == 'Lọc theo trạng thái' ||
+                            _getStatusText(item.status) == statusFilter;
+
                         bool matchesDate = true;
                         if (dateRange != null) {
                           // Lọc bao gồm cả ngày kết thúc (đến 23:59:59)
-                          final startDate = DateTime(dateRange.start.year, dateRange.start.month, dateRange.start.day);
-                          final endDate = DateTime(dateRange.end.year, dateRange.end.month, dateRange.end.day, 23, 59, 59);
-                          matchesDate = item.createdAt.isAfter(startDate.subtract(const Duration(seconds: 1))) && 
-                                        item.createdAt.isBefore(endDate.add(const Duration(seconds: 1)));
+                          final startDate = DateTime(
+                            dateRange.start.year,
+                            dateRange.start.month,
+                            dateRange.start.day,
+                          );
+                          final endDate = DateTime(
+                            dateRange.end.year,
+                            dateRange.end.month,
+                            dateRange.end.day,
+                            23,
+                            59,
+                            59,
+                          );
+                          matchesDate =
+                              item.createdAt.isAfter(
+                                startDate.subtract(const Duration(seconds: 1)),
+                              ) &&
+                              item.createdAt.isBefore(
+                                endDate.add(const Duration(seconds: 1)),
+                              );
                         }
-                        
+
                         return matchesSearch && matchesStatus && matchesDate;
                       }).toList();
 
@@ -176,7 +216,9 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
             const SizedBox(height: 8),
             Text(
               'Xem và quản lý các yêu cầu xác minh từ các chuyên gia.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
             ),
           ],
         ),
@@ -226,9 +268,14 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
             },
             decoration: InputDecoration(
               hintText: 'Tìm kiếm chuyên gia...',
-              prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodySmall?.color),
+              prefixIcon: Icon(
+                Icons.search,
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
               filled: true,
-              fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+              fillColor: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkSurfaceVariant
+                  : Colors.white.withValues(alpha: 0.3),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
                 borderSide: BorderSide.none,
@@ -241,7 +288,10 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                 borderRadius: BorderRadius.circular(30),
                 borderSide: BorderSide.none,
               ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 0,
+                horizontal: 16,
+              ),
             ),
           ),
         ),
@@ -255,9 +305,15 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
               return DropdownButtonFormField<String>(
                 value: current,
                 decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.filter_list_rounded, size: 16, color: Theme.of(context).textTheme.bodySmall?.color),
+                  prefixIcon: Icon(
+                    Icons.filter_list_rounded,
+                    size: 16,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
                   filled: true,
-                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+                  fillColor: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkSurfaceVariant
+                      : Colors.white.withValues(alpha: 0.3),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide.none,
@@ -270,11 +326,28 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                     borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 0,
+                  ),
                 ),
-                items: ['Lọc theo trạng thái', 'Chờ duyệt', 'Đã duyệt', 'Đã từ chối']
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s, style: Theme.of(context).textTheme.bodySmall)))
-                    .toList(),
+                items:
+                    [
+                          'Lọc theo trạng thái',
+                          'Chờ duyệt',
+                          'Đã duyệt',
+                          'Đã từ chối',
+                        ]
+                        .map(
+                          (s) => DropdownMenuItem(
+                            value: s,
+                            child: Text(
+                              s,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (val) {
                   if (val != null) {
                     _selectedStatus.value = val;
@@ -300,18 +373,23 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.3),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkSurfaceVariant
+                        : Colors.white.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today_outlined, 
-                          size: 16, color: Theme.of(context).textTheme.bodySmall?.color),
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 16,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          range == null 
-                              ? 'Lọc theo ngày' 
+                          range == null
+                              ? 'Lọc theo ngày'
                               : '${DateFormat('dd/MM').format(range.start)} - ${DateFormat('dd/MM').format(range.end)}',
                           style: Theme.of(context).textTheme.bodySmall,
                           overflow: TextOverflow.ellipsis,
@@ -344,9 +422,14 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 0,
+                ),
                 minimumSize: const Size(0, 44),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
                 elevation: 0,
               ),
             ),
@@ -362,8 +445,10 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
       builder: (context, page, _) {
         final startIndex = (page - 1) * _itemsPerPage;
         if (data.isEmpty) return _buildEmptyState();
-        
-        final endIndex = startIndex + _itemsPerPage > data.length ? data.length : startIndex + _itemsPerPage;
+
+        final endIndex = startIndex + _itemsPerPage > data.length
+            ? data.length
+            : startIndex + _itemsPerPage;
         final pageItems = data.sublist(startIndex, endIndex);
 
         return Column(
@@ -371,9 +456,16 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
             Expanded(
               child: CustomAdminTable(
                 flex: const [3, 3, 2, 2, 1],
-                labels: const ['Họ tên', 'Lĩnh vực', 'Trạng thái', 'Ngày gửi', 'Thao tác'],
+                labels: const [
+                  'Họ tên',
+                  'Lĩnh vực',
+                  'Trạng thái',
+                  'Ngày gửi',
+                  'Thao tác',
+                ],
                 itemCount: pageItems.length,
-                onRowTapWithIndex: (index) => _showDetailDialog(pageItems[index]),
+                onRowTapWithIndex: (index) =>
+                    _showDetailDialog(pageItems[index]),
                 rowBuilder: (context, index) {
                   final item = pageItems[index];
                   return [
@@ -382,8 +474,13 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                       children: [
                         CircleAvatar(
                           backgroundColor: AppColors.primary.withOpacity(0.1),
-                          child: Text(item.fullName.isNotEmpty ? item.fullName[0].toUpperCase() : '?', 
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary)),
+                          child: Text(
+                            item.fullName.isNotEmpty
+                                ? item.fullName[0].toUpperCase()
+                                : '?',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(color: AppColors.primary),
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Flexible(
@@ -391,8 +488,20 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item.fullName, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-                              Text(item.phone, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color)),
+                              Text(
+                                item.fullName,
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                item.phone,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.color,
+                                    ),
+                              ),
                             ],
                           ),
                         ),
@@ -402,8 +511,14 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Chip(
-                        label: Text(item.expertise, style: Theme.of(context).textTheme.labelSmall),
-                        backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.4),
+                        label: Text(
+                          item.expertise,
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkSurfaceVariant
+                            : Colors.white.withValues(alpha: 0.4),
                         side: BorderSide.none,
                       ),
                     ),
@@ -416,12 +531,18 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
                       ),
                     ),
                     // Date
-                    Text(DateFormat('dd/MM/yyyy').format(item.createdAt), style: Theme.of(context).textTheme.bodyMedium),
+                    Text(
+                      DateFormat('dd/MM/yyyy').format(item.createdAt),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                     // Actions
                     Align(
                       alignment: Alignment.centerRight,
                       child: IconButton(
-                        icon: const Icon(Icons.visibility_outlined, color: AppColors.primary),
+                        icon: const Icon(
+                          Icons.visibility_outlined,
+                          color: AppColors.primary,
+                        ),
                         onPressed: () => _showDetailDialog(item),
                         tooltip: 'Xem chi tiết',
                       ),
@@ -449,9 +570,18 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_outlined, size: 64, color: Theme.of(context).dividerColor),
+          Icon(
+            Icons.inbox_outlined,
+            size: 64,
+            color: Theme.of(context).dividerColor,
+          ),
           const SizedBox(height: 16),
-          Text('Không tìm thấy yêu cầu nào', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
+          Text(
+            'Không tìm thấy yêu cầu nào',
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodySmall?.color,
+            ),
+          ),
         ],
       ),
     );
@@ -464,7 +594,12 @@ class _ExpertVerificationScreenState extends State<ExpertVerificationScreen> {
         children: [
           const Icon(Icons.error_outline, color: Colors.red, size: 48),
           const SizedBox(height: 16),
-          Text('Lỗi: $error', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red)),
+          Text(
+            'Lỗi: $error',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.red),
+          ),
         ],
       ),
     );

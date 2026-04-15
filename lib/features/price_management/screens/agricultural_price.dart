@@ -5,9 +5,10 @@ import 'package:intl/intl.dart';
 import '../../../core/widgets/common/custom_admin_table.dart';
 import '../../../core/widgets/common/custom_admin_toolbar.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/common/glass_container.dart';
 
 class AgriculturalPriceDashboard extends StatefulWidget {
-  const AgriculturalPriceDashboard({Key? key}) : super(key: key);
+  const AgriculturalPriceDashboard({super.key});
 
   @override
   State<AgriculturalPriceDashboard> createState() => _AgriculturalPriceDashboardState();
@@ -16,13 +17,9 @@ class AgriculturalPriceDashboard extends StatefulWidget {
 class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard> {
   // --- THEME ADAPTIVE COLORS ---
   Color get _bgColor => Theme.of(context).scaffoldBackgroundColor;
-  Color get _cardColor => Theme.of(context).cardColor;
   Color get _darkGreen => Theme.of(context).primaryColor;
-  Color get _lightGreen => Theme.of(context).primaryColor.withOpacity(0.1);
   Color get _textMain => Theme.of(context).colorScheme.onSurface;
   Color get _textMuted => Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey;
-  Color get _borderColor => Theme.of(context).dividerColor;
-  Color get _surfaceVariant => _isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceVariant;
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
 
   // --- Filter & Sort State ---
@@ -162,169 +159,169 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: Colors.transparent,
       body: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance.collection('Price').snapshots(),
           builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return const Center(child: Text('Đã xảy ra lỗi khi tải dữ liệu'));
-            }
-
-            if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-              return Center(child: CircularProgressIndicator(color: _darkGreen));
-            }
-
-            Map<String, Map<String, dynamic>> kpiData = {
-              'Cà Phê': {'price': '', 'change': ''},
-              'Hồ Tiêu': {'price': '', 'change': ''},
-              'Sầu Riêng': {'price': '', 'change': ''},
-            };
-            List<Map<String, dynamic>> allRows = [];
-            Set<String> dynamicCrops = {};
-            String globalLastUpdated = 'Đang tải...';
-
-            if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-              for (var doc in snapshot.data!.docs) {
-                Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
-                if (docData['updated_at'] != null) {
-                  globalLastUpdated = _formatDateString(docData['updated_at']);
-                  break;
-                }
+              if (snapshot.hasError) {
+                return const Center(child: Text('Đã xảy ra lỗi khi tải dữ liệu'));
               }
 
-              for (var doc in snapshot.data!.docs) {
-                String cropId = doc.id;
-                Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
-                List<dynamic> dataList = docData['latest_data'] ?? [];
+              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                return Center(child: CircularProgressIndicator(color: _darkGreen));
+              }
 
-                String rawUpdate = docData['updated_at']?.toString() ?? '';
-                String updated = _formatDateString(rawUpdate);
+              Map<String, Map<String, dynamic>> kpiData = {
+                'Cà Phê': {'price': '', 'change': ''},
+                'Hồ Tiêu': {'price': '', 'change': ''},
+                'Sầu Riêng': {'price': '', 'change': ''},
+              };
+              List<Map<String, dynamic>> allRows = [];
+              Set<String> dynamicCrops = {};
+              String globalLastUpdated = 'Đang tải...';
 
-                String cropName = cropId == 'Coffee' ? 'Cà Phê' : (cropId == 'Pepper' ? 'Hồ Tiêu' : (cropId == 'Durian' ? 'Sầu Riêng' : cropId));
-                dynamicCrops.add(cropName);
-
-                if (cropId == 'Durian') {
-                  if (dataList.isNotEmpty) {
-                    var firstEntry = dataList[0] as Map<String, dynamic>;
-                    String firstPrice = firstEntry.values.firstWhere(
-                            (v) => v != null && v.toString().contains(RegExp(r'[0-9]')),
-                        orElse: () => ''
-                    ).toString();
-                    kpiData['Sầu Riêng'] = {'price': firstPrice, 'change': 'Không đổi'};
+              if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                for (var doc in snapshot.data!.docs) {
+                  Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
+                  if (docData['updated_at'] != null) {
+                    globalLastUpdated = _formatDateString(docData['updated_at']);
+                    break;
                   }
+                }
 
-                  for (var item in dataList) {
-                    String subType = item['sub_type']?.toString() ?? item['loai']?.toString() ?? '';
-                    bool hasKeys = false;
-                    item.forEach((key, value) {
-                      if (key != 'loai' && key != 'sub_type' && value != null && value.toString().contains(RegExp(r'[0-9]'))) {
+                for (var doc in snapshot.data!.docs) {
+                  String cropId = doc.id;
+                  Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
+                  List<dynamic> dataList = docData['latest_data'] ?? [];
+
+                  String rawUpdate = docData['updated_at']?.toString() ?? '';
+                  String updated = _formatDateString(rawUpdate);
+
+                  String cropName = cropId == 'Coffee' ? 'Cà Phê' : (cropId == 'Pepper' ? 'Hồ Tiêu' : (cropId == 'Durian' ? 'Sầu Riêng' : cropId));
+                  dynamicCrops.add(cropName);
+
+                  if (cropId == 'Durian') {
+                    if (dataList.isNotEmpty) {
+                      var firstEntry = dataList[0] as Map<String, dynamic>;
+                      String firstPrice = firstEntry.values.firstWhere(
+                              (v) => v != null && v.toString().contains(RegExp(r'[0-9]')),
+                          orElse: () => ''
+                      ).toString();
+                      kpiData['Sầu Riêng'] = {'price': firstPrice, 'change': 'Không đổi'};
+                    }
+
+                    for (var item in dataList) {
+                      String subType = item['sub_type']?.toString() ?? item['loai']?.toString() ?? '';
+                      bool hasKeys = false;
+                      item.forEach((key, value) {
+                        if (key != 'loai' && key != 'sub_type' && value != null && value.toString().contains(RegExp(r'[0-9]'))) {
+                          allRows.add({
+                            'region': '',
+                            'name': cropName,
+                            'sub_type': subType,
+                            'price': value.toString(),
+                            'change': 'Không đổi',
+                            'update': updated,
+                            'raw_date': rawUpdate,
+                            'status': 'Ổn định',
+                          });
+                          hasKeys = true;
+                        }
+                      });
+                      if (!hasKeys && item.containsKey('price')) {
                         allRows.add({
                           'region': '',
                           'name': cropName,
                           'sub_type': subType,
-                          'price': value.toString(),
-                          'change': 'Không đổi',
+                          'price': item['price']?.toString() ?? '',
+                          'change': item['change']?.toString() ?? '',
                           'update': updated,
                           'raw_date': rawUpdate,
-                          'status': 'Ổn định',
+                          'status': _getStatusFromChange(item['change']?.toString() ?? ''),
                         });
-                        hasKeys = true;
                       }
-                    });
-                    if (!hasKeys && item.containsKey('price')) {
+                    }
+                  } else {
+                    if (dataList.isNotEmpty) {
+                      kpiData[cropName] = {
+                        'price': dataList[0]['price']?.toString() ?? '',
+                        'change': dataList[0]['change']?.toString() ?? ''
+                      };
+                    }
+
+                    for (var item in dataList) {
+                      String changeVal = item['change']?.toString() ?? '';
                       allRows.add({
-                        'region': '',
+                        'region': item['location']?.toString() ?? '',
                         'name': cropName,
-                        'sub_type': subType,
+                        'sub_type': item['sub_type']?.toString() ?? '',
                         'price': item['price']?.toString() ?? '',
-                        'change': item['change']?.toString() ?? '',
+                        'change': changeVal,
                         'update': updated,
                         'raw_date': rawUpdate,
-                        'status': _getStatusFromChange(item['change']?.toString() ?? ''),
+                        'status': _getStatusFromChange(changeVal),
                       });
                     }
                   }
-                } else {
-                  if (dataList.isNotEmpty) {
-                    kpiData[cropName] = {
-                      'price': dataList[0]['price']?.toString() ?? '',
-                      'change': dataList[0]['change']?.toString() ?? ''
-                    };
-                  }
-
-                  for (var item in dataList) {
-                    String changeVal = item['change']?.toString() ?? '';
-                    allRows.add({
-                      'region': item['location']?.toString() ?? '',
-                      'name': cropName,
-                      'sub_type': item['sub_type']?.toString() ?? '',
-                      'price': item['price']?.toString() ?? '',
-                      'change': changeVal,
-                      'update': updated,
-                      'raw_date': rawUpdate,
-                      'status': _getStatusFromChange(changeVal),
-                    });
-                  }
                 }
               }
-            }
 
-            // LỌC & SẮP XẾP
-            List<Map<String, dynamic>> processedTableData = allRows.where((row) {
-              if (_selectedProductFilter == 'Tất cả') return true;
-              return row['name'].toString().contains(_selectedProductFilter);
-            }).toList();
+              // LỌC & SẮP XẾP
+              List<Map<String, dynamic>> processedTableData = allRows.where((row) {
+                if (_selectedProductFilter == 'Tất cả') return true;
+                return row['name'].toString().contains(_selectedProductFilter);
+              }).toList();
 
-            processedTableData.sort((a, b) {
-              if (_selectedPriceSort != 'Mặc định (Giá)') {
-                double priceA = _parsePriceHelper(a['price']);
-                double priceB = _parsePriceHelper(b['price']);
-                int priceComp = priceA.compareTo(priceB);
-                if (priceComp != 0) {
-                  return _selectedPriceSort == 'Giá tăng dần' ? priceComp : -priceComp;
+              processedTableData.sort((a, b) {
+                if (_selectedPriceSort != 'Mặc định (Giá)') {
+                  double priceA = _parsePriceHelper(a['price']);
+                  double priceB = _parsePriceHelper(b['price']);
+                  int priceComp = priceA.compareTo(priceB);
+                  if (priceComp != 0) {
+                    return _selectedPriceSort == 'Giá tăng dần' ? priceComp : -priceComp;
+                  }
                 }
-              }
-              String dateA = a['raw_date']?.toString() ?? '';
-              String dateB = b['raw_date']?.toString() ?? '';
-              int dateComp = dateA.compareTo(dateB);
-              return _selectedDateSort == 'Mới nhất' ? -dateComp : dateComp;
-            });
+                String dateA = a['raw_date']?.toString() ?? '';
+                String dateB = b['raw_date']?.toString() ?? '';
+                int dateComp = dateA.compareTo(dateB);
+                return _selectedDateSort == 'Mới nhất' ? -dateComp : dateComp;
+              });
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Quản lý Giá Nông Sản', style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                  const SizedBox(height: 24),
-                  _buildKPIRow(kpiData),
-                  const SizedBox(height: 24),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 2, child: _buildMainChart()),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        flex: 1,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildTrendForecast(),
-                            const SizedBox(height: 24),
-                            _buildTopMovers(allRows),
-                          ],
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Quản lý Giá Nông Sản', style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 24),
+                    _buildKPIRow(kpiData),
+                    const SizedBox(height: 24),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 2, child: _buildMainChart()),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          flex: 1,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildTrendForecast(),
+                              const SizedBox(height: 24),
+                              _buildTopMovers(allRows),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // GỌI HÀM BẢNG CUSTOM
-                  _buildCustomTableSection(processedTableData, dynamicCrops.toList(), globalLastUpdated),
-                ],
-              ),
-            );
-          }
-      ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // GỌI HÀM BẢNG CUSTOM
+                    _buildCustomTableSection(processedTableData, dynamicCrops.toList(), globalLastUpdated),
+                  ],
+                ),
+              );
+            }
+        ),
     );
   }
 
@@ -356,16 +353,10 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
 
     Color changeColor = isFlat ? _textMuted : (isUp ? _darkGreen : Colors.red);
     IconData? changeIcon = isFlat ? null : (isUp ? Icons.trending_up : Icons.trending_down);
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
+    // Glass effect synchronization
 
-    return Container(
+    return GlassContainer(
       height: 145, 
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), width: 1.5),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(4, 4))],
-      ),
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0), // 2. Tối ưu lại padding
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,7 +370,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(topIcon, size: 20, color: iconColor),
@@ -420,15 +411,8 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
 
 // --- (B) BIỂU ĐỒ CHÍNH ---
   Widget _buildMainChart() {
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
+    return GlassContainer(
       height: 400,
-      decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.75),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), width: 1.5),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(4, 4))]
-      ),
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,7 +432,16 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
               Row(
                 children: [
                   Container(
-                    height: 40, padding: const EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: _surfaceVariant, borderRadius: BorderRadius.circular(20)),
+                    height: 40, 
+                    padding: const EdgeInsets.symmetric(horizontal: 16), 
+                    decoration: BoxDecoration(
+                      color: _isDark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.15), 
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: _isDark ? 0.1 : 0.6),
+                        width: 0.5,
+                      ),
+                    ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: _selectedProductChart, icon: const Icon(Icons.keyboard_arrow_down, size: 18), style: Theme.of(context).textTheme.titleSmall?.copyWith(color: _textMain, fontWeight: FontWeight.w600),
@@ -464,7 +457,15 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                   ),
                   const SizedBox(width: 12),
                   Container(
-                    height: 40, decoration: BoxDecoration(color: _surfaceVariant, borderRadius: BorderRadius.circular(20)),
+                    height: 40, 
+                    decoration: BoxDecoration(
+                      color: _isDark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.15), 
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: _isDark ? 0.1 : 0.6),
+                        width: 0.5,
+                      ),
+                    ),
                     child: Row(
                       children: ['7 Ngày', '30 Ngày', '3 Tháng'].map((time) {
                         bool isSelected = _selectedChartFilter == time;
@@ -474,7 +475,12 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                             _fetchChartAndForecastData(_selectedProductChart, time);
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16), alignment: Alignment.center, decoration: BoxDecoration(color: isSelected ? _darkGreen : Colors.transparent, borderRadius: BorderRadius.circular(20)),
+                            padding: const EdgeInsets.symmetric(horizontal: 16), 
+                            alignment: Alignment.center, 
+                            decoration: BoxDecoration(
+                              color: isSelected ? _darkGreen : Colors.transparent, 
+                              borderRadius: BorderRadius.circular(20)
+                            ),
                             child: Text(time, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: isSelected ? Colors.white : _textMuted, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
                           ),
                         );
@@ -499,7 +505,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
-                      color: Colors.grey.withOpacity(0.15),
+                      color: Colors.grey.withValues(alpha: 0.15),
                       strokeWidth: 1,
                       dashArray: [5, 5], // Lưới đứt nét cho thanh lịch
                     );
@@ -535,7 +541,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                       dotData: const FlDotData(show: false),
                       // 3. ĐỔ BÓNG CHO ĐƯỜNG LINE
                       shadow: Shadow(
-                        color: _darkGreen.withOpacity(0.3),
+                        color: _darkGreen.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -544,8 +550,8 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                         show: true,
                         gradient: LinearGradient(
                           colors: [
-                            _darkGreen.withOpacity(0.25), // Đậm ở trên
-                            _darkGreen.withOpacity(0.0),  // Mờ dần xuống dưới
+                            _darkGreen.withValues(alpha: 0.25), // Đậm ở trên
+                            _darkGreen.withValues(alpha: 0.0),  // Mờ dần xuống dưới
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -571,7 +577,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
         gradient: LinearGradient(
           colors: [
             _darkGreen,
-            _darkGreen.withOpacity(0.8),
+            _darkGreen.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -579,7 +585,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: _darkGreen.withOpacity(0.3),
+            color: _darkGreen.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           )
@@ -587,7 +593,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
       ),
       child: Stack(
         children: [
-          Positioned(right: -10, bottom: -10, child: Icon(Icons.bar_chart, size: 80, color: Colors.white.withOpacity(0.1))),
+          Positioned(right: -10, bottom: -10, child: Icon(Icons.bar_chart, size: 80, color: Colors.white.withValues(alpha: 0.1))),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -599,7 +605,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Dự báo 3 ngày', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                      Text('Dự báo 3 ngày', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
                       const SizedBox(height: 4),
                       Text(isEmpty ? '--' : '${NumberFormat('#,###').format(_trendForecast['day3'])}đ', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                     ],
@@ -607,7 +613,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('Xu hướng', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                      Text('Xu hướng', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
                       const SizedBox(height: 4),
                       Text(isEmpty ? '--' : _trendForecast['trend'].toString().toUpperCase(), style: Theme.of(context).textTheme.titleMedium?.copyWith(color: isIncrease ? Colors.greenAccent : Colors.redAccent, fontWeight: FontWeight.bold)),
                     ],
@@ -622,7 +628,6 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
   }
 
   Widget _buildTopMovers(List<Map<String, dynamic>> allData) {
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
     var validData = allData.where((e) => !e['change'].toLowerCase().contains('không đổi') && e['change'] != '0.0%' && e['change'] != '0%' && e['change'].toString().isNotEmpty).toList();
     validData.sort((a, b) {
       double valA = double.tryParse(a['change'].replaceAll('%', '').replaceAll('+', '')) ?? 0;
@@ -633,14 +638,8 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
     var topTang = validData.where((e) => e['change'].contains('+')).take(2).toList();
     var topGiam = validData.reversed.where((e) => e['change'].contains('-')).take(1).toList();
 
-    return Container(
+    return GlassContainer(
       height: 236, // This height precisely aligns with the chart's 400 height (140 + 24 + 236)
-      decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.75), 
-          borderRadius: BorderRadius.circular(24), 
-          border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), width: 1.5),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(4, 4))]
-      ),
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -661,7 +660,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
 
   Widget _buildMoverItem(String name, String subType, String value, bool isUp) {
     String initials = name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase();
-    Color avatarBg = isUp ? _darkGreen.withOpacity(0.2) : Colors.red.withOpacity(0.2);
+    Color avatarBg = isUp ? _darkGreen.withValues(alpha: 0.2) : Colors.red.withValues(alpha: 0.2);
     Color avatarText = isUp ? _darkGreen : Colors.red;
     String displaySub = subType.isNotEmpty ? ' ($subType)' : '';
 
@@ -691,7 +690,14 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
       child: Container(
         margin: const EdgeInsets.only(right: 0), // Margin right handles by CustomAdminToolbar 16px wrapper
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(color: _surfaceVariant, borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(
+          color: _isDark ? AppColors.darkSurfaceVariant : Colors.white.withValues(alpha: 0.15), 
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: _isDark ? 0.1 : 0.6),
+            width: 0.5,
+          ),
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -773,13 +779,13 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
                 children: [
                   IconButton(
                     icon: const Icon(Icons.chevron_left, size: 20),
-                    color: _currentPage > 1 ? _textMain : _textMuted.withOpacity(0.3),
+                    color: _currentPage > 1 ? _textMain : _textMuted.withValues(alpha: 0.3),
                     onPressed: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
                   ),
                   ..._buildPageNumbers(totalPages),
                   IconButton(
                     icon: const Icon(Icons.chevron_right, size: 20),
-                    color: _currentPage < totalPages ? _textMain : _textMuted.withOpacity(0.3),
+                    color: _currentPage < totalPages ? _textMain : _textMuted.withValues(alpha: 0.3),
                     onPressed: _currentPage < totalPages ? () => setState(() => _currentPage++) : null,
                   ),
                 ],
@@ -800,7 +806,7 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
 
     String status = item['status']?.toString() ?? '';
     Color badgeBg = isFlat 
-        ? (_isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100]!) 
+        ? (_isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100]!) 
         : (status.contains('Tăng') ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE));
     Color badgeText = isFlat ? _textMuted : (status.contains('Tăng') ? _darkGreen : Colors.red[800]!);
 
@@ -831,7 +837,11 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
           ? const SizedBox()
           : Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: badgeBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: badgeText.withOpacity(0.1))),
+              decoration: BoxDecoration(
+                color: badgeBg, 
+                borderRadius: BorderRadius.circular(20), 
+                border: Border.all(color: badgeText.withValues(alpha: 0.1))
+              ),
               child: Text(status.toUpperCase(), textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: badgeText, fontWeight: FontWeight.bold)),
             ),
     ];
@@ -863,14 +873,28 @@ class _AgriculturalPriceDashboardState extends State<AgriculturalPriceDashboard>
     }
 
     if (totalPages <= 5) {
-      for (int i = 1; i <= totalPages; i++) addPage(i);
+      for (int i = 1; i <= totalPages; i++) {
+        addPage(i);
+      }
     } else {
       if (_currentPage <= 3) {
-        addPage(1); addPage(2); addPage(3); addDots(); addPage(totalPages);
+        addPage(1);
+        addPage(2);
+        addPage(3);
+        addDots();
+        addPage(totalPages);
       } else if (_currentPage >= totalPages - 2) {
-        addPage(1); addDots(); addPage(totalPages - 2); addPage(totalPages - 1); addPage(totalPages);
+        addPage(1);
+        addDots();
+        addPage(totalPages - 2);
+        addPage(totalPages - 1);
+        addPage(totalPages);
       } else {
-        addPage(1); addDots(); addPage(_currentPage); addDots(); addPage(totalPages);
+        addPage(1);
+        addDots();
+        addPage(_currentPage);
+        addDots();
+        addPage(totalPages);
       }
     }
     return widgets;
