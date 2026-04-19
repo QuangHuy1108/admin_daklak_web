@@ -206,28 +206,6 @@ class _AdminHeaderState extends State<AdminHeader> {
 
               return Row(
                 children: [
-                  IconButton(
-                    icon: Icon(Icons.bug_report_outlined, color: isDark ? Colors.grey.shade500 : Colors.grey.shade400, size: 20),
-                    onPressed: () async {
-                      try {
-                        await NotificationService.sendTestNotification();
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Đã gửi thông báo thử nghiệm thành công!')),
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Lỗi khi gửi thông báo: $e')),
-                          );
-                        }
-                      }
-                    },
-                    tooltip: 'Gửi Test Notification',
-                  ),
-                  const SizedBox(width: 12),
-
                   Stack(
                     clipBehavior: Clip.none,
                     alignment: Alignment.center,

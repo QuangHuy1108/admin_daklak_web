@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:cloud_functions/cloud_functions.dart';
 import '../../../core/constants/app_colors.dart';
 import '../models/expert_verification_request_model.dart';
 import '../services/expert_verification_service.dart';
@@ -22,6 +23,8 @@ class ExpertRequestDetailDialog extends StatefulWidget {
 class _ExpertRequestDetailDialogState extends State<ExpertRequestDetailDialog> {
   final ExpertVerificationService _service = ExpertVerificationService();
   bool _isProcessing = false;
+  bool _isAnalyzing = false;
+  Map<String, dynamic>? _analysisResult;
 
   Future<void> _handleAction(bool isApproved) async {
     setState(() => _isProcessing = true);
@@ -63,10 +66,49 @@ class _ExpertRequestDetailDialogState extends State<ExpertRequestDetailDialog> {
     html.window.open(url, '_blank');
   }
 
+  Future<void> _runAIAnalysis() async {
+    setState(() {
+      _isAnalyzing = true;
+      _analysisResult = null;
+    });
+
+    try {
+      final List<String> imageUrls = [];
+      if (widget.request.portfolioUrl.isNotEmpty) imageUrls.add(widget.request.portfolioUrl);
+      imageUrls.addAll(widget.request.evidenceDocuments);
+
+      final HttpsCallable callable = FirebaseFunctions.instanceFor(region: 'asia-southeast1')
+          .httpsCallable('analyzeExpertRequest');
+
+      final result = await callable.call({
+        'requestId': widget.request.id,
+        'imageUrls': imageUrls,
+        'expertInfo': {
+          'fullName': widget.request.fullName,
+          'expertise': widget.request.expertise,
+          'workplace': widget.request.workplace,
+          'bio': widget.request.bio,
+        },
+      });
+
+      if (mounted) {
+        setState(() {
+          _analysisResult = result.data['analysis'];
+          _isAnalyzing = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isAnalyzing = false);
+        _showError('Lỗi phân tích AI: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Theme.of(context).dialogBackgroundColor,
+      backgroundColor: Theme.of(context).dialogTheme.backgroundColor ?? Theme.of(context).dialogBackgroundColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         width: 650,
@@ -97,6 +139,13 @@ class _ExpertRequestDetailDialogState extends State<ExpertRequestDetailDialog> {
                     _buildSectionHeader('Tài liệu minh chứng'),
                     const SizedBox(height: 12),
                     _buildEvidenceGrid(),
+
+                    if (_isAnalyzing || _analysisResult != null) ...[
+                      const SizedBox(height: 32),
+                      _buildSectionHeader('Báo cáo hỗ trợ từ AI (Trợ lý Gemini)'),
+                      const SizedBox(height: 12),
+                      _buildAIAnalysisSection(),
+                    ],
                   ],
                 ),
               ),
@@ -121,9 +170,24 @@ class _ExpertRequestDetailDialogState extends State<ExpertRequestDetailDialog> {
             'Hồ sơ xác minh chuyên gia',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close),
+          Row(
+            children: [
+              if (!_isAnalyzing && _analysisResult == null)
+                TextButton.icon(
+                  onPressed: _runAIAnalysis,
+                  icon: const Icon(Icons.auto_awesome, size: 18),
+                  label: const Text('AI PHÂN TÍCH'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.purple[700],
+                    backgroundColor: Colors.purple[50],
+                  ),
+                ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close),
+              ),
+            ],
           ),
         ],
       ),
@@ -284,6 +348,93 @@ class _ExpertRequestDetailDialogState extends State<ExpertRequestDetailDialog> {
         const SizedBox(height: 2),
         const Text('Nhấn để xem', style: TextStyle(fontSize: 11, color: Colors.grey)),
       ],
+    );
+  }
+
+
+  Widget _buildAIAnalysisSection() {
+    if (_isAnalyzing) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.purple[50]?.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.purple[100]!),
+        ),
+        child: Column(
+          children: [
+            const CircularProgressIndicator(strokeWidth: 2, color: Colors.purple),
+            const SizedBox(height: 16),
+            Text('AI Gemini đang đọc tài liệu và phân tích hồ sơ...',
+                style: TextStyle(color: Colors.purple[900], fontStyle: FontStyle.italic)),
+          ],
+        ),
+      );
+    }
+
+    final String recommendation = _analysisResult?['recommendation'] ?? 'UNKNOWN';
+    final double confidence = _analysisResult?['confidenceScore'] ?? 0.0;
+    
+    Color statusColor = Colors.grey;
+    String statusTitle = 'CHƯA XÁC ĐỊNH';
+    IconData statusIcon = Icons.help_outline;
+
+    if (recommendation == 'DE_XUAT_DUYET') {
+      statusColor = Colors.green;
+      statusTitle = 'GỢI Ý: CHẤP THUẬN';
+      statusIcon = Icons.check_circle;
+    } else if (recommendation == 'DE_XUAT_TU_CHOI') {
+      statusColor = Colors.red;
+      statusTitle = 'GỢI Ý: TỪ CHỐI';
+      statusIcon = Icons.cancel;
+    } else {
+      statusColor = Colors.orange;
+      statusTitle = 'GỢI Ý: CẦN KIỂM TRA LẠI';
+      statusIcon = Icons.warning_amber_rounded;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(statusIcon, color: statusColor, size: 24),
+              const SizedBox(width: 12),
+              Text(statusTitle, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 16)),
+              const Spacer(),
+              Text('Độ tin cậy: ${(confidence * 100).toStringAsFixed(0)}%', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildAIInfoRow('Thông tin trích xuất:', _analysisResult?['fullName'] ?? '--'),
+          _buildAIInfoRow('Loại giấy tờ:', _analysisResult?['documentType'] ?? '--'),
+          _buildAIInfoRow('Hạn dùng:', _analysisResult?['expiryDate'] ?? 'Không rõ'),
+          const Divider(height: 24),
+          const Text('LÝ DO PHÂN TÍCH:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+          const SizedBox(height: 4),
+          Text(_analysisResult?['reason'] ?? 'Không có giải thích chi tiết.', style: const TextStyle(height: 1.5, fontSize: 13.5)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAIInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+          const SizedBox(width: 8),
+          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+        ],
+      ),
     );
   }
 

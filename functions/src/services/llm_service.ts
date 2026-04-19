@@ -13,8 +13,8 @@ export class LLMService {
 
   constructor(apiKey: string) {
     this.genAI = new GoogleGenerativeAI(apiKey);
-    // Standardizing on Gemini 1.5 Flash as per requirements
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Standardizing on Gemini 2.5 Flash as per available model list
+    this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   }
 
   /**

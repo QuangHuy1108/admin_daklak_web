@@ -14,6 +14,8 @@ import 'features/auth/logic/user_provider.dart';
 import 'features/finance/providers/finance_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/theme_provider.dart';
+import 'core/providers/locale_provider.dart';
+import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +41,7 @@ void main() async {
         ),
         ChangeNotifierProvider(create: (_) => FinanceProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
       child: const AdminApp(),
     ),
@@ -65,12 +68,17 @@ class _AdminAppState extends State<AdminApp> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
+    final localeProvider = context.watch<LocaleProvider>();
+
     return MaterialApp.router(
       title: 'Ea Agri Admin',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeProvider.themeMode,
+      locale: localeProvider.locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: _router,
     );
   }

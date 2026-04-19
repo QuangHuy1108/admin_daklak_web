@@ -24,6 +24,8 @@ import '../../features/logs/screens/audit_logs_screen.dart';
 import '../../features/expert_management/screens/expert_verification_screen.dart';
 import '../../features/system_logs/screens/system_log_screen.dart';
 import '../../features/profile/screens/admin_profile_screen.dart';
+import '../../features/info/screens/info_screen.dart';
+
 
 class AppRouter {
   static GoRouter createRouter(UserProvider userProvider) {
@@ -33,8 +35,9 @@ class AppRouter {
       redirect: (context, state) {
         final bool isLoggedIn = FirebaseAuth.instance.currentUser != null;
         final bool isGoingToLogin = state.matchedLocation == '/login';
+        final bool isPublicRoute = state.matchedLocation.startsWith('/info');
 
-        if (!isLoggedIn && !isGoingToLogin) return '/login';
+        if (!isLoggedIn && !isGoingToLogin && !isPublicRoute) return '/login';
         if (isLoggedIn && isGoingToLogin) return '/dashboard';
 
         // RBAC Check for Settings
@@ -54,6 +57,70 @@ class AppRouter {
         GoRoute(
           path: '/login',
           builder: (context, state) => const LoginScreen(),
+        ),
+        GoRoute(
+          path: '/info/:type',
+          builder: (context, state) {
+            final type = state.pathParameters['type'];
+            String title = 'Thông Tin';
+            String content = 'Nội dung đang được cập nhật...';
+            
+            switch (type) {
+              case 'privacy':
+                title = 'Chính Sách Bảo Mật';
+                content = '''
+Chính sách bảo mật của Ea Agri cam kết bảo vệ thông tin cá nhân của người dùng một cách tuyệt đối.
+
+1. Thu thập thông tin: Chúng tôi chỉ thu thập các thông tin cần thiết để quản lý tài khoản và cải thiện dịch vụ.
+2. Sử dụng thông tin: Thông tin của bạn được sử dụng để xác thực, bảo mật và thông báo các cập nhật quan trọng.
+3. Chia sẻ thông tin: Chúng tôi không bao giờ bán hoặc chia sẻ dữ liệu của bạn cho bên thứ ba vì mục đích thương mại.
+4. Bảo mật: Dữ liệu được mã hóa và lưu trữ trên hệ thống đám mây bảo mật cao của Google (Firebase).
+
+Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ đội ngũ hỗ trợ của chúng tôi.
+                ''';
+                break;
+              case 'terms':
+                title = 'Điều Khoản Dịch Vụ';
+                content = '''
+Bằng việc truy cập vào hệ thống Ea Agri, bạn đồng ý tuân thủ các điều khoản sau:
+
+1. Trách nhiệm tài khoản: Bạn chịu trách nhiệm bảo mật mật khẩu và mọi hoạt động diễn ra dưới tài khoản của mình.
+2. Sử dụng đúng mục đích: Hệ thống chỉ dành cho mục đích quản lý nông nghiệp số chuyên nghiệp.
+3. Hành vi nghiêm cấm: Không được phép truy cập trái phép, phá hoại dữ liệu hoặc can thiệp vào hoạt động của hệ thống.
+4. Thay đổi điều khoản: Chúng tôi có quyền cập nhật điều khoản này bất cứ lúc nào để phù hợp với quy định pháp luật.
+
+Việc vi phạm các điều khoản trên có thể dẫn đến việc khóa tài khoản vĩnh viễn.
+                ''';
+                break;
+              case 'support':
+                title = 'Trung Tâm Hỗ Trợ';
+                content = '''
+Chào mừng đến với Trung Tâm Hỗ Trợ Ea Agri!
+
+Làm thế nào để chúng tôi có thể giúp bạn?
+- Hỗ trợ kỹ thuật: support@eaagri.vn
+- Hotline: 1900 xxxx (8:00 - 17:30, Thứ 2 - Thứ 6)
+- Zalo hỗ trợ: 09xx xxx xxx
+
+Chúng tôi sẽ phản hồi yêu cầu của bạn trong vòng tối đa 24 giờ làm việc.
+                ''';
+                break;
+              case 'contact':
+                title = 'Liên Hệ';
+                content = '''
+Liên hệ với Ban Quản Trị Hệ Thống Ea Agri:
+
+- Địa chỉ: Thành phố Buôn Ma Thuột, Tỉnh Đắk Lắk.
+- Email: contact@eaagri.vn
+- Điện thoại: (0262) xxx xxxx
+- Website: www.daklakweb.vn
+
+Chúng tôi luôn sẵn sàng lắng nghe ý kiến đóng góp của bạn để hoàn thiện hệ thống hơn mỗi ngày.
+                ''';
+                break;
+            }
+            return InfoScreen(title: title, content: content);
+          },
         ),
         // SỬ DỤNG SHELL_ROUTE CHO CÁC TRANG QUẢN TRỊ
         ShellRoute(

@@ -199,6 +199,14 @@ service cloud.firestore {
       // Cho phép Người nhận (Chuyên gia) đọc, cập nhật (đã đọc) hoặc xoá thông báo của chính họ. Admin có toàn quyền.
       allow read, update, delete: if isAdmin() || (request.auth != null && resource.data.receiverId == request.auth.uid);
     }
-    
+    // ==========================================================
+    // 14. HỆ THỐNG THÔNG BÁO DÀNH CHO ADMIN (admin_notifications)
+    // ==========================================================
+    match /admin_notifications/{docId} {
+      // Chỉ có tài khoản mang role Admin mới được phép đọc và cập nhật (đánh dấu đã đọc)
+      allow read, update: if isAdmin();
+      // Việc phân phối thông báo mới (create) chỉ được thực hiện bởi Firebase Cloud Functions (backend)
+      allow create, delete: if false; 
+    }
   }
 }
